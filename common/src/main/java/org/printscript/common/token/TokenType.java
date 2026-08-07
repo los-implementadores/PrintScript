@@ -1,0 +1,26 @@
+package org.printscript.common.token;
+
+public enum TokenType {
+    // Keywords
+    LET,
+    TYPE_NUMBER,   // "number" usado como tipo en una declaración
+    TYPE_STRING,   // "string" usado como tipo en una declaración
+
+    // Literales e identificadores
+    IDENTIFIER,
+    NUMBER_LITERAL,
+    STRING_LITERAL,
+
+    // Símbolos
+    COLON,       // :
+    ASSIGN,      // =
+    SEMICOLON,   // ;
+    LPAREN,      // (
+    RPAREN,      // )
+    PLUS,        // +
+    MINUS,       // -
+    STAR,        // *
+    SLASH,       // /
+
+    EOF
+}
