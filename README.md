@@ -1,6 +1,6 @@
 # PrintScript
 
-TP de Ingeniería de Sistemas (Austral, 2026) — lexer, parser, interpreter, formatter y
+TP de Ingeniería de Sistemas 2026 — lexer, parser, interpreter, formatter y
 static code analyzer para el lenguaje PrintScript (subset de TypeScript).
 
 ## Módulos
@@ -32,7 +32,7 @@ Desde terminal (necesita Gradle instalado, o generar el wrapper una vez con
 ## Estado
 
 - [x] Estructura del proyecto
-- [ ] Lexer
+- [x] Lexer
 - [ ] Parser + AST
 - [ ] Interpreter
 - [ ] CLI (modo Execution)
