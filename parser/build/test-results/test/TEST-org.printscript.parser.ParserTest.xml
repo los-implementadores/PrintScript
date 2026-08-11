@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.printscript.parser.ParserTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-08-11T19:45:41.473Z" hostname="MRecio--cachyos-x8664" time="0.08">
+  <properties/>
+  <testcase name="parserAsIteratorProducesStatementsLazily()" classname="org.printscript.parser.ParserTest" time="0.023"/>
+  <testcase name="throwsOnUnknownType()" classname="org.printscript.parser.ParserTest" time="0.018"/>
+  <testcase name="leftAssociativityForAddition()" classname="org.printscript.parser.ParserTest" time="0.002"/>
+  <testcase name="parenthesesOverridePrecedence()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="parseExceptionContainsPosition()" classname="org.printscript.parser.ParserTest" time="0.005"/>
+  <testcase name="parsesFullProgram()" classname="org.printscript.parser.ParserTest" time="0.002"/>
+  <testcase name="respectsDivisionOverSubtraction()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="tracksPositionOfVarDeclaration()" classname="org.printscript.parser.ParserTest" time="0.002"/>
+  <testcase name="parsesStringDeclaration()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="parsesAssignment()" classname="org.printscript.parser.ParserTest" time="0.002"/>
+  <testcase name="throwsOnMissingSemicolon()" classname="org.printscript.parser.ParserTest" time="0.002"/>
+  <testcase name="throwsOnUnexpectedToken()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="respectsMultiplicationOverAddition()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="throwsOnMissingColon()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="parsesPrintlnWithStringLiteral()" classname="org.printscript.parser.ParserTest" time="0.003"/>
+  <testcase name="parsesNumberDeclaration()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="parsesPrintlnWithIdentifier()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <testcase name="parsesNumberProgramWithDivision()" classname="org.printscript.parser.ParserTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
