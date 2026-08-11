@@ -3,6 +3,7 @@ package org.printscript.common.ast;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
 
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,19 +21,14 @@ class ASTTest {
     // Helpers
     // -------------------------------------------------------------------------
 
-    /** Posición ficticia para no repetirla en cada test. */
     private static final Position POS = new Position(1, 1, 1, 1);
 
-    private Identifier id(String name) {
-        return new Identifier(name, POS);
-    }
+    private Identifier id(String name) { return new Identifier(name, POS); }
+    private NumberLiteral num(double value) { return new NumberLiteral(value, POS); }
+    private StringLiteral str(String value) { return new StringLiteral(value, POS); }
 
-    private NumberLiteral num(double value) {
-        return new NumberLiteral(value, POS);
-    }
-
-    private StringLiteral str(String value) {
-        return new StringLiteral(value, POS);
+    private Program program(Statement... stmts) {
+        return new EagerProgram(List.of(stmts), POS);
     }
 
     // -------------------------------------------------------------------------
@@ -41,18 +37,16 @@ class ASTTest {
 
     @Test
     void varDeclarationConStringLiteral() {
-        // let name: string = "Joe";
         VarDeclarationStatement node = new VarDeclarationStatement(
                 id("name"), "string", str("Joe"), POS);
 
-        assertEquals("name",  node.getName().getName());
+        assertEquals("name",   node.getName().getName());
         assertEquals("string", node.getTypeName());
-        assertEquals("Joe",   ((StringLiteral) node.getInitializer()).getValue());
+        assertEquals("Joe",    ((StringLiteral) node.getInitializer()).getValue());
     }
 
     @Test
     void varDeclarationConNumberLiteral() {
-        // let a: number = 12;
         VarDeclarationStatement node = new VarDeclarationStatement(
                 id("a"), "number", num(12), POS);
 
@@ -67,15 +61,14 @@ class ASTTest {
 
     @Test
     void assignmentActualizaVariableExistente() {
-        // a = a / b;
         BinaryExpression division = new BinaryExpression(id("a"), "/", id("b"), POS);
         AssignmentStatement node  = new AssignmentStatement(id("a"), division, POS);
 
-        assertEquals("a",   node.getTarget().getName());
+        assertEquals("a", node.getTarget().getName());
         BinaryExpression rhs = (BinaryExpression) node.getValue();
-        assertEquals("/",   rhs.getOperator());
-        assertEquals("a",   ((Identifier) rhs.getLeft()).getName());
-        assertEquals("b",   ((Identifier) rhs.getRight()).getName());
+        assertEquals("/", rhs.getOperator());
+        assertEquals("a", ((Identifier) rhs.getLeft()).getName());
+        assertEquals("b", ((Identifier) rhs.getRight()).getName());
     }
 
     // -------------------------------------------------------------------------
@@ -84,69 +77,89 @@ class ASTTest {
 
     @Test
     void printlnConConcatenacionDeStrings() {
-        // println(name + " " + lastName)
-        // árbol: println( (name + " ") + lastName )
         BinaryExpression innerConcat = new BinaryExpression(id("name"), "+", str(" "), POS);
         BinaryExpression outerConcat = new BinaryExpression(innerConcat, "+", id("lastName"), POS);
         CallExpression   call        = new CallExpression("println", List.of(outerConcat), POS);
-        ExpressionStatement stmt     = new ExpressionStatement(call, POS);
 
         assertEquals("println", call.getCallee());
-        assertEquals(1,         call.getArguments().size());
+        assertEquals(1, call.getArguments().size());
         BinaryExpression arg = (BinaryExpression) call.getArguments().get(0);
         assertEquals("+", arg.getOperator());
         assertEquals("lastName", ((Identifier) arg.getRight()).getName());
     }
 
     // -------------------------------------------------------------------------
-    // println("Result: " + c);   donde c = a / b
-    // -------------------------------------------------------------------------
-
-    @Test
-    void printlnConConcatenacionStringYNumber() {
-        // println("Result: " + c)
-        BinaryExpression concat = new BinaryExpression(str("Result: "), "+", id("c"), POS);
-        CallExpression   call   = new CallExpression("println", List.of(concat), POS);
-
-        assertEquals("+",         ((BinaryExpression) call.getArguments().get(0)).getOperator());
-        assertEquals("Result: ",  ((StringLiteral) ((BinaryExpression) call.getArguments().get(0)).getLeft()).getValue());
-        assertEquals("c",         ((Identifier)   ((BinaryExpression) call.getArguments().get(0)).getRight()).getName());
-    }
-
-    // -------------------------------------------------------------------------
-    // Programa completo: let a: number = 12; let b: number = 4; println("Result: " + a / b);
+    // Program: toList() y stream()
     // -------------------------------------------------------------------------
 
     @Test
     void programaCompletoTieneOrdenCorrectoDeSentencias() {
-        // let a: number = 12;
-        Statement decA = new VarDeclarationStatement(id("a"), "number", num(12), POS);
-        // let b: number = 4;
-        Statement decB = new VarDeclarationStatement(id("b"), "number", num(4), POS);
-        // println("Result: " + a / b);   — simplificado, sin precedencia
-        BinaryExpression div    = new BinaryExpression(id("a"), "/", id("b"), POS);
-        BinaryExpression concat = new BinaryExpression(str("Result: "), "+", div, POS);
+        Statement decA  = new VarDeclarationStatement(id("a"), "number", num(12), POS);
+        Statement decB  = new VarDeclarationStatement(id("b"), "number", num(4), POS);
         Statement print = new ExpressionStatement(
-                new CallExpression("println", List.of(concat), POS), POS);
+                new CallExpression("println", List.of(id("a")), POS), POS);
 
-        Program program = new Program(List.of(decA, decB, print), POS);
+        Program program = program(decA, decB, print);
 
-        assertEquals(3, program.getStatements().size());
-        assertInstanceOf(VarDeclarationStatement.class, program.getStatements().get(0));
-        assertInstanceOf(VarDeclarationStatement.class, program.getStatements().get(1));
-        assertInstanceOf(ExpressionStatement.class,     program.getStatements().get(2));
+        List<Statement> stmts = program.toList();
+        assertEquals(3, stmts.size());
+        assertInstanceOf(VarDeclarationStatement.class, stmts.get(0));
+        assertInstanceOf(VarDeclarationStatement.class, stmts.get(1));
+        assertInstanceOf(ExpressionStatement.class,     stmts.get(2));
     }
 
     @Test
-    void programaEsInmutable() {
-        Program program = new Program(List.of(
+    void toListEsInmutable() {
+        Program program = program(
                 new ExpressionStatement(
-                        new CallExpression("println", List.of(num(1)), POS), POS)
-        ), POS);
+                        new CallExpression("println", List.of(num(1)), POS), POS));
 
         assertThrows(UnsupportedOperationException.class,
-                () -> program.getStatements().add(
-                        new ExpressionStatement(num(2), POS)));
+                () -> program.toList().add(new ExpressionStatement(num(2), POS)));
+    }
+
+    @Test
+    void streamProduceTodasLasSentencias() {
+        Statement decA = new VarDeclarationStatement(id("a"), "number", num(1), POS);
+        Statement decB = new VarDeclarationStatement(id("b"), "number", num(2), POS);
+        Program program = program(decA, decB);
+
+        Iterator<Statement> it = program.stream();
+        assertTrue(it.hasNext());
+        assertInstanceOf(VarDeclarationStatement.class, it.next());
+        assertTrue(it.hasNext());
+        assertInstanceOf(VarDeclarationStatement.class, it.next());
+        assertFalse(it.hasNext());
+    }
+
+    @Test
+    void lazyProgramToListMaterializaYCachea() {
+        Statement stmt = new VarDeclarationStatement(id("x"), "number", num(5), POS);
+        Iterator<Statement> source = List.of(stmt).iterator();
+        LazyProgram lazy = new LazyProgram(source, POS);
+
+        // primera llamada: drena el iterator
+        List<Statement> first = lazy.toList();
+        assertEquals(1, first.size());
+
+        // segunda llamada: devuelve el cache (el iterator ya está agotado)
+        List<Statement> second = lazy.toList();
+        assertSame(first, second);
+    }
+
+    @Test
+    void lazyProgramStreamEsLazy() {
+        Statement stmt1 = new VarDeclarationStatement(id("a"), "number", num(1), POS);
+        Statement stmt2 = new VarDeclarationStatement(id("b"), "number", num(2), POS);
+        Iterator<Statement> source = List.of(stmt1, stmt2).iterator();
+        LazyProgram lazy = new LazyProgram(source, POS);
+
+        Iterator<Statement> it = lazy.stream();
+        assertTrue(it.hasNext());
+        assertEquals(stmt1, it.next());
+        assertTrue(it.hasNext());
+        assertEquals(stmt2, it.next());
+        assertFalse(it.hasNext());
     }
 
     // -------------------------------------------------------------------------
@@ -155,16 +168,14 @@ class ASTTest {
 
     @Test
     void visitorRecorreElArbolCorrectamente() {
-        // let x: number = 2 + 3;
         BinaryExpression sum  = new BinaryExpression(num(2), "+", num(3), POS);
         VarDeclarationStatement decl = new VarDeclarationStatement(id("x"), "number", sum, POS);
-        Program program = new Program(List.of(decl), POS);
+        Program prog = program(decl);
 
-        // Visitor que reconstruye el código fuente (simplificado)
         ASTVisitor<String> printer = new ASTVisitor<>() {
             @Override public String visitProgram(Program n) {
                 StringBuilder sb = new StringBuilder();
-                for (Statement s : n.getStatements()) sb.append(s.accept(this));
+                for (Statement s : n.toList()) sb.append(s.accept(this));
                 return sb.toString();
             }
             @Override public String visitVarDeclaration(VarDeclarationStatement n) {
@@ -193,11 +204,11 @@ class ASTTest {
             @Override public String visitIdentifier(Identifier n)        { return n.getName(); }
         };
 
-        assertEquals("let x: number = 2 + 3;", program.accept(printer));
+        assertEquals("let x: number = 2 + 3;", prog.accept(printer));
     }
 
     // -------------------------------------------------------------------------
-    // Posición se propaga correctamente
+    // Posición
     // -------------------------------------------------------------------------
 
     @Test

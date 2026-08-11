@@ -8,20 +8,28 @@ import org.printscript.lexer.Lexer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Implementación de {@link Parser} usando recursivo descendente para sentencias
  * y Pratt parsing (top-down operator precedence) para expresiones.
  *
+ * <p>Implementa {@link java.util.Iterator}{@code <Statement>}: produce una sentencia
+ * por llamada a {@link #next()}, sin materializar el árbol completo. El lexer
+ * subyacente también es lazy, por lo que en cada momento solo existe en memoria
+ * el fragmento de código que se está procesando ahora.
+ *
  * <h2>Estructura general</h2>
  * <pre>
- *   parse()           → Program
+ *   hasNext()         → true mientras el token actual no sea EOF
+ *   next()            → parseStatement()
  *   parseStatement()  → Statement
- *     parseVarDeclaration()   → VarDeclarationStatement   (let ...)
- *     parseAssignment()       → AssignmentStatement       (id = ...)
- *     parseExpressionStmt()   → ExpressionStatement       (expr ;)
- *   parseExpression(minPower) → Expression   ← Pratt
- *     parsePrimary()          → Expression   (literal, id, paréntesis, call)
+ *     parseVarDeclaration()              → VarDeclarationStatement   (let ...)
+ *     parseAssignmentOrExprStmt()        → AssignmentStatement       (id = ...)
+ *                                        → ExpressionStatement       (id(...) o expr ;)
+ *     parseExpressionStatement()         → ExpressionStatement       (expr ;)
+ *   parseExpression(minPower)            → Expression   ← Pratt
+ *     parsePrimary()                     → Expression   (literal, id, paréntesis, call)
  * </pre>
  *
  * <h2>Tabla de binding powers (Pratt)</h2>
@@ -37,7 +45,8 @@ import java.util.List;
  * No se modifica la interfaz {@link Lexer}.
  *
  * <h2>Errores</h2>
- * Estrategia fail-fast: se lanza {@link ParseException} en el primer error.
+ * Estrategia fail-fast: {@link #next()} lanza {@link ParseException} en el primer
+ * error sintáctico con la {@link Position} del token problemático.
  */
 public class ParserImpl implements Parser {
 
@@ -52,7 +61,7 @@ public class ParserImpl implements Parser {
             case SLASH:
                 return 20;
             default:
-                return 0; // no es un operador infix
+                return 0;
         }
     }
 
@@ -71,18 +80,29 @@ public class ParserImpl implements Parser {
         this.current = lexer.next(); // carga el primer token
     }
 
-    // ---------------------------------------------------------------- Parser API
+    // ---------------------------------------------------------------- Iterator API
+
+    /**
+     * Devuelve {@code true} mientras haya sentencias por parsear.
+     * Es {@code false} cuando el token actual es EOF.
+     */
     @Override
-    public Program parse() {
-        List<Statement> statements = new ArrayList<>();
-        Position start = current.getPosition();
+    public boolean hasNext() {
+        return current.getType() != TokenType.EOF;
+    }
 
-        while (current.getType() != TokenType.EOF) {
-            statements.add(parseStatement());
+    /**
+     * Parsea y devuelve la siguiente sentencia.
+     *
+     * @throws NoSuchElementException si no hay más sentencias (EOF)
+     * @throws ParseException         si el código fuente tiene un error sintáctico
+     */
+    @Override
+    public Statement next() {
+        if (!hasNext()) {
+            throw new NoSuchElementException("No more statements");
         }
-
-        Position end = current.getPosition(); // posición del EOF
-        return new Program(statements, span(start, end));
+        return parseStatement();
     }
 
     // ---------------------------------------------------------------- Statements
@@ -91,13 +111,9 @@ public class ParserImpl implements Parser {
         if (current.getType() == TokenType.LET) {
             return parseVarDeclaration();
         }
-
-        // IDENTIFIER seguido de ASSIGN → asignación
         if (current.getType() == TokenType.IDENTIFIER) {
             return parseAssignmentOrExpressionStatement();
         }
-
-        // Cualquier otra cosa se intenta parsear como expresión-sentencia
         return parseExpressionStatement();
     }
 
@@ -127,15 +143,11 @@ public class ParserImpl implements Parser {
     }
 
     /**
-     * Determina si es {@code id = expr ;}, {@code id(...) ;} o {@code expr ;} mirando
-     * el token después del identificador (lookahead de 1 nivel a través del estado interno).
-     *
-     * <p>Para no consumir el identificador prematuramente, primero lo leemos
-     * y chequeamos qué sigue:
+     * Distingue entre tres casos que empiezan con un identificador:
      * <ul>
-     *   <li>{@code =}  → asignación</li>
-     *   <li>{@code (}  → llamada a función como sentencia</li>
-     *   <li>cualquier otra cosa → expresión que empieza con identificador</li>
+     *   <li>{@code id = expr ;} → asignación</li>
+     *   <li>{@code id( ... ) ;} → llamada a función como sentencia</li>
+     *   <li>{@code id op expr ;} → expresión binaria como sentencia</li>
      * </ul>
      */
     private Statement parseAssignmentOrExpressionStatement() {
@@ -145,7 +157,7 @@ public class ParserImpl implements Parser {
         advance(); // consume el IDENTIFIER
 
         if (current.getType() == TokenType.ASSIGN) {
-            // Es una asignación: id = expr ;
+            // id = expr ;
             advance(); // consume el =
             Identifier target = new Identifier(nameToken.getLexeme(), nameToken.getPosition());
             Expression value = parseExpression(0);
@@ -155,15 +167,14 @@ public class ParserImpl implements Parser {
         }
 
         if (current.getType() == TokenType.LPAREN) {
-            // Es una llamada a función como sentencia: id( ... ) ;
+            // id( ... ) ;
             CallExpression call = parseCallExpression(nameToken);
             Token semi = current;
             consume(TokenType.SEMICOLON);
             return new ExpressionStatement(call, span(start, semi.getPosition()));
         }
 
-        // No es asignación ni llamada: el identificador era el inicio de una expresión binaria.
-        // Construimos el nodo Identifier y continuamos con Pratt desde él.
+        // id op expr ; — el identificador era el inicio de una expresión binaria
         Expression left = new Identifier(nameToken.getLexeme(), nameToken.getPosition());
         Expression expr = parseExpressionWithLeft(left, 0);
         Token semi = current;
@@ -224,7 +235,7 @@ public class ParserImpl implements Parser {
             advance(); // consume el operador
 
             // Asociatividad izquierda: pasamos el mismo power para que el mismo
-            // operador a la derecha NO entre (necesita > power).
+            // operador a la derecha NO entre (necesita estrictamente > power).
             Expression right = parseExpression(power);
             left = new BinaryExpression(left, opToken.getLexeme(), right,
                     span(left.getPosition(), right.getPosition()));
@@ -253,7 +264,6 @@ public class ParserImpl implements Parser {
 
             case IDENTIFIER: {
                 advance();
-                // ¿Es una llamada a función? id ( ...
                 if (current.getType() == TokenType.LPAREN) {
                     return parseCallExpression(token);
                 }
@@ -263,10 +273,8 @@ public class ParserImpl implements Parser {
             case LPAREN: {
                 advance(); // consume (
                 Expression inner = parseExpression(0);
-                Token close = current;
                 consume(TokenType.RPAREN);
-                // La posición abarca los paréntesis
-                return wrapPosition(inner, span(token.getPosition(), close.getPosition()));
+                return inner;
             }
 
             default:
@@ -278,7 +286,7 @@ public class ParserImpl implements Parser {
     }
 
     /**
-     * Parsea una llamada a función {@code name(arg1, arg2, ...)}.
+     * Parsea una llamada a función {@code name(arg1, ...)}.
      * El token del nombre ya fue consumido y se recibe como parámetro.
      */
     private CallExpression parseCallExpression(Token nameToken) {
@@ -287,8 +295,6 @@ public class ParserImpl implements Parser {
 
         if (current.getType() != TokenType.RPAREN) {
             args.add(parseExpression(0));
-            // En PrintScript 1.0 solo se soporta un argumento, pero la
-            // estructura permite extenderlo fácilmente.
         }
 
         Token close = current;
@@ -299,10 +305,6 @@ public class ParserImpl implements Parser {
 
     // ---------------------------------------------------------------- Helpers
 
-    /**
-     * Consume el token actual si su tipo coincide con {@code expected},
-     * y avanza al siguiente. Lanza {@link ParseException} si no coincide.
-     */
     private void consume(TokenType expected) {
         if (current.getType() != expected) {
             throw new ParseException(
@@ -313,31 +315,14 @@ public class ParserImpl implements Parser {
         advance();
     }
 
-    /** Avanza al siguiente token del lexer. */
     private void advance() {
         if (lexer.hasNext()) {
             current = lexer.next();
         }
-        // Si no hay más tokens, current queda en EOF (ya lo estamos mirando)
     }
 
-    /** Construye una {@link Position} que abarca desde {@code start} hasta {@code end}. */
     private Position span(Position start, Position end) {
         return new Position(start.getStartLine(), start.getStartColumn(),
                 end.getEndLine(), end.getEndColumn());
-    }
-
-    /**
-     * Devuelve la expresión con una posición diferente.
-     * Se usa para envolver expresiones entre paréntesis con la posición correcta.
-     */
-    private Expression wrapPosition(Expression expr, Position pos) {
-        // Los nodos son inmutables, así que delegamos en el mismo nodo
-        // pero lo envolvemos solo si la posición importa para el caller.
-        // En la práctica, los paréntesis no generan un nodo propio en el AST —
-        // simplemente la posición queda en el nodo interno.
-        // Retornamos el inner tal cual; la posición de los paréntesis se pierde
-        // intencionalmente (el AST refleja estructura semántica, no sintáctica).
-        return expr;
     }
 }
