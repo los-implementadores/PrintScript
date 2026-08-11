@@ -127,11 +127,16 @@ public class ParserImpl implements Parser {
     }
 
     /**
-     * Determina si es {@code id = expr ;} o {@code expr ;} mirando el token
-     * después del identificador (lookahead de 1 nivel a través del estado interno).
+     * Determina si es {@code id = expr ;}, {@code id(...) ;} o {@code expr ;} mirando
+     * el token después del identificador (lookahead de 1 nivel a través del estado interno).
      *
      * <p>Para no consumir el identificador prematuramente, primero lo leemos
-     * como expresión primaria y luego chequeamos si sigue un {@code =}.
+     * y chequeamos qué sigue:
+     * <ul>
+     *   <li>{@code =}  → asignación</li>
+     *   <li>{@code (}  → llamada a función como sentencia</li>
+     *   <li>cualquier otra cosa → expresión que empieza con identificador</li>
+     * </ul>
      */
     private Statement parseAssignmentOrExpressionStatement() {
         Position start = current.getPosition();
@@ -140,7 +145,7 @@ public class ParserImpl implements Parser {
         advance(); // consume el IDENTIFIER
 
         if (current.getType() == TokenType.ASSIGN) {
-            // Es una asignación
+            // Es una asignación: id = expr ;
             advance(); // consume el =
             Identifier target = new Identifier(nameToken.getLexeme(), nameToken.getPosition());
             Expression value = parseExpression(0);
@@ -149,7 +154,15 @@ public class ParserImpl implements Parser {
             return new AssignmentStatement(target, value, span(start, semi.getPosition()));
         }
 
-        // No es asignación: el identificador era el inicio de una expresión.
+        if (current.getType() == TokenType.LPAREN) {
+            // Es una llamada a función como sentencia: id( ... ) ;
+            CallExpression call = parseCallExpression(nameToken);
+            Token semi = current;
+            consume(TokenType.SEMICOLON);
+            return new ExpressionStatement(call, span(start, semi.getPosition()));
+        }
+
+        // No es asignación ni llamada: el identificador era el inicio de una expresión binaria.
         // Construimos el nodo Identifier y continuamos con Pratt desde él.
         Expression left = new Identifier(nameToken.getLexeme(), nameToken.getPosition());
         Expression expr = parseExpressionWithLeft(left, 0);
