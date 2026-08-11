@@ -205,17 +205,33 @@ new ExpressionStatement(
 
 ---
 
-### `Program.java` — raíz del árbol
+### `Program.java` — raíz del árbol (interfaz)
 
-El nodo raíz. Representa el programa completo como una lista ordenada de
-`Statement`. Es lo que devuelve el parser.
+El nodo raíz. Representa el programa completo como una secuencia de `Statement`.
+Es una **interfaz** con dos métodos:
 
-- `statements` — lista **inmutable** de sentencias en el orden en que aparecen
-  en el código fuente
+- `toList()` — materializa y devuelve todas las sentencias como lista inmutable.
+  Usar cuando se necesita el árbol completo (p.ej. el analyzer).
+- `stream()` — devuelve un `Iterator<Statement>` lazy. Usar cuando se procesa
+  de a uno sin necesitar todo en memoria (p.ej. el interpreter).
+
+Hay dos implementaciones:
+
+| Clase | Cuándo usar |
+|---|---|
+| `EagerProgram` | Lista inmutable cargada en construcción. Para tests y analyzer. |
+| `LazyProgram` | Envuelve un `Iterator<Statement>` (el parser). Drena on-demand. |
 
 ```java
-Program program = new Program(List.of(decA, decB, printStmt), pos);
-program.getStatements(); // [VarDecl, VarDecl, ExprStmt]
+// Eager — árbol completo en memoria desde el inicio:
+Program program = new EagerProgram(List.of(decA, decB, printStmt), pos);
+program.toList();   // [VarDecl, VarDecl, ExprStmt]
+
+// Lazy — envuelve el parser, drena cuando hace falta:
+Parser parser = new ParserImpl(lexer);
+Program program = new LazyProgram(parser, pos);
+program.stream();   // Iterator<Statement> que avanza el parser de a uno
+program.toList();   // drena el iterator completo y cachea el resultado
 ```
 
 ---
@@ -262,17 +278,24 @@ program.accept(interpreter); // arranca el recorrido
                     ──────────
 Lexer               Node  (interfaz base)
   │                  ├── Expression
-  │ List<Token>      │    ├── NumberLiteral
+  │ Iterator<Token>  │    ├── NumberLiteral
   ▼                  │    ├── StringLiteral
 Parser               │    ├── Identifier
   │                  │    ├── BinaryExpression
-  │ Program          │    └── CallExpression
+  │ Iterator<Stmt>   │    └── CallExpression
   ▼                  └── Statement
-  ┌──────────────────     ├── VarDeclarationStatement
-  │                       ├── AssignmentStatement
-  ├── Interpreter          └── ExpressionStatement
-  │   implements           Program  (raíz)
-  │   ASTVisitor<Object>   ASTVisitor<T>  (interfaz)
+LazyProgram               ├── VarDeclarationStatement
+  │ implements            ├── AssignmentStatement
+  │ Program               └── ExpressionStatement
+  │                  Program  (interfaz raíz)
+  ├── .stream()       ├── EagerProgram  (lista inmutable)
+  │   Iterator<Stmt>  └── LazyProgram   (drena parser on-demand)
+  └── .toList()       ASTVisitor<T>  (interfaz)
+      List<Stmt>
+  │
+  ├── Interpreter
+  │   implements
+  │   ASTVisitor<Object>
   │
   ├── Formatter
   │   implements
