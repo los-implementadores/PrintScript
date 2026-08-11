@@ -4,9 +4,9 @@ import org.printscript.common.Position;
 import org.printscript.common.ast.*;
 import org.printscript.common.token.Token;
 import org.printscript.common.token.TokenType;
-import org.printscript.lexer.Lexer;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -14,44 +14,15 @@ import java.util.NoSuchElementException;
  * Implementación de {@link Parser} usando recursivo descendente para sentencias
  * y Pratt parsing (top-down operator precedence) para expresiones.
  *
- * <p>Implementa {@link java.util.Iterator}{@code <Statement>}: produce una sentencia
- * por llamada a {@link #next()}, sin materializar el árbol completo. El lexer
- * subyacente también es lazy, por lo que en cada momento solo existe en memoria
- * el fragmento de código que se está procesando ahora.
+ * <p>Recibe un {@code Iterator<Token>} — no conoce al lexer ni depende de él.
+ * El orquestador (CLI) es responsable de crear el lexer y pasar el iterador.
  *
- * <h2>Estructura general</h2>
- * <pre>
- *   hasNext()         → true mientras el token actual no sea EOF
- *   next()            → parseStatement()
- *   parseStatement()  → Statement
- *     parseVarDeclaration()              → VarDeclarationStatement   (let ...)
- *     parseAssignmentOrExprStmt()        → AssignmentStatement       (id = ...)
- *                                        → ExpressionStatement       (id(...) o expr ;)
- *     parseExpressionStatement()         → ExpressionStatement       (expr ;)
- *   parseExpression(minPower)            → Expression   ← Pratt
- *     parsePrimary()                     → Expression   (literal, id, paréntesis, call)
- * </pre>
- *
- * <h2>Tabla de binding powers (Pratt)</h2>
- * <pre>
- *   +  →  10   (left-associative)
- *   -  →  10   (left-associative)
- *   *  →  20   (left-associative)
- *   /  →  20   (left-associative)
- * </pre>
- *
- * <h2>Lookahead</h2>
- * El parser mantiene un campo {@code current} con el token que está por consumir.
- * No se modifica la interfaz {@link Lexer}.
- *
- * <h2>Errores</h2>
- * Estrategia fail-fast: {@link #next()} lanza {@link ParseException} en el primer
- * error sintáctico con la {@link Position} del token problemático.
+ * <p>Implementa {@link Iterator}{@code <Statement>}: produce una sentencia
+ * por llamada a {@link #next()}, sin materializar el árbol completo.
  */
 public class ParserImpl implements Parser {
 
     // ------------------------------------------------------------------ Pratt
-    /** Binding power de cada operador binario infix. */
     private static int bindingPower(TokenType type) {
         switch (type) {
             case PLUS:
@@ -66,37 +37,22 @@ public class ParserImpl implements Parser {
     }
 
     // ------------------------------------------------------------------ Estado
-    private final Lexer lexer;
-
-    /**
-     * Token actual (el que está por ser consumido).
-     * Se avanza con {@link #advance()}.
-     */
+    private final Iterator<Token> tokens;
     private Token current;
 
     // ---------------------------------------------------------------- Constructor
-    public ParserImpl(Lexer lexer) {
-        this.lexer = lexer;
-        this.current = lexer.next(); // carga el primer token
+    public ParserImpl(Iterator<Token> tokens) {
+        this.tokens = tokens;
+        this.current = tokens.next(); // carga el primer token
     }
 
     // ---------------------------------------------------------------- Iterator API
 
-    /**
-     * Devuelve {@code true} mientras haya sentencias por parsear.
-     * Es {@code false} cuando el token actual es EOF.
-     */
     @Override
     public boolean hasNext() {
         return current.getType() != TokenType.EOF;
     }
 
-    /**
-     * Parsea y devuelve la siguiente sentencia.
-     *
-     * @throws NoSuchElementException si no hay más sentencias (EOF)
-     * @throws ParseException         si el código fuente tiene un error sintáctico
-     */
     @Override
     public Statement next() {
         if (!hasNext()) {
@@ -117,9 +73,6 @@ public class ParserImpl implements Parser {
         return parseExpressionStatement();
     }
 
-    /**
-     * Parsea {@code let name: type = expr ;}.
-     */
     private VarDeclarationStatement parseVarDeclaration() {
         Position start = current.getPosition();
         consume(TokenType.LET);
@@ -142,23 +95,14 @@ public class ParserImpl implements Parser {
         return new VarDeclarationStatement(name, typeName, initializer, span(start, semi.getPosition()));
     }
 
-    /**
-     * Distingue entre tres casos que empiezan con un identificador:
-     * <ul>
-     *   <li>{@code id = expr ;} → asignación</li>
-     *   <li>{@code id( ... ) ;} → llamada a función como sentencia</li>
-     *   <li>{@code id op expr ;} → expresión binaria como sentencia</li>
-     * </ul>
-     */
     private Statement parseAssignmentOrExpressionStatement() {
         Position start = current.getPosition();
 
         Token nameToken = current;
-        advance(); // consume el IDENTIFIER
+        advance();
 
         if (current.getType() == TokenType.ASSIGN) {
-            // id = expr ;
-            advance(); // consume el =
+            advance();
             Identifier target = new Identifier(nameToken.getLexeme(), nameToken.getPosition());
             Expression value = parseExpression(0);
             Token semi = current;
@@ -167,14 +111,12 @@ public class ParserImpl implements Parser {
         }
 
         if (current.getType() == TokenType.LPAREN) {
-            // id( ... ) ;
             CallExpression call = parseCallExpression(nameToken);
             Token semi = current;
             consume(TokenType.SEMICOLON);
             return new ExpressionStatement(call, span(start, semi.getPosition()));
         }
 
-        // id op expr ; — el identificador era el inicio de una expresión binaria
         Expression left = new Identifier(nameToken.getLexeme(), nameToken.getPosition());
         Expression expr = parseExpressionWithLeft(left, 0);
         Token semi = current;
@@ -211,31 +153,19 @@ public class ParserImpl implements Parser {
 
     // ---------------------------------------------------------------- Pratt expressions
 
-    /**
-     * Punto de entrada del Pratt parser.
-     *
-     * @param minPower binding power mínimo que debe tener el próximo operador
-     *                 para ser incorporado a la expresión actual.
-     */
     private Expression parseExpression(int minPower) {
         Expression left = parsePrimary();
         return parseExpressionWithLeft(left, minPower);
     }
 
-    /**
-     * Continúa un Pratt parse con un {@code left} ya construido.
-     * Permite reutilizar la lógica cuando el identificador ya fue consumido.
-     */
     private Expression parseExpressionWithLeft(Expression left, int minPower) {
         while (true) {
             int power = bindingPower(current.getType());
             if (power <= minPower) break;
 
             Token opToken = current;
-            advance(); // consume el operador
+            advance();
 
-            // Asociatividad izquierda: pasamos el mismo power para que el mismo
-            // operador a la derecha NO entre (necesita estrictamente > power).
             Expression right = parseExpression(power);
             left = new BinaryExpression(left, opToken.getLexeme(), right,
                     span(left.getPosition(), right.getPosition()));
@@ -243,10 +173,6 @@ public class ParserImpl implements Parser {
         return left;
     }
 
-    /**
-     * Parsea un operando primario: literal, identificador, llamada a función
-     * o expresión entre paréntesis.
-     */
     private Expression parsePrimary() {
         Token token = current;
 
@@ -271,7 +197,7 @@ public class ParserImpl implements Parser {
             }
 
             case LPAREN: {
-                advance(); // consume (
+                advance();
                 Expression inner = parseExpression(0);
                 consume(TokenType.RPAREN);
                 return inner;
@@ -285,10 +211,6 @@ public class ParserImpl implements Parser {
         }
     }
 
-    /**
-     * Parsea una llamada a función {@code name(arg1, ...)}.
-     * El token del nombre ya fue consumido y se recibe como parámetro.
-     */
     private CallExpression parseCallExpression(Token nameToken) {
         consume(TokenType.LPAREN);
         List<Expression> args = new ArrayList<>();
@@ -316,8 +238,8 @@ public class ParserImpl implements Parser {
     }
 
     private void advance() {
-        if (lexer.hasNext()) {
-            current = lexer.next();
+        if (tokens.hasNext()) {
+            current = tokens.next();
         }
     }
 
