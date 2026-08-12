@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.printscript.common.ast.ASTTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-08-11T19:45:38.872Z" hostname="MRecio--cachyos-x8664" time="0.053">
+  <properties/>
+  <testcase name="lazyProgramToListMaterializaYCachea()" classname="org.printscript.common.ast.ASTTest" time="0.019"/>
+  <testcase name="programaCompletoTieneOrdenCorrectoDeSentencias()" classname="org.printscript.common.ast.ASTTest" time="0.002"/>
+  <testcase name="varDeclarationConStringLiteral()" classname="org.printscript.common.ast.ASTTest" time="0.002"/>
+  <testcase name="varDeclarationConNumberLiteral()" classname="org.printscript.common.ast.ASTTest" time="0.001"/>
+  <testcase name="printlnConConcatenacionDeStrings()" classname="org.printscript.common.ast.ASTTest" time="0.001"/>
+  <testcase name="streamProduceTodasLasSentencias()" classname="org.printscript.common.ast.ASTTest" time="0.002"/>
+  <testcase name="lazyProgramStreamEsLazy()" classname="org.printscript.common.ast.ASTTest" time="0.002"/>
+  <testcase name="visitorRecorreElArbolCorrectamente()" classname="org.printscript.common.ast.ASTTest" time="0.013"/>
+  <testcase name="posicionDeNodoEsAccesible()" classname="org.printscript.common.ast.ASTTest" time="0.0"/>
+  <testcase name="toListEsInmutable()" classname="org.printscript.common.ast.ASTTest" time="0.001"/>
+  <testcase name="assignmentActualizaVariableExistente()" classname="org.printscript.common.ast.ASTTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
