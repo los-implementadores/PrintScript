@@ -14,3 +14,7 @@ dependencies {
 application {
     mainClass.set("org.printscript.cli.Main")
 }
+
+tasks.named<JavaExec>("run") {
+    workingDir = rootProject.projectDir
+}
