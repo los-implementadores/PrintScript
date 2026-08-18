@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.printscript.interpreter.InterpreterTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-11T19:45:39.887Z" hostname="MRecio--cachyos-x8664" time="0.029">
+<testsuite name="org.printscript.interpreter.InterpreterTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-18T15:01:02.412Z" hostname="Candelas-MacBook-Pro.local" time="0.007">
   <properties/>
-  <testcase name="executesMathOperationsCorrectly()" classname="org.printscript.interpreter.InterpreterTest" time="0.022"/>
-  <testcase name="executesStringConcatenationAndPrints()" classname="org.printscript.interpreter.InterpreterTest" time="0.002"/>
-  <testcase name="printsNumbersWithoutDecimalsIfInteger()" classname="org.printscript.interpreter.InterpreterTest" time="0.002"/>
+  <testcase name="executesMathOperationsCorrectly()" classname="org.printscript.interpreter.InterpreterTest" time="0.005"/>
+  <testcase name="executesStringConcatenationAndPrints()" classname="org.printscript.interpreter.InterpreterTest" time="0.0"/>
+  <testcase name="printsNumbersWithoutDecimalsIfInteger()" classname="org.printscript.interpreter.InterpreterTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

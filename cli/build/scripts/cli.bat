@@ -70,7 +70,7 @@ goto fail
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\cli.jar;%APP_HOME%\lib\formatter.jar;%APP_HOME%\lib\analyzer.jar;%APP_HOME%\lib\parser.jar;%APP_HOME%\lib\lexer.jar;%APP_HOME%\lib\interpreter.jar;%APP_HOME%\lib\common.jar
+set CLASSPATH=%APP_HOME%\lib\cli.jar;%APP_HOME%\lib\formatter.jar;%APP_HOME%\lib\analyzer.jar;%APP_HOME%\lib\lexer.jar;%APP_HOME%\lib\parser.jar;%APP_HOME%\lib\interpreter.jar;%APP_HOME%\lib\common.jar
 
 
 @rem Execute cli

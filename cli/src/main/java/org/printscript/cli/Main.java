@@ -9,14 +9,22 @@ import org.printscript.interpreter.InterpreterImpl;
 import org.printscript.interpreter.SemanticAnalyzer;
 import org.printscript.interpreter.SemanticAnalyzerImpl;
 import org.printscript.common.env.Environment;
+import org.printscript.common.token.TokenType;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerImpl;
+import org.printscript.lexer.TokenMatcher;
+import org.printscript.lexer.IdentifierTokenMatcher;
+import org.printscript.lexer.NumberTokenMatcher;
+import org.printscript.lexer.StringTokenMatcher;
+import org.printscript.lexer.SymbolTokenMatcher;
 import org.printscript.parser.Parser;
 import org.printscript.parser.ParserImpl;
 
 import java.io.FileReader;
 import java.io.Reader;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
 
@@ -32,7 +40,28 @@ public class Main {
 
         try (Reader reader = new FileReader(filePath)) {
 
-            Lexer lexer = new LexerImpl(reader);
+            List<TokenMatcher> matchers = List.of(
+                    new IdentifierTokenMatcher(Map.of(
+                            "let", TokenType.LET,
+                            "number", TokenType.TYPE_NUMBER,
+                            "string", TokenType.TYPE_STRING
+                    )),
+                    new NumberTokenMatcher(),
+                    new StringTokenMatcher(),
+                    new SymbolTokenMatcher(Map.of(
+                            ':', TokenType.COLON,
+                            '=', TokenType.ASSIGN,
+                            ';', TokenType.SEMICOLON,
+                            '(', TokenType.LPAREN,
+                            ')', TokenType.RPAREN,
+                            '+', TokenType.PLUS,
+                            '-', TokenType.MINUS,
+                            '*', TokenType.STAR,
+                            '/', TokenType.SLASH
+                    ))
+            );
+
+            Lexer lexer = new LexerImpl(reader, matchers);
             Parser parser = new ParserImpl(lexer);
 
             // Suponiendo que arman el LazyProgram como indica la doc de tu amigo

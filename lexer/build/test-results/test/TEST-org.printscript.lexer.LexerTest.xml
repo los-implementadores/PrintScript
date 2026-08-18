@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.printscript.lexer.LexerTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-08-11T19:45:40.629Z" hostname="MRecio--cachyos-x8664" time="0.042">
+<testsuite name="org.printscript.lexer.LexerTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-08-18T15:01:02.950Z" hostname="Candelas-MacBook-Pro.local" time="0.017">
   <properties/>
-  <testcase name="throwsOnUnexpectedCharacter()" classname="org.printscript.lexer.LexerTest" time="0.033"/>
-  <testcase name="throwsOnUnterminatedString()" classname="org.printscript.lexer.LexerTest" time="0.001"/>
-  <testcase name="supportsSingleAndDoubleQuotedStrings()" classname="org.printscript.lexer.LexerTest" time="0.002"/>
-  <testcase name="tokenizesNumberDeclarationAndDivision()" classname="org.printscript.lexer.LexerTest" time="0.001"/>
-  <testcase name="tokenizesStringDeclarationAndPrintln()" classname="org.printscript.lexer.LexerTest" time="0.001"/>
+  <testcase name="throwsOnUnexpectedCharacter()" classname="org.printscript.lexer.LexerTest" time="0.009"/>
+  <testcase name="tokenizesIdentifierWithUnderscore()" classname="org.printscript.lexer.LexerTest" time="0.001"/>
+  <testcase name="tracksPositionAcrossLines()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="throwsOnUnterminatedString()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tracksColumnPositionOfKeyword()" classname="org.printscript.lexer.LexerTest" time="0.001"/>
+  <testcase name="tokenizesKeywordNumber()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesKeywordString()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesIdentifier()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesFullProgram()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesDoubleQuotedString()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="supportsCustomMatcherWithoutModifyingLexer()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesAllSymbols()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesSingleQuotedString()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesDecimal()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="identifierStartingWithKeywordIsNotKeyword()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesInteger()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
+  <testcase name="tokenizesKeywordLet()" classname="org.printscript.lexer.LexerTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
