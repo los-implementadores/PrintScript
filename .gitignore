@@ -10,5 +10,11 @@ build/
 *.iws
 *.ipr
 
+# Eclipse / jdtls
+.project
+.classpath
+.settings/
+bin/
+
 # macOS
 .DS_Store

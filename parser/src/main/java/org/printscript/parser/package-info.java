@@ -1,4 +1,5 @@
 /**
- * TODO: parser. Consume tokens del {@link org.printscript.lexer.Lexer} y arma el AST.
+ * Analizador sintáctico de PrintScript. Consume un {@code Iterator<Token>}
+ * y produce sentencias ({@link org.printscript.common.ast.Statement}) de forma lazy.
  */
 package org.printscript.parser;
