@@ -1,1 +1,5 @@
-// Sin dependencias propias: es la base que consumen los demás módulos.
+plugins {
+    id("printscript.java-conventions")
+}
+
+// Sin dependencias a otros módulos: es la base que consumen los demás.

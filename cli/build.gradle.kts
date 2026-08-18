@@ -1,5 +1,5 @@
 plugins {
-    application
+    id("printscript.application-conventions")
 }
 
 dependencies {
