@@ -1,0 +1,28 @@
+#!/bin/sh
+# Pre-commit hook: runs formatter check and linter before committing.
+# Bypass with: git commit --no-verify
+
+echo "🔍 Running pre-commit checks..."
+
+echo "→ Checking format (Spotless)..."
+./gradlew spotlessCheck --quiet
+if [ $? -ne 0 ]; then
+    echo "❌ Format check failed. Run './gradlew spotlessApply' to fix."
+    exit 1
+fi
+
+echo "→ Running linter (Checkstyle)..."
+./gradlew checkstyleMain --quiet
+if [ $? -ne 0 ]; then
+    echo "❌ Checkstyle failed. Check the report for details."
+    exit 1
+fi
+
+echo "→ Running static analysis (PMD)..."
+./gradlew pmdMain --quiet
+if [ $? -ne 0 ]; then
+    echo "❌ PMD failed. Check the report for details."
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed."
