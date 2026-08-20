@@ -1,11 +1,25 @@
 plugins {
     java
     checkstyle
+    pmd
 }
 
 checkstyle {
     toolVersion = "10.17.0"
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+}
+
+pmd {
+    toolVersion = "7.3.0"
+    isConsoleOutput = true
+    ruleSetFiles = files("${rootProject.projectDir}/config/pmd/pmd-rules.xml")
+}
+
+tasks.withType<Pmd> {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 java {
