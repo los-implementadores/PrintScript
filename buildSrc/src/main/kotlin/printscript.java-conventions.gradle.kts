@@ -2,6 +2,7 @@ plugins {
     java
     checkstyle
     pmd
+    id("com.diffplug.spotless")
 }
 
 checkstyle {
@@ -19,6 +20,15 @@ tasks.withType<Pmd> {
     reports {
         xml.required.set(true)
         html.required.set(true)
+    }
+}
+
+spotless {
+    java {
+        googleJavaFormat("1.22.0")
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
     }
 }
 
