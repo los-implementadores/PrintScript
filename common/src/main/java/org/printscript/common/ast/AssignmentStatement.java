@@ -10,39 +10,38 @@ import org.printscript.common.Position;
  *   name = "otro";
  * </pre>
  *
- * Distinto de {@link VarDeclarationStatement}, que declara e inicializa en una
- * sola sentencia ({@code let x: number = 5;}). Acá la variable ya existe y solo
- * se actualiza su valor.
+ * Distinto de {@link VarDeclarationStatement}, que declara e inicializa en una sola sentencia
+ * ({@code let x: number = 5;}). Acá la variable ya existe y solo se actualiza su valor.
  */
 public final class AssignmentStatement implements Statement {
 
-    private final Identifier target;
-    private final Expression value;
-    private final Position position;
+  private final Identifier target;
+  private final Expression value;
+  private final Position position;
 
-    public AssignmentStatement(Identifier target, Expression value, Position position) {
-        this.target = target;
-        this.value = value;
-        this.position = position;
-    }
+  public AssignmentStatement(Identifier target, Expression value, Position position) {
+    this.target = target;
+    this.value = value;
+    this.position = position;
+  }
 
-    /** Identificador de la variable que recibe el nuevo valor. */
-    public Identifier getTarget() {
-        return target;
-    }
+  /** Identificador de la variable que recibe el nuevo valor. */
+  public Identifier getTarget() {
+    return target;
+  }
 
-    /** Expresión del lado derecho del {@code =}. */
-    public Expression getValue() {
-        return value;
-    }
+  /** Expresión del lado derecho del {@code =}. */
+  public Expression getValue() {
+    return value;
+  }
 
-    @Override
-    public Position getPosition() {
-        return position;
-    }
+  @Override
+  public Position getPosition() {
+    return position;
+  }
 
-    @Override
-    public <T> T accept(ASTVisitor<T> visitor) {
-        return visitor.visitAssignment(this);
-    }
+  @Override
+  public <T> T accept(ASTVisitor<T> visitor) {
+    return visitor.visitAssignment(this);
+  }
 }

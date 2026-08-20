@@ -11,25 +11,25 @@ import org.printscript.common.Position;
  */
 public final class ExpressionStatement implements Statement {
 
-    private final Expression expression;
-    private final Position position;
+  private final Expression expression;
+  private final Position position;
 
-    public ExpressionStatement(Expression expression, Position position) {
-        this.expression = expression;
-        this.position = position;
-    }
+  public ExpressionStatement(Expression expression, Position position) {
+    this.expression = expression;
+    this.position = position;
+  }
 
-    public Expression getExpression() {
-        return expression;
-    }
+  public Expression getExpression() {
+    return expression;
+  }
 
-    @Override
-    public Position getPosition() {
-        return position;
-    }
+  @Override
+  public Position getPosition() {
+    return position;
+  }
 
-    @Override
-    public <T> T accept(ASTVisitor<T> visitor) {
-        return visitor.visitExpressionStatement(this);
-    }
+  @Override
+  public <T> T accept(ASTVisitor<T> visitor) {
+    return visitor.visitExpressionStatement(this);
+  }
 }

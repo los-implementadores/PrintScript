@@ -5,14 +5,14 @@ import org.printscript.common.env.Environment;
 
 public class SemanticAnalyzerImpl implements SemanticAnalyzer {
 
-    private final SemanticAnalyzerVisitor visitor;
+  private final SemanticAnalyzerVisitor visitor;
 
-    public SemanticAnalyzerImpl(Environment env) {
-        this.visitor = new SemanticAnalyzerVisitor(env);
-    }
+  public SemanticAnalyzerImpl(Environment env) {
+    this.visitor = new SemanticAnalyzerVisitor(env);
+  }
 
-    @Override
-    public void analyze(Statement statement) {
-        statement.accept(visitor);
-    }
+  @Override
+  public void analyze(Statement statement) {
+    statement.accept(visitor);
+  }
 }

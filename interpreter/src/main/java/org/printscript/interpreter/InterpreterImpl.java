@@ -5,14 +5,14 @@ import org.printscript.common.env.Environment;
 
 public class InterpreterImpl implements Interpreter {
 
-    private final InterpreterVisitor visitor;
+  private final InterpreterVisitor visitor;
 
-    public InterpreterImpl(Environment env) {
-        this.visitor = new InterpreterVisitor(env);
-    }
+  public InterpreterImpl(Environment env) {
+    this.visitor = new InterpreterVisitor(env);
+  }
 
-    @Override
-    public void execute(Statement statement) {
-        statement.accept(visitor);
-    }
+  @Override
+  public void execute(Statement statement) {
+    statement.accept(visitor);
+  }
 }
