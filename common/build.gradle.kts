@@ -2,4 +2,6 @@ plugins {
     id("printscript.java-conventions")
 }
 
-// Sin dependencias a otros módulos: es la base que consumen los demás.
+dependencies {
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+}
