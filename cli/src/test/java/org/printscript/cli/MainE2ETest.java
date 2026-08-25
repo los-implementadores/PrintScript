@@ -80,4 +80,24 @@ class MainE2ETest {
         assertEquals(expectedCode.trim(), resultingCode.trim());
         assertTrue(outContent.toString().contains("Formatting successful"));
     }
+
+    @Test
+    void testExecutionRunsScriptAndPrintsOutput() throws Exception {
+        // 1. Obtenemos la ruta del script de ejecución desde resources
+        Path scriptPath = getResourcePath("execution_script.ps");
+
+        // 2. Ejecutamos el CLI en modo "execution"
+        String[] args = { "execution", scriptPath.toString() };
+        Main.main(args);
+
+        // 3. Verificamos la salida de la consola
+        String consoleOutput = outContent.toString();
+
+        // Verificamos los mensajes de la CLI
+        assertTrue(consoleOutput.contains("Ejecutando script..."));
+        assertTrue(consoleOutput.contains("Execution finished."));
+
+        // Verificamos el output real del intérprete
+        assertTrue(consoleOutput.contains("Result: 3"));
+    }
 }
