@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":interpreter"))
     implementation(project(":formatter"))
     implementation(project(":analyzer"))
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 }
 
 application {

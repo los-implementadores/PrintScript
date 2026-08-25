@@ -1,0 +1,6 @@
+{
+  "activeNamingConvention": true,
+  "namingConventionFormat": "camelCase",
+  "activeComplexPrintln": true,
+  "activeUnusedVariables": true
+}
