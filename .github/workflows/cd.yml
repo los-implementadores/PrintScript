@@ -1,0 +1,52 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+# Permisos necesarios para crear Releases con el GITHUB_TOKEN.
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Package CLI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build CLI distribution
+        run: ./gradlew :cli:distZip --no-daemon --stacktrace
+
+      - name: Upload CLI artifact
+        # En cada push (main o tag) deja el zip descargable desde Actions.
+        uses: actions/upload-artifact@v4
+        with:
+          name: printscript-cli
+          path: cli/build/distributions/cli.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create GitHub Release
+        # Solo cuando el push es un tag v* (ej. v1.0.0).
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cli/build/distributions/cli.zip
+          generate_release_notes: true
