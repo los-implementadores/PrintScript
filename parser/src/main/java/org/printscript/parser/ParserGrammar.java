@@ -16,6 +16,7 @@ import org.printscript.parser.parselet.prefix.NumberLiteralParselet;
 import org.printscript.parser.parselet.prefix.StringLiteralParselet;
 import org.printscript.parser.parselet.statement.AssignmentOrExpressionParselet;
 import org.printscript.parser.parselet.statement.ExpressionStatementParselet;
+import org.printscript.parser.parselet.statement.IfStatementParselet;
 import org.printscript.parser.parselet.statement.VarDeclarationParselet;
 
 /**
@@ -91,6 +92,8 @@ public final class ParserGrammar {
       // const (#32): declaración inmutable, reutiliza la lógica de `let`.
       statements.put(
           TokenType.CONST, new VarDeclarationParselet(typeNameParser, TokenType.CONST, true));
+      // if/else (#33): condicional con bloques.
+      statements.put(TokenType.IF, new IfStatementParselet());
     }
 
     return new ParserGrammar(statements, prefixes, infixes, new ExpressionStatementParselet());

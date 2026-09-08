@@ -65,6 +65,30 @@ public class FormatterVisitor implements ASTVisitor<String> {
   }
 
   @Override
+  public String visitIf(IfStatement node) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("if (");
+    sb.append(node.getCondition().accept(this));
+    sb.append(") {\n");
+    appendBlock(sb, node.getThenBlock());
+    sb.append('}');
+    if (node.hasElse()) {
+      sb.append(" else {\n");
+      appendBlock(sb, node.getElseBlock());
+      sb.append('}');
+    }
+    return sb.toString();
+  }
+
+  private void appendBlock(StringBuilder sb, List<Statement> block) {
+    for (Statement stmt : block) {
+      sb.append("    ");
+      sb.append(stmt.accept(this));
+      sb.append('\n');
+    }
+  }
+
+  @Override
   public String visitBinaryExpression(BinaryExpression node) {
     String left = node.getLeft().accept(this);
     String right = node.getRight().accept(this);

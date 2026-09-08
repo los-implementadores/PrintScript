@@ -97,6 +97,28 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   }
 
   @Override
+  public String visitIf(IfStatement node) {
+    String condType = node.getCondition().accept(this);
+    if (!"boolean".equals(condType)) {
+      throw new RuntimeException(
+          "Semantic Error at "
+              + node.getPosition()
+              + ": if condition must be boolean, found "
+              + condType
+              + ".");
+    }
+    for (Statement stmt : node.getThenBlock()) {
+      stmt.accept(this);
+    }
+    if (node.hasElse()) {
+      for (Statement stmt : node.getElseBlock()) {
+        stmt.accept(this);
+      }
+    }
+    return null;
+  }
+
+  @Override
   public String visitBinaryExpression(BinaryExpression node) {
     String leftType = node.getLeft().accept(this);
     String rightType = node.getRight().accept(this);

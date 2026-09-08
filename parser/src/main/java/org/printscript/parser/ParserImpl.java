@@ -71,17 +71,17 @@ public class ParserImpl implements Parser, ParseContext {
     return parseStatement();
   }
 
-  // ---------------------------------------------------------------- Statement dispatch
+  // ---------------------------------------------------------------- Statement dispatch /
+  // ParseContext
 
-  private Statement parseStatement() {
+  @Override
+  public Statement parseStatement() {
     StatementParselet parselet = statementParselets.get(tokens.currentType());
     if (parselet == null) {
       parselet = defaultStatementParselet;
     }
     return parselet.parse(this);
   }
-
-  // ---------------------------------------------------------------- ParseContext
 
   @Override
   public TokenStream tokens() {

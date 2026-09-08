@@ -243,6 +243,11 @@ class ASTTest {
           public String visitBooleanLiteral(BooleanLiteral n) {
             return String.valueOf(n.getValue());
           }
+
+          @Override
+          public String visitIf(IfStatement n) {
+            return "if";
+          }
         };
 
     assertEquals("let x: number = 2 + 3;", prog.accept(printer));
