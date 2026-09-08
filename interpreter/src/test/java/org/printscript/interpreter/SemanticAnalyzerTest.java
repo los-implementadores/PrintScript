@@ -82,6 +82,46 @@ class SemanticAnalyzerTest {
   }
 
   @Test
+  void throwsWhenReassigningConstant() {
+    // const pi: number = 3; pi = 4;
+    VarDeclarationStatement decl =
+        new VarDeclarationStatement(
+            new Identifier("pi", dummyPos),
+            "number",
+            new NumberLiteral(3.0, dummyPos),
+            true,
+            dummyPos);
+    decl.accept(analyzer);
+
+    AssignmentStatement reassign =
+        new AssignmentStatement(
+            new Identifier("pi", dummyPos), new NumberLiteral(4.0, dummyPos), dummyPos);
+
+    RuntimeException exception =
+        assertThrows(RuntimeException.class, () -> reassign.accept(analyzer));
+    assertTrue(exception.getMessage().contains("Cannot reassign constant 'pi'"));
+  }
+
+  @Test
+  void allowsReadingConstant() {
+    // const pi: number = 3; let r: number = pi;
+    VarDeclarationStatement decl =
+        new VarDeclarationStatement(
+            new Identifier("pi", dummyPos),
+            "number",
+            new NumberLiteral(3.0, dummyPos),
+            true,
+            dummyPos);
+    decl.accept(analyzer);
+
+    VarDeclarationStatement read =
+        new VarDeclarationStatement(
+            new Identifier("r", dummyPos), "number", new Identifier("pi", dummyPos), dummyPos);
+
+    assertDoesNotThrow(() -> read.accept(analyzer));
+  }
+
+  @Test
   void throwsOnInvalidMathOperation() {
     // "hola" - 5
     BinaryExpression expr =

@@ -88,6 +88,9 @@ public final class ParserGrammar {
     if (version == LanguageVersion.V1_1) {
       // boolean (#31): literal true/false. El tipo `boolean` ya se habilita via `typeTokens`.
       prefixes.put(TokenType.BOOLEAN_LITERAL, new BooleanLiteralParselet());
+      // const (#32): declaración inmutable, reutiliza la lógica de `let`.
+      statements.put(
+          TokenType.CONST, new VarDeclarationParselet(typeNameParser, TokenType.CONST, true));
     }
 
     return new ParserGrammar(statements, prefixes, infixes, new ExpressionStatementParselet());
