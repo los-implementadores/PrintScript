@@ -3,6 +3,7 @@ package org.printscript.common.token;
 public enum TokenType {
   // Keywords
   LET,
+  CONST, // "const" declaración inmutable (1.1)
   TYPE_NUMBER, // "number" usado como tipo en una declaración
   TYPE_STRING, // "string" usado como tipo en una declaración
   TYPE_BOOLEAN, // "boolean" usado como tipo en una declaración (1.1)

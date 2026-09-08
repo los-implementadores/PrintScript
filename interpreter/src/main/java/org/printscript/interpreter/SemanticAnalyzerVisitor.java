@@ -48,7 +48,7 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
       }
     }
 
-    env.define(varName, declaredType, null);
+    env.define(varName, declaredType, null, node.isConst());
     return null;
   }
 
@@ -63,6 +63,15 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
               + ": Variable '"
               + varName
               + "' is not declared.");
+    }
+
+    if (env.isConst(varName)) {
+      throw new RuntimeException(
+          "Semantic Error at "
+              + node.getPosition()
+              + ": Cannot reassign constant '"
+              + varName
+              + "'.");
     }
 
     String varType = env.getType(varName);
