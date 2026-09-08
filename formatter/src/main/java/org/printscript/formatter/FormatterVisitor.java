@@ -81,10 +81,17 @@ public class FormatterVisitor implements ASTVisitor<String> {
   }
 
   private void appendBlock(StringBuilder sb, List<Statement> block) {
+    String indent = " ".repeat(rules.getIndentSize());
     for (Statement stmt : block) {
-      sb.append("    ");
-      sb.append(stmt.accept(this));
-      sb.append('\n');
+      String formatted = stmt.accept(this);
+      // Indenta cada línea del statement (soporta bloques anidados como if dentro de if).
+      for (String line : formatted.split("\n", -1)) {
+        if (line.isEmpty()) {
+          sb.append('\n');
+        } else {
+          sb.append(indent).append(line).append('\n');
+        }
+      }
     }
   }
 
