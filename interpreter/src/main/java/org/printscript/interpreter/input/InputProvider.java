@@ -1,4 +1,4 @@
-package org.printscript.interpreter;
+package org.printscript.interpreter.input;
 
 /**
  * Abstracción inyectable para la provisión de entradas en tiempo de ejecución.

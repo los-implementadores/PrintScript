@@ -1,4 +1,4 @@
-package org.printscript.interpreter;
+package org.printscript.interpreter.input;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;

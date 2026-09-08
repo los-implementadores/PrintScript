@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 
 class SemanticAnalyzerTest {
 
