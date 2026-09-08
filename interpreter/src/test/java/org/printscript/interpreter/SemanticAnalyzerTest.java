@@ -57,6 +57,31 @@ class SemanticAnalyzerTest {
   }
 
   @Test
+  void acceptsValidBooleanDeclaration() {
+    // let ok: boolean = true;
+    VarDeclarationStatement stmt =
+        new VarDeclarationStatement(
+            new Identifier("ok", dummyPos),
+            "boolean",
+            new BooleanLiteral(true, dummyPos),
+            dummyPos);
+
+    assertDoesNotThrow(() -> stmt.accept(analyzer));
+    assertTrue(env.isDeclared("ok"));
+  }
+
+  @Test
+  void throwsWhenAssigningNumberToBoolean() {
+    // let ok: boolean = 5;
+    VarDeclarationStatement stmt =
+        new VarDeclarationStatement(
+            new Identifier("ok", dummyPos), "boolean", new NumberLiteral(5.0, dummyPos), dummyPos);
+
+    RuntimeException exception = assertThrows(RuntimeException.class, () -> stmt.accept(analyzer));
+    assertTrue(exception.getMessage().contains("Cannot assign number to variable of type boolean"));
+  }
+
+  @Test
   void throwsOnInvalidMathOperation() {
     // "hola" - 5
     BinaryExpression expr =

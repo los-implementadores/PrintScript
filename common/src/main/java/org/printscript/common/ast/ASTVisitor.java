@@ -26,5 +26,7 @@ public interface ASTVisitor<T> {
 
   T visitStringLiteral(StringLiteral node);
 
+  T visitBooleanLiteral(BooleanLiteral node);
+
   T visitIdentifier(Identifier node);
 }

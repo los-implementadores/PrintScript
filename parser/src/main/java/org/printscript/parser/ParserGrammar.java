@@ -9,6 +9,7 @@ import org.printscript.parser.parselet.InfixParselet;
 import org.printscript.parser.parselet.PrefixParselet;
 import org.printscript.parser.parselet.StatementParselet;
 import org.printscript.parser.parselet.infix.BinaryOperatorParselet;
+import org.printscript.parser.parselet.prefix.BooleanLiteralParselet;
 import org.printscript.parser.parselet.prefix.GroupParselet;
 import org.printscript.parser.parselet.prefix.IdentifierParselet;
 import org.printscript.parser.parselet.prefix.NumberLiteralParselet;
@@ -84,9 +85,10 @@ public final class ParserGrammar {
     infixes.put(TokenType.STAR, new BinaryOperatorParselet(MULTIPLICATIVE));
     infixes.put(TokenType.SLASH, new BinaryOperatorParselet(MULTIPLICATIVE));
 
-    // Las construcciones propias de 1.1 (boolean, const, if/else) se registran en las features
-    // correspondientes: cada una agrega su parselet a `statements`/`prefixes` cuando version==V1_1.
-    // El tipo `boolean` ya se habilita arriba via `typeTokens`.
+    if (version == LanguageVersion.V1_1) {
+      // boolean (#31): literal true/false. El tipo `boolean` ya se habilita via `typeTokens`.
+      prefixes.put(TokenType.BOOLEAN_LITERAL, new BooleanLiteralParselet());
+    }
 
     return new ParserGrammar(statements, prefixes, infixes, new ExpressionStatementParselet());
   }
