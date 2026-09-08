@@ -28,6 +28,7 @@ public class FormattingRules {
   private boolean spaceAroundAssign = true;
   private boolean spaceAroundOperators = true;
   private int newlineBeforePrintln = 1;
+  private int indentSize = 4;
 
   /** Constructor con valores por defecto. */
   public FormattingRules() {}
@@ -68,5 +69,13 @@ public class FormattingRules {
    */
   public int getNewlineBeforePrintln() {
     return newlineBeforePrintln;
+  }
+
+  /**
+   * Cantidad de espacios de indentación para el contenido de un bloque (ej. dentro de un {@code
+   * if}). Configurable desde el JSON; por defecto 4.
+   */
+  public int getIndentSize() {
+    return indentSize;
   }
 }
