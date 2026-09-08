@@ -97,6 +97,12 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
       if (leftType.equals("string") || rightType.equals("string")) {
         return "string";
       }
+      if (!leftType.equals("number") || !rightType.equals("number")) {
+        throw new RuntimeException(
+            "Semantic Error at "
+                + node.getPosition()
+                + ": Operator '+' requires numeric or string operands.");
+      }
       return "number";
     }
 
@@ -144,6 +150,11 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   @Override
   public String visitStringLiteral(StringLiteral node) {
     return "string";
+  }
+
+  @Override
+  public String visitBooleanLiteral(BooleanLiteral node) {
+    return "boolean";
   }
 
   @Override

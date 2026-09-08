@@ -100,6 +100,11 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
   }
 
   @Override
+  public Object visitBooleanLiteral(BooleanLiteral node) {
+    return node.getValue();
+  }
+
+  @Override
   public Object visitIdentifier(Identifier node) {
     return env.get(node.getName());
   }

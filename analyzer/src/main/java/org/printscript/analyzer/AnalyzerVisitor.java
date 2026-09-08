@@ -155,6 +155,11 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
   }
 
   @Override
+  public Void visitBooleanLiteral(BooleanLiteral node) {
+    return null;
+  }
+
+  @Override
   public Void visitIdentifier(Identifier node) {
     String varName = node.getName();
     if (env.isDeclared(varName)) {
