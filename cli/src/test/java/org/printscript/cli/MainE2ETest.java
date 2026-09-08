@@ -3,9 +3,12 @@ package org.printscript.cli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -99,5 +102,24 @@ class MainE2ETest {
 
     // Verificamos el output real del intérprete
     assertTrue(consoleOutput.contains("Result: 3"));
+  }
+
+  @Test
+  void testExecutionWithReadInputInV1_1() throws Exception {
+    InputStream originalIn = System.in;
+    try {
+      System.setIn(new ByteArrayInputStream("Matias\n25\n".getBytes(StandardCharsets.UTF_8)));
+      Path scriptPath = getResourcePath("read_input_script.ps");
+
+      String[] args = {"execution", scriptPath.toString(), "--version", "1.1"};
+      Main.main(args);
+
+      String consoleOutput = outContent.toString();
+      assertTrue(consoleOutput.contains("Nombre: "));
+      assertTrue(consoleOutput.contains("Edad: "));
+      assertTrue(consoleOutput.contains("Hola Matias edad 25"));
+    } finally {
+      System.setIn(originalIn);
+    }
   }
 }

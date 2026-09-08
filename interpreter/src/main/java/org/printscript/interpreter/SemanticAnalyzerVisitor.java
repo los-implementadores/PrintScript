@@ -7,9 +7,16 @@ import org.printscript.common.env.Environment;
 public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
 
   private final Environment env;
+  private final org.printscript.common.LanguageVersion version;
+  private String expectedType;
 
   public SemanticAnalyzerVisitor(Environment env) {
+    this(env, org.printscript.common.LanguageVersion.V1_0);
+  }
+
+  public SemanticAnalyzerVisitor(Environment env, org.printscript.common.LanguageVersion version) {
     this.env = env;
+    this.version = version;
   }
 
   @Override
@@ -36,7 +43,14 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     }
 
     if (node.getInitializer() != null) {
-      String exprType = node.getInitializer().accept(this);
+      String prev = this.expectedType;
+      String exprType;
+      try {
+        this.expectedType = declaredType;
+        exprType = node.getInitializer().accept(this);
+      } finally {
+        this.expectedType = prev;
+      }
       if (!declaredType.equals(exprType)) {
         throw new RuntimeException(
             "Semantic Error at "
@@ -75,7 +89,14 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     }
 
     String varType = env.getType(varName);
-    String exprType = node.getValue().accept(this);
+    String prev = this.expectedType;
+    String exprType;
+    try {
+      this.expectedType = varType;
+      exprType = node.getValue().accept(this);
+    } finally {
+      this.expectedType = prev;
+    }
 
     if (!varType.equals(exprType)) {
       throw new RuntimeException(
@@ -155,22 +176,65 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
 
   @Override
   public String visitCallExpression(CallExpression node) {
-    if (!node.getCallee().equals("println")) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Unknown function '"
-              + node.getCallee()
-              + "'");
+    if (node.getCallee().equals("println")) {
+      return analyzePrintln(node);
     }
+    if (node.getCallee().equals("readInput")) {
+      return analyzeReadInput(node);
+    }
+    throw new RuntimeException(
+        "Semantic Error at "
+            + node.getPosition()
+            + ": Unknown function '"
+            + node.getCallee()
+            + "'");
+  }
 
+  private String analyzePrintln(CallExpression node) {
     if (node.getArguments().size() != 1) {
       throw new RuntimeException(
           "Semantic Error at " + node.getPosition() + ": println expects 1 argument.");
     }
-
-    node.getArguments().get(0).accept(this);
+    String prev = this.expectedType;
+    try {
+      this.expectedType = "string";
+      node.getArguments().get(0).accept(this);
+    } finally {
+      this.expectedType = prev;
+    }
     return null;
+  }
+
+  private String analyzeReadInput(CallExpression node) {
+    if (version == org.printscript.common.LanguageVersion.V1_0) {
+      throw new RuntimeException(
+          "Semantic Error at "
+              + node.getPosition()
+              + ": Function 'readInput' is only supported in PrintScript 1.1.");
+    }
+    if (node.getArguments().size() != 1) {
+      throw new RuntimeException(
+          "Semantic Error at " + node.getPosition() + ": readInput expects 1 argument.");
+    }
+
+    String prev = this.expectedType;
+    String argType;
+    try {
+      this.expectedType = "string";
+      argType = node.getArguments().get(0).accept(this);
+    } finally {
+      this.expectedType = prev;
+    }
+
+    if (!"string".equals(argType)) {
+      throw new RuntimeException(
+          "Semantic Error at "
+              + node.getPosition()
+              + ": readInput argument must be of type string, found "
+              + argType);
+    }
+
+    return expectedType != null ? expectedType : "string";
   }
 
   @Override

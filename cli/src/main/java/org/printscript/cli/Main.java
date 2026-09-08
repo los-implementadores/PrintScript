@@ -165,10 +165,12 @@ public class Main {
 
       // 3. Entornos e instancias (Tabla de simbolos y Memoria)
       Environment symbolTable = new Environment(); // Solo para tipos
-      SemanticAnalyzer analyzer = new SemanticAnalyzerImpl(symbolTable);
+      SemanticAnalyzer analyzer = new SemanticAnalyzerImpl(symbolTable, version);
 
       Environment memory = new Environment(); // Para valores reales
-      Interpreter interpreter = new InterpreterImpl(memory);
+      Interpreter interpreter =
+          new InterpreterImpl(
+              memory, new org.printscript.interpreter.StdinInputProvider(), version);
 
       // 4. Enrutamiento del modo
       switch (operation.toLowerCase()) {
