@@ -60,14 +60,14 @@ class VersioningTest {
   }
 
   @Test
-  void booleanTypeIsAllowedInV1_1() {
+  void booleanTypeIsAllowedInVersion11() {
     List<Statement> stmts = parseWith("let ok: boolean = 1;", LanguageVersion.V1_1);
     VarDeclarationStatement decl = (VarDeclarationStatement) stmts.get(0);
     assertEquals("boolean", decl.getTypeName());
   }
 
   @Test
-  void booleanTypeIsRejectedInV1_0() {
+  void booleanTypeIsRejectedInVersion10() {
     ParseException ex =
         assertThrows(
             ParseException.class, () -> parseWith("let ok: boolean = 1;", LanguageVersion.V1_0));

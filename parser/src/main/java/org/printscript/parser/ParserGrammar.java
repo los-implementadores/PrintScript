@@ -84,27 +84,11 @@ public final class ParserGrammar {
     infixes.put(TokenType.STAR, new BinaryOperatorParselet(MULTIPLICATIVE));
     infixes.put(TokenType.SLASH, new BinaryOperatorParselet(MULTIPLICATIVE));
 
-    if (version == LanguageVersion.V1_1) {
-      registerV11(statements, prefixes, infixes, typeNameParser);
-    }
+    // Las construcciones propias de 1.1 (boolean, const, if/else) se registran en las features
+    // correspondientes: cada una agrega su parselet a `statements`/`prefixes` cuando version==V1_1.
+    // El tipo `boolean` ya se habilita arriba via `typeTokens`.
 
     return new ParserGrammar(statements, prefixes, infixes, new ExpressionStatementParselet());
-  }
-
-  /**
-   * Punto de extensión para las construcciones de PrintScript 1.1. Cada issue de 1.1 (boolean,
-   * const, if/else, readInput, readEnv) registra acá sus parselets. Hoy es un no-op y se irá
-   * completando a medida que esas features se implementen.
-   */
-  private static void registerV11(
-      Map<TokenType, StatementParselet> statements,
-      Map<TokenType, PrefixParselet> prefixes,
-      Map<TokenType, InfixParselet> infixes,
-      TypeNameParser typeNameParser) {
-    // boolean (#31): prefixes.put(TokenType.BOOLEAN_LITERAL, new BooleanLiteralParselet());
-    // const   (#32): statements.put(TokenType.CONST, new ConstDeclarationParselet(typeNameParser));
-    // if/else (#33): statements.put(TokenType.IF, new IfStatementParselet());
-    // readInput/readEnv (#34/#35): se resuelven como CallExpression sobre IDENTIFIER.
   }
 
   Map<TokenType, StatementParselet> statementParselets() {
