@@ -18,6 +18,8 @@ public interface ASTVisitor<T> {
 
   T visitExpressionStatement(ExpressionStatement node);
 
+  T visitIf(IfStatement node);
+
   T visitBinaryExpression(BinaryExpression node);
 
   T visitCallExpression(CallExpression node);

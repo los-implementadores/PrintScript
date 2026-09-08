@@ -112,6 +112,20 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
   }
 
   @Override
+  public Void visitIf(IfStatement node) {
+    node.getCondition().accept(this);
+    for (Statement stmt : node.getThenBlock()) {
+      stmt.accept(this);
+    }
+    if (node.hasElse()) {
+      for (Statement stmt : node.getElseBlock()) {
+        stmt.accept(this);
+      }
+    }
+    return null;
+  }
+
+  @Override
   public Void visitBinaryExpression(BinaryExpression node) {
     node.getLeft().accept(this);
     node.getRight().accept(this);
