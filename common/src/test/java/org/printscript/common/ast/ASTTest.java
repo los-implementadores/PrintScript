@@ -238,6 +238,11 @@ class ASTTest {
           public String visitIdentifier(Identifier n) {
             return n.getName();
           }
+
+          @Override
+          public String visitBooleanLiteral(BooleanLiteral n) {
+            return String.valueOf(n.getValue());
+          }
         };
 
     assertEquals("let x: number = 2 + 3;", prog.accept(printer));

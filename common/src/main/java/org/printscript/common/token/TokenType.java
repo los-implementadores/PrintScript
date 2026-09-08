@@ -11,6 +11,7 @@ public enum TokenType {
   IDENTIFIER,
   NUMBER_LITERAL,
   STRING_LITERAL,
+  BOOLEAN_LITERAL, // true / false (1.1)
 
   // Símbolos
   COLON, // :

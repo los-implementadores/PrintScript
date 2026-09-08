@@ -107,6 +107,11 @@ public class FormatterVisitor implements ASTVisitor<String> {
   }
 
   @Override
+  public String visitBooleanLiteral(BooleanLiteral node) {
+    return String.valueOf(node.getValue());
+  }
+
+  @Override
   public String visitIdentifier(Identifier node) {
     return node.getName();
   }
