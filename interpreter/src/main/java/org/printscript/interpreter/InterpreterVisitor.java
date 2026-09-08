@@ -31,7 +31,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
       value = node.getInitializer().accept(this);
     }
 
-    env.define(name, type, value);
+    env.define(name, type, value, node.isConst());
     return null;
   }
 

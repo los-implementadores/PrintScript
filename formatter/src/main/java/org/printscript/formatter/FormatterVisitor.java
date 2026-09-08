@@ -39,7 +39,7 @@ public class FormatterVisitor implements ASTVisitor<String> {
   @Override
   public String visitVarDeclaration(VarDeclarationStatement node) {
     StringBuilder sb = new StringBuilder();
-    sb.append("let ");
+    sb.append(node.isConst() ? "const " : "let ");
     sb.append(node.getName().accept(this));
     sb.append(colonFormatted());
     sb.append(node.getTypeName());

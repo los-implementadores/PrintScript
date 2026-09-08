@@ -21,9 +21,22 @@ import org.printscript.parser.parselet.StatementParselet;
 public final class VarDeclarationParselet implements StatementParselet {
 
   private final TypeNameParser typeNameParser;
+  private final TokenType keyword;
+  private final boolean isConst;
 
+  /** Declaración mutable con {@code let}. */
   public VarDeclarationParselet(TypeNameParser typeNameParser) {
+    this(typeNameParser, TokenType.LET, false);
+  }
+
+  /**
+   * Declaración con la keyword indicada. {@code isConst=true} marca la variable como inmutable
+   * (usado para {@code const}, PrintScript 1.1).
+   */
+  public VarDeclarationParselet(TypeNameParser typeNameParser, TokenType keyword, boolean isConst) {
     this.typeNameParser = typeNameParser;
+    this.keyword = keyword;
+    this.isConst = isConst;
   }
 
   @Override
@@ -31,7 +44,7 @@ public final class VarDeclarationParselet implements StatementParselet {
     TokenStream ts = ctx.tokens();
 
     Position start = ts.current().getPosition();
-    ts.consume(TokenType.LET);
+    ts.consume(keyword);
 
     Token nameToken = ts.current();
     ts.consume(TokenType.IDENTIFIER);
@@ -47,6 +60,6 @@ public final class VarDeclarationParselet implements StatementParselet {
     ts.consume(TokenType.SEMICOLON);
 
     return new VarDeclarationStatement(
-        name, typeName, initializer, ts.span(start, semi.getPosition()));
+        name, typeName, initializer, isConst, ts.span(start, semi.getPosition()));
   }
 }

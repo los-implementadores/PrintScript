@@ -18,14 +18,32 @@ public final class VarDeclarationStatement implements Statement {
   private final Identifier name;
   private final String typeName; // "number" o "string"
   private final Expression initializer;
+  private final boolean isConst;
   private final Position position;
 
   public VarDeclarationStatement(
       Identifier name, String typeName, Expression initializer, Position position) {
+    this(name, typeName, initializer, false, position);
+  }
+
+  public VarDeclarationStatement(
+      Identifier name,
+      String typeName,
+      Expression initializer,
+      boolean isConst,
+      Position position) {
     this.name = name;
     this.typeName = typeName;
     this.initializer = initializer;
+    this.isConst = isConst;
     this.position = position;
+  }
+
+  /**
+   * {@code true} si la declaración es una constante ({@code const}), inmutable tras inicializar.
+   */
+  public boolean isConst() {
+    return isConst;
   }
 
   public Identifier getName() {
