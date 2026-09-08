@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Scanner;
 import org.printscript.analyzer.StaticAnalyzer;
 import org.printscript.analyzer.StaticAnalyzerImpl;
+import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
@@ -41,12 +42,17 @@ public class Main {
       String operation = args[0];
       String filePath = args[1];
       String configPath = null;
+      String versionLabel = "1.0";
 
-      if (args.length >= 4 && args[2].equals("--config")) {
-        configPath = args[3];
+      for (int i = 2; i < args.length - 1; i++) {
+        if (args[i].equals("--config")) {
+          configPath = args[i + 1];
+        } else if (args[i].equals("--version")) {
+          versionLabel = args[i + 1];
+        }
       }
 
-      ejecutarModo(operation, filePath, configPath);
+      ejecutarModo(operation, filePath, configPath, versionLabel);
     } else {
       iniciarModoInteractivo();
     }
@@ -98,11 +104,25 @@ public class Main {
       }
     }
 
+    System.out.print("Ingrese la version del lenguaje (1.0 / 1.1) [default 1.0]: ");
+    String inputVersion = scanner.nextLine().trim();
+    String versionLabel = inputVersion.isEmpty() ? "1.0" : inputVersion;
+
     // Ejecutamos el motor con los datos ingresados
-    ejecutarModo(operation, filePath, configPath);
+    ejecutarModo(operation, filePath, configPath, versionLabel);
   }
 
-  private static void ejecutarModo(String operation, String filePath, String configPath) {
+  private static void ejecutarModo(
+      String operation, String filePath, String configPath, String versionLabel) {
+    final LanguageVersion version;
+    try {
+      version = LanguageVersion.fromLabel(versionLabel);
+    } catch (IllegalArgumentException e) {
+      System.err.println("\n[ERROR] " + e.getMessage());
+      System.exit(1);
+      return;
+    }
+
     try (Reader reader = new FileReader(filePath)) {
 
       List<TokenMatcher> matchers =
@@ -129,7 +149,7 @@ public class Main {
       Lexer lexer = new LexerImpl(reader, matchers);
 
       // 2. Configuracion del Parser
-      Parser parser = new ParserImpl(lexer);
+      Parser parser = new ParserImpl(lexer, version);
 
       Position startPos = new Position(1, 1, 1, 1);
       Program program = new LazyProgram(parser, startPos);

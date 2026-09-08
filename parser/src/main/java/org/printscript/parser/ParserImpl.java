@@ -37,9 +37,14 @@ public class ParserImpl implements Parser, ParseContext {
   private final Map<TokenType, InfixParselet> infixParselets;
   private final StatementParselet defaultStatementParselet;
 
-  /** Construye un parser con la gramática por defecto de PrintScript. */
+  /** Construye un parser con la gramática por defecto de PrintScript (1.0). */
   public ParserImpl(Iterator<Token> tokens) {
     this(tokens, ParserGrammar.printScript());
+  }
+
+  /** Construye un parser con la gramática correspondiente a la versión indicada. */
+  public ParserImpl(Iterator<Token> tokens, org.printscript.common.LanguageVersion version) {
+    this(tokens, ParserGrammar.forVersion(version));
   }
 
   /** Construye un parser con una gramática (conjunto de parselets) explícita. */

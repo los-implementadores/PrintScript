@@ -5,6 +5,7 @@ public enum TokenType {
   LET,
   TYPE_NUMBER, // "number" usado como tipo en una declaración
   TYPE_STRING, // "string" usado como tipo en una declaración
+  TYPE_BOOLEAN, // "boolean" usado como tipo en una declaración (1.1)
 
   // Literales e identificadores
   IDENTIFIER,
