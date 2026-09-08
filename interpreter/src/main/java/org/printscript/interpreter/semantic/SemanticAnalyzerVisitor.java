@@ -1,4 +1,4 @@
-package org.printscript.interpreter;
+package org.printscript.interpreter.semantic;
 
 import java.util.Iterator;
 import org.printscript.common.ast.*;
@@ -182,6 +182,9 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     if (node.getCallee().equals("readInput")) {
       return analyzeReadInput(node);
     }
+    if (node.getCallee().equals("readEnv")) {
+      return analyzeReadEnv(node);
+    }
     throw new RuntimeException(
         "Semantic Error at "
             + node.getPosition()
@@ -231,6 +234,38 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
           "Semantic Error at "
               + node.getPosition()
               + ": readInput argument must be of type string, found "
+              + argType);
+    }
+
+    return expectedType != null ? expectedType : "string";
+  }
+
+  private String analyzeReadEnv(CallExpression node) {
+    if (version == org.printscript.common.LanguageVersion.V1_0) {
+      throw new RuntimeException(
+          "Semantic Error at "
+              + node.getPosition()
+              + ": Function 'readEnv' is only supported in PrintScript 1.1.");
+    }
+    if (node.getArguments().size() != 1) {
+      throw new RuntimeException(
+          "Semantic Error at " + node.getPosition() + ": readEnv expects 1 argument.");
+    }
+
+    String prev = this.expectedType;
+    String argType;
+    try {
+      this.expectedType = "string";
+      argType = node.getArguments().get(0).accept(this);
+    } finally {
+      this.expectedType = prev;
+    }
+
+    if (!"string".equals(argType)) {
+      throw new RuntimeException(
+          "Semantic Error at "
+              + node.getPosition()
+              + ": readEnv argument must be of type string, found "
               + argType);
     }
 

@@ -122,4 +122,15 @@ class MainE2ETest {
       System.setIn(originalIn);
     }
   }
+
+  @Test
+  void testExecutionWithReadEnvInV1_1() throws Exception {
+    Path scriptPath = getResourcePath("read_env_script.ps");
+
+    String[] args = {"execution", scriptPath.toString(), "--version", "1.1"};
+    Main.main(args);
+
+    String consoleOutput = outContent.toString();
+    assertTrue(consoleOutput.contains("Path found"));
+  }
 }

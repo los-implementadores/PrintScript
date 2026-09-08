@@ -18,6 +18,8 @@ import org.printscript.common.ast.NumberLiteral;
 import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.input.ProgrammaticInputProvider;
+import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 
 class ReadInputTest {
 
