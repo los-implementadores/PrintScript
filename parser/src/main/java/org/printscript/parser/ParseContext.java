@@ -1,6 +1,7 @@
 package org.printscript.parser;
 
 import org.printscript.common.ast.Expression;
+import org.printscript.common.ast.Statement;
 
 /**
  * Servicios que un parselet necesita para hacer su trabajo, sin acoplarse a {@code ParserImpl}.
@@ -13,6 +14,13 @@ public interface ParseContext {
 
   /** Stream de tokens compartido. */
   TokenStream tokens();
+
+  /**
+   * Parsea una sentencia completa a partir del token actual, despachando al {@link
+   * StatementParselet} correspondiente. Permite que un parselet compuesto (ej. {@code if} con
+   * bloques) parsee sentencias anidadas sin acoplarse a {@code ParserImpl}.
+   */
+  Statement parseStatement();
 
   /**
    * Parsea una expresión completa respetando la precedencia (binding power) mínima indicada. Es el

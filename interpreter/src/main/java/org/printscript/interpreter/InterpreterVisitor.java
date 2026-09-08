@@ -51,6 +51,25 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
   }
 
   @Override
+  public Object visitIf(IfStatement node) {
+    Object cond = node.getCondition().accept(this);
+    if (!(cond instanceof Boolean b)) {
+      throw new RuntimeException(
+          "Execution Error at " + node.getPosition() + ": if condition must be boolean.");
+    }
+    if (b) {
+      for (Statement stmt : node.getThenBlock()) {
+        stmt.accept(this);
+      }
+    } else if (node.hasElse()) {
+      for (Statement stmt : node.getElseBlock()) {
+        stmt.accept(this);
+      }
+    }
+    return null;
+  }
+
+  @Override
   public Object visitBinaryExpression(BinaryExpression node) {
     Object left = node.getLeft().accept(this);
     Object right = node.getRight().accept(this);

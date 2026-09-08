@@ -131,4 +131,22 @@ class SemanticAnalyzerTest {
     RuntimeException exception = assertThrows(RuntimeException.class, () -> expr.accept(analyzer));
     assertTrue(exception.getMessage().contains("Operator '-' requires numeric operands"));
   }
+
+  @Test
+  void acceptsIfWithBooleanCondition() {
+    // if (true) { }
+    IfStatement ifStmt =
+        new IfStatement(new BooleanLiteral(true, dummyPos), java.util.List.of(), null, dummyPos);
+    assertDoesNotThrow(() -> ifStmt.accept(analyzer));
+  }
+
+  @Test
+  void throwsOnNonBooleanIfCondition() {
+    // if (5) { }
+    IfStatement ifStmt =
+        new IfStatement(new NumberLiteral(5.0, dummyPos), java.util.List.of(), null, dummyPos);
+    RuntimeException exception =
+        assertThrows(RuntimeException.class, () -> ifStmt.accept(analyzer));
+    assertTrue(exception.getMessage().contains("if condition must be boolean"));
+  }
 }

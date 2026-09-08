@@ -128,23 +128,31 @@ public class Main {
       List<TokenMatcher> matchers =
           List.of(
               new IdentifierTokenMatcher(
-                  Map.of(
-                      "let", TokenType.LET,
-                      "number", TokenType.TYPE_NUMBER,
-                      "string", TokenType.TYPE_STRING)),
+                  Map.ofEntries(
+                      Map.entry("let", TokenType.LET),
+                      Map.entry("const", TokenType.CONST),
+                      Map.entry("if", TokenType.IF),
+                      Map.entry("else", TokenType.ELSE),
+                      Map.entry("number", TokenType.TYPE_NUMBER),
+                      Map.entry("string", TokenType.TYPE_STRING),
+                      Map.entry("boolean", TokenType.TYPE_BOOLEAN),
+                      Map.entry("true", TokenType.BOOLEAN_LITERAL),
+                      Map.entry("false", TokenType.BOOLEAN_LITERAL))),
               new NumberTokenMatcher(),
               new StringTokenMatcher(),
               new SymbolTokenMatcher(
-                  Map.of(
-                      ':', TokenType.COLON,
-                      '=', TokenType.ASSIGN,
-                      ';', TokenType.SEMICOLON,
-                      '(', TokenType.LPAREN,
-                      ')', TokenType.RPAREN,
-                      '+', TokenType.PLUS,
-                      '-', TokenType.MINUS,
-                      '*', TokenType.STAR,
-                      '/', TokenType.SLASH)));
+                  Map.ofEntries(
+                      Map.entry(':', TokenType.COLON),
+                      Map.entry('=', TokenType.ASSIGN),
+                      Map.entry(';', TokenType.SEMICOLON),
+                      Map.entry('(', TokenType.LPAREN),
+                      Map.entry(')', TokenType.RPAREN),
+                      Map.entry('{', TokenType.LBRACE),
+                      Map.entry('}', TokenType.RBRACE),
+                      Map.entry('+', TokenType.PLUS),
+                      Map.entry('-', TokenType.MINUS),
+                      Map.entry('*', TokenType.STAR),
+                      Map.entry('/', TokenType.SLASH))));
 
       Lexer lexer = new LexerImpl(reader, matchers);
 
