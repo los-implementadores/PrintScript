@@ -1,34 +1,60 @@
 package org.printscript.formatter;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import java.io.Reader;
 
 /**
  * Reglas de formateo configurables para el formatter de PrintScript.
  *
- * <p>Se carga desde un archivo JSON. Cada campo tiene un valor por defecto razonable para que el
- * formatter funcione sin configuración explícita.
- *
- * <p>Ejemplo de JSON:
- *
- * <pre>{@code
- * {
- *   "spaceBeforeColon": false,
- *   "spaceAfterColon": true,
- *   "spaceAroundAssign": true,
- *   "spaceAroundOperators": true,
- *   "newlineBeforePrintln": 1
- * }
- * }</pre>
+ * <p>Soporta configuraciones estándar en camelCase y las reglas específicas del TCK en kebab-case.
  */
 public class FormattingRules {
 
-  private boolean spaceBeforeColon = false;
-  private boolean spaceAfterColon = true;
-  private boolean spaceAroundAssign = true;
-  private boolean spaceAroundOperators = true;
-  private int newlineBeforePrintln = 1;
-  private int indentSize = 4;
+  @SerializedName(
+      value = "spaceBeforeColon",
+      alternate = {"enforce-spacing-before-colon-in-declaration"})
+  private Boolean spaceBeforeColon;
+
+  @SerializedName(
+      value = "spaceAfterColon",
+      alternate = {"enforce-spacing-after-colon-in-declaration"})
+  private Boolean spaceAfterColon;
+
+  @SerializedName(
+      value = "spaceAroundAssign",
+      alternate = {"enforce-spacing-around-equals"})
+  private Boolean spaceAroundAssign;
+
+  @SerializedName("enforce-no-spacing-around-equals")
+  private Boolean noSpacingAroundAssign;
+
+  @SerializedName(
+      value = "spaceAroundOperators",
+      alternate = {"mandatory-space-surrounding-operations"})
+  private Boolean spaceAroundOperators;
+
+  @SerializedName(
+      value = "newlineBeforePrintln",
+      alternate = {"line-breaks-after-println"})
+  private Integer newlineBeforePrintln;
+
+  @SerializedName(
+      value = "indentSize",
+      alternate = {"indent-inside-if"})
+  private Integer indentSize;
+
+  @SerializedName("mandatory-line-break-after-statement")
+  private Boolean lineBreakAfterStatement;
+
+  @SerializedName("mandatory-single-space-separation")
+  private Boolean singleSpaceSeparation;
+
+  @SerializedName("if-brace-below-line")
+  private Boolean ifBraceBelowLine;
+
+  @SerializedName("if-brace-same-line")
+  private Boolean ifBraceSameLine;
 
   /** Constructor con valores por defecto. */
   public FormattingRules() {}
@@ -43,39 +69,76 @@ public class FormattingRules {
     return new Gson().fromJson(reader, FormattingRules.class);
   }
 
-  /** Si se agrega un espacio antes del {@code :} en declaraciones ({@code let x : number}). */
-  public boolean isSpaceBeforeColon() {
-    return spaceBeforeColon;
+  // --- Getters para estrategia AST (con defaults históricos) ---
+
+  public boolean isSpaceBeforeColonAst() {
+    return spaceBeforeColon != null && spaceBeforeColon;
   }
 
-  /** Si se agrega un espacio después del {@code :} en declaraciones ({@code let x: number}). */
-  public boolean isSpaceAfterColon() {
-    return spaceAfterColon;
+  public boolean isSpaceAfterColonAst() {
+    return spaceAfterColon == null || spaceAfterColon;
   }
 
-  /** Si se agrega un espacio alrededor del {@code =} ({@code let x: number = 5}). */
-  public boolean isSpaceAroundAssign() {
-    return spaceAroundAssign;
+  public boolean isSpaceAroundAssignAst() {
+    return (spaceAroundAssign == null || spaceAroundAssign)
+        && (noSpacingAroundAssign == null || !noSpacingAroundAssign);
   }
 
-  /** Si se agrega un espacio alrededor de operadores ({@code a + b}). */
-  public boolean isSpaceAroundOperators() {
-    return spaceAroundOperators;
+  public boolean isSpaceAroundOperatorsAst() {
+    return spaceAroundOperators == null || spaceAroundOperators;
   }
 
-  /**
-   * Cantidad de líneas en blanco a insertar antes de un {@code println} (u otra llamada a función).
-   * Valor 0 = ninguna línea extra, 1 = una línea en blanco antes.
-   */
   public int getNewlineBeforePrintln() {
-    return newlineBeforePrintln;
+    return newlineBeforePrintln != null ? newlineBeforePrintln : 1;
   }
 
-  /**
-   * Cantidad de espacios de indentación para el contenido de un bloque (ej. dentro de un {@code
-   * if}). Configurable desde el JSON; por defecto 4.
-   */
   public int getIndentSize() {
-    return indentSize;
+    return indentSize != null ? indentSize : 4;
+  }
+
+  // --- Getters booleanos para la estrategia Streaming (sin defaults arbitrarios) ---
+
+  public boolean isSpaceBeforeColon() {
+    return spaceBeforeColon != null && spaceBeforeColon;
+  }
+
+  public boolean isSpaceAfterColon() {
+    return spaceAfterColon != null && spaceAfterColon;
+  }
+
+  public boolean isSpaceAroundAssign() {
+    return spaceAroundAssign != null && spaceAroundAssign;
+  }
+
+  public boolean isNoSpacingAroundAssign() {
+    return noSpacingAroundAssign != null && noSpacingAroundAssign;
+  }
+
+  public boolean isSpaceAroundOperators() {
+    return spaceAroundOperators != null && spaceAroundOperators;
+  }
+
+  public boolean isLineBreakAfterStatement() {
+    return lineBreakAfterStatement != null && lineBreakAfterStatement;
+  }
+
+  public boolean isSingleSpaceSeparation() {
+    return singleSpaceSeparation != null && singleSpaceSeparation;
+  }
+
+  public boolean isIfBraceBelowLine() {
+    return ifBraceBelowLine != null && ifBraceBelowLine;
+  }
+
+  public boolean isIfBraceSameLine() {
+    return ifBraceSameLine != null && ifBraceSameLine;
+  }
+
+  public boolean hasIndentSize() {
+    return indentSize != null;
+  }
+
+  public boolean hasNewlineBeforePrintln() {
+    return newlineBeforePrintln != null;
   }
 }
