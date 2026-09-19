@@ -61,6 +61,17 @@ class ParserTest {
   }
 
   @Test
+  void parsesNumberDeclarationNotAssigned() {
+    List<Statement> stmts = parseStatements("let x: number;");
+
+    assertEquals(1, stmts.size());
+    VarDeclarationStatement stmt = (VarDeclarationStatement) stmts.get(0);
+
+    assertEquals("x", stmt.getName().getName());
+    assertEquals("number", stmt.getTypeName());
+  }
+
+  @Test
   void parsesStringDeclaration() {
     List<Statement> stmts = parseStatements("let name: string = \"Joe\";");
 

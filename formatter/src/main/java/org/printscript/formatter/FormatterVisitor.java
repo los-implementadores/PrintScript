@@ -43,8 +43,10 @@ public class FormatterVisitor implements ASTVisitor<String> {
     sb.append(node.getName().accept(this));
     sb.append(colonFormatted());
     sb.append(node.getTypeName());
-    sb.append(assignFormatted());
-    sb.append(node.getInitializer().accept(this));
+    if (node.getInitializer() != null) {
+      sb.append(assignFormatted());
+      sb.append(node.getInitializer().accept(this));
+    }
     sb.append(';');
     return sb.toString();
   }
