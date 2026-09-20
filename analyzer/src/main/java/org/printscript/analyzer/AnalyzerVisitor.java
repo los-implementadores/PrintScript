@@ -134,6 +134,7 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
 
   @Override
   public Void visitCallExpression(CallExpression node) {
+    //extraer condiciones complejas, y que sea mas descriptivo por si mismo
     if (config.activeComplexPrintln
         && node.getCallee().equals("println")
         && !node.getArguments().isEmpty()) {

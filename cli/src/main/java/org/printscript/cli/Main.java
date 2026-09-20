@@ -34,7 +34,7 @@ import org.printscript.lexer.SymbolTokenMatcher;
 import org.printscript.lexer.TokenMatcher;
 import org.printscript.parser.Parser;
 import org.printscript.parser.ParserImpl;
-
+//ANTI-SOLID usar command pattern
 public class Main {
 
   public static void main(String[] args) {
