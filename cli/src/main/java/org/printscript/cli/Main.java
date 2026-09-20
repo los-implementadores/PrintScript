@@ -23,8 +23,10 @@ import org.printscript.formatter.FormatterImpl;
 import org.printscript.formatter.FormattingRules;
 import org.printscript.interpreter.Interpreter;
 import org.printscript.interpreter.InterpreterImpl;
-import org.printscript.interpreter.SemanticAnalyzer;
-import org.printscript.interpreter.SemanticAnalyzerImpl;
+import org.printscript.interpreter.env.SystemEnvProvider;
+import org.printscript.interpreter.input.StdinInputProvider;
+import org.printscript.interpreter.semantic.SemanticAnalyzer;
+import org.printscript.interpreter.semantic.SemanticAnalyzerImpl;
 import org.printscript.lexer.IdentifierTokenMatcher;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerImpl;
@@ -169,8 +171,7 @@ public class Main {
 
       Environment memory = new Environment(); // Para valores reales
       Interpreter interpreter =
-          new InterpreterImpl(
-              memory, new org.printscript.interpreter.StdinInputProvider(), version);
+          new InterpreterImpl(memory, new StdinInputProvider(), new SystemEnvProvider(), version);
 
       // 4. Enrutamiento del modo
       switch (operation.toLowerCase()) {

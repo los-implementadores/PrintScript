@@ -1,4 +1,4 @@
-package org.printscript.interpreter;
+package org.printscript.interpreter.semantic;
 
 import org.printscript.common.ast.Statement;
 

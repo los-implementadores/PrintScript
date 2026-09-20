@@ -3,28 +3,47 @@ package org.printscript.interpreter;
 import java.util.Iterator;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.env.EnvProvider;
+import org.printscript.interpreter.env.SystemEnvProvider;
+import org.printscript.interpreter.input.InputProvider;
+import org.printscript.interpreter.input.StdinInputProvider;
+import org.printscript.interpreter.util.TypeCoercion;
 
 public class InterpreterVisitor implements ASTVisitor<Object> {
 
   private final Environment env;
   private final InputProvider inputProvider;
+  private final EnvProvider envProvider;
   private final org.printscript.common.LanguageVersion version;
   private String expectedType;
 
   public InterpreterVisitor(Environment env) {
-    this(env, new StdinInputProvider(), org.printscript.common.LanguageVersion.V1_0);
+    this(
+        env,
+        new StdinInputProvider(),
+        new SystemEnvProvider(),
+        org.printscript.common.LanguageVersion.V1_0);
   }
 
   public InterpreterVisitor(Environment env, InputProvider inputProvider) {
-    this(env, inputProvider, org.printscript.common.LanguageVersion.V1_1);
+    this(env, inputProvider, new SystemEnvProvider(), org.printscript.common.LanguageVersion.V1_1);
   }
 
   public InterpreterVisitor(
       Environment env,
       InputProvider inputProvider,
       org.printscript.common.LanguageVersion version) {
+    this(env, inputProvider, new SystemEnvProvider(), version);
+  }
+
+  public InterpreterVisitor(
+      Environment env,
+      InputProvider inputProvider,
+      EnvProvider envProvider,
+      org.printscript.common.LanguageVersion version) {
     this.env = env;
     this.inputProvider = inputProvider;
+    this.envProvider = envProvider;
     this.version = version;
   }
 
@@ -137,6 +156,9 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     if (node.getCallee().equals("readInput")) {
       return executeReadInput(node);
     }
+    if (node.getCallee().equals("readEnv")) {
+      return executeReadEnv(node);
+    }
     throw new RuntimeException(
         "Execution Error at "
             + node.getPosition()
@@ -195,33 +217,43 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     }
 
     String targetType = expectedType != null ? expectedType : "string";
-    return coerceInput(raw, targetType, node.getPosition());
+    return TypeCoercion.coerce(raw, targetType, node.getPosition(), "input");
   }
 
-  private Object coerceInput(String raw, String targetType, org.printscript.common.Position pos) {
-    return switch (targetType) {
-      case "string" -> raw;
-      case "number" -> {
-        try {
-          yield Double.parseDouble(raw.trim());
-        } catch (NumberFormatException e) {
-          throw new RuntimeException(
-              "Execution Error at " + pos + ": Cannot coerce input '" + raw + "' to number.");
-        }
-      }
-      case "boolean" -> {
-        String trimmed = raw.trim();
-        if ("true".equalsIgnoreCase(trimmed)) {
-          yield Boolean.TRUE;
-        } else if ("false".equalsIgnoreCase(trimmed)) {
-          yield Boolean.FALSE;
-        } else {
-          throw new RuntimeException(
-              "Execution Error at " + pos + ": Cannot coerce input '" + raw + "' to boolean.");
-        }
-      }
-      default -> raw;
-    };
+  private Object executeReadEnv(CallExpression node) {
+    if (version == org.printscript.common.LanguageVersion.V1_0) {
+      throw new RuntimeException(
+          "Execution Error at "
+              + node.getPosition()
+              + ": readEnv is only supported in PrintScript 1.1.");
+    }
+    if (node.getArguments().size() != 1) {
+      throw new RuntimeException(
+          "Execution Error at " + node.getPosition() + ": readEnv expects 1 argument.");
+    }
+
+    String prev = this.expectedType;
+    Object nameVal;
+    try {
+      this.expectedType = "string";
+      nameVal = node.getArguments().get(0).accept(this);
+    } finally {
+      this.expectedType = prev;
+    }
+
+    String varName = formatPrintValue(nameVal);
+    String raw = envProvider.getEnv(varName);
+    if (raw == null) {
+      throw new RuntimeException(
+          "Execution Error at "
+              + node.getPosition()
+              + ": Environment variable '"
+              + varName
+              + "' is not defined.");
+    }
+
+    String targetType = expectedType != null ? expectedType : "string";
+    return TypeCoercion.coerce(raw, targetType, node.getPosition(), "env variable");
   }
 
   @Override
