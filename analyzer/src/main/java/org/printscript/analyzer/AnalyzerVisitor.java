@@ -134,28 +134,41 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
 
   @Override
   public Void visitCallExpression(CallExpression node) {
-    if (config.activeComplexPrintln
-        && node.getCallee().equals("println")
-        && !node.getArguments().isEmpty()) {
-      Node argument = node.getArguments().get(0);
-      boolean isLiteralOrIdentifier =
-          argument instanceof NumberLiteral
-              || argument instanceof StringLiteral
-              || argument instanceof Identifier;
-
-      if (!isLiteralOrIdentifier) {
-        violations.add(
-            new Violation(
-                "Complex expression in 'println'. Consider extracting to an intermediate variable.",
-                Severity.WARNING,
-                node.getPosition()));
-      }
-    }
+    validateCallArguments(node);
 
     for (Node arg : node.getArguments()) {
-      if (arg instanceof Expression) arg.accept(this);
+      if (arg instanceof Expression expr) {
+        expr.accept(this);
+      }
     }
     return null;
+  }
+
+  private void validateCallArguments(CallExpression node) {
+    if (node.getArguments().isEmpty()) {
+      return;
+    }
+    String callee = node.getCallee();
+    boolean isRestricted =
+        ("println".equals(callee) && config.activeComplexPrintln)
+            || ("readInput".equals(callee) && config.activeComplexReadInput);
+
+    if (isRestricted && !isLiteralOrIdentifier(node.getArguments().get(0))) {
+      violations.add(
+          new Violation(
+              "Complex expression in '"
+                  + callee
+                  + "'. Consider extracting to an intermediate variable.",
+              Severity.WARNING,
+              node.getPosition()));
+    }
+  }
+
+  private boolean isLiteralOrIdentifier(Node argument) {
+    return argument instanceof NumberLiteral
+        || argument instanceof StringLiteral
+        || argument instanceof BooleanLiteral
+        || argument instanceof Identifier;
   }
 
   @Override

@@ -1,17 +1,39 @@
 package org.printscript.common.configs;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.Reader;
 
 /** Representa la configuración externa */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AnalyzerConfig {
-  public boolean activeNamingConvention = true;
 
+  @JsonProperty("activeNamingConvention")
+  public boolean activeNamingConvention = false;
+
+  @JsonProperty("namingConventionFormat")
   public NamingConvention namingConventionFormat = NamingConvention.CAMEL_CASE;
 
-  public boolean activeComplexPrintln = true;
+  @JsonProperty("activeComplexPrintln")
+  @JsonAlias("mandatory-variable-or-literal-in-println")
+  public boolean activeComplexPrintln = false;
 
-  public boolean activeUnusedVariables = true;
+  @JsonProperty("activeComplexReadInput")
+  @JsonAlias("mandatory-variable-or-literal-in-readInput")
+  public boolean activeComplexReadInput = false;
+
+  @JsonProperty("activeUnusedVariables")
+  public boolean activeUnusedVariables = false;
+
+  @JsonProperty("identifier_format")
+  public void setIdentifierFormat(NamingConvention format) {
+    if (format != null) {
+      this.activeNamingConvention = true;
+      this.namingConventionFormat = format;
+    }
+  }
 
   /**
    * Carga las reglas desde un JSON usando Jackson. Si falla, imprime un error y devuelve la
