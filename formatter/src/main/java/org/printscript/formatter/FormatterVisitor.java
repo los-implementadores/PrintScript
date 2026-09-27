@@ -43,8 +43,10 @@ public class FormatterVisitor implements ASTVisitor<String> {
     sb.append(node.getName().accept(this));
     sb.append(colonFormatted());
     sb.append(node.getTypeName());
-    sb.append(assignFormatted());
-    sb.append(node.getInitializer().accept(this));
+    if (node.getInitializer() != null) {
+      sb.append(assignFormatted());
+      sb.append(node.getInitializer().accept(this));
+    }
     sb.append(';');
     return sb.toString();
   }
@@ -101,7 +103,7 @@ public class FormatterVisitor implements ASTVisitor<String> {
     String right = node.getRight().accept(this);
     String op = node.getOperator();
 
-    if (rules.isSpaceAroundOperators()) {
+    if (rules.isSpaceAroundOperatorsAst()) {
       return left + " " + op + " " + right;
     }
     return left + op + right;
@@ -151,18 +153,18 @@ public class FormatterVisitor implements ASTVisitor<String> {
 
   private String colonFormatted() {
     StringBuilder sb = new StringBuilder();
-    if (rules.isSpaceBeforeColon()) {
+    if (rules.isSpaceBeforeColonAst()) {
       sb.append(' ');
     }
     sb.append(':');
-    if (rules.isSpaceAfterColon()) {
+    if (rules.isSpaceAfterColonAst()) {
       sb.append(' ');
     }
     return sb.toString();
   }
 
   private String assignFormatted() {
-    if (rules.isSpaceAroundAssign()) {
+    if (rules.isSpaceAroundAssignAst()) {
       return " = ";
     }
     return "=";

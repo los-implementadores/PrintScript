@@ -1,6 +1,8 @@
 package org.printscript.interpreter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -84,5 +86,23 @@ class InterpreterTest {
 
     // El formatter interno del intérprete debería sacarle el .0
     assertEquals("42", outputStreamCaptor.toString().trim());
+  }
+
+  @Test
+  void declareVariable() {
+    VarDeclarationStatement decl =
+        new VarDeclarationStatement(new Identifier("x", dummyPos), "number", null, dummyPos);
+    decl.accept(interpreter);
+
+    assertTrue(env.isDeclared("x"));
+    assertEquals("number", env.getType("x"));
+    assertNull(env.get("x"));
+
+    AssignmentStatement assign =
+        new AssignmentStatement(
+            new Identifier("x", dummyPos), new NumberLiteral(10.0, dummyPos), dummyPos);
+    assign.accept(interpreter);
+
+    assertEquals(10.0, env.get("x"));
   }
 }

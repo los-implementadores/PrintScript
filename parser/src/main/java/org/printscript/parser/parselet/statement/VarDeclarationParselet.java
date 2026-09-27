@@ -8,6 +8,7 @@ import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.token.Token;
 import org.printscript.common.token.TokenType;
 import org.printscript.parser.ParseContext;
+import org.printscript.parser.ParseException;
 import org.printscript.parser.TokenStream;
 import org.printscript.parser.TypeNameParser;
 import org.printscript.parser.parselet.StatementParselet;
@@ -53,8 +54,14 @@ public final class VarDeclarationParselet implements StatementParselet {
     ts.consume(TokenType.COLON);
     String typeName = typeNameParser.parse(ts);
 
-    ts.consume(TokenType.ASSIGN);
-    Expression initializer = ctx.parseExpression(0);
+    Expression initializer = null;
+    if (ts.current().getType() == TokenType.ASSIGN) {
+      ts.consume(TokenType.ASSIGN);
+      initializer = ctx.parseExpression(0);
+    } else if (isConst) {
+      throw new ParseException(
+          "Constant declaration must have an initializer", ts.current().getPosition());
+    }
 
     Token semi = ts.current();
     ts.consume(TokenType.SEMICOLON);

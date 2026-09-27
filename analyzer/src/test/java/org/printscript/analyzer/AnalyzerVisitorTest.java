@@ -162,4 +162,67 @@ class AnalyzerVisitorTest {
 
     assertEquals("[WARNING] Variable should be camelCase at 1:5-1:15", violation.toString());
   }
+
+  @Test
+  void testComplexReadInputViolation() {
+    config.activeComplexReadInput = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+
+    // readInput("Enter " + "name")
+    BinaryExpression complexExpr =
+        new BinaryExpression(
+            new StringLiteral("Enter ", defaultPos),
+            "+",
+            new StringLiteral("name", defaultPos),
+            defaultPos);
+    CallExpression readInputStmt =
+        new CallExpression("readInput", List.of(complexExpr), defaultPos);
+
+    readInputStmt.accept(visitor);
+    List<Violation> violations = visitor.getFinalViolations();
+
+    assertEquals(1, violations.size());
+    assertTrue(violations.get(0).getMessage().contains("readInput"));
+  }
+
+  @Test
+  void testSimpleReadInputSuccess() {
+    config.activeComplexReadInput = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+
+    // readInput("Enter name: ")
+    StringLiteral prompt = new StringLiteral("Enter name: ", defaultPos);
+    CallExpression readInputStmt = new CallExpression("readInput", List.of(prompt), defaultPos);
+
+    readInputStmt.accept(visitor);
+    List<Violation> violations = visitor.getFinalViolations();
+
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  void testTckConfigCompatibility() {
+    String json =
+        """
+        {
+          "identifier_format": "snake case",
+          "mandatory-variable-or-literal-in-println": true,
+          "mandatory-variable-or-literal-in-readInput": true
+        }
+        """;
+    AnalyzerConfig parsed = AnalyzerConfig.fromJson(new java.io.StringReader(json));
+
+    assertTrue(parsed.activeNamingConvention);
+    assertEquals(NamingConvention.SNAKE_CASE, parsed.namingConventionFormat);
+    assertTrue(parsed.activeComplexPrintln);
+    assertTrue(parsed.activeComplexReadInput);
+    assertFalse(parsed.activeUnusedVariables);
+
+    // Empty config should have no rules active
+    AnalyzerConfig empty = AnalyzerConfig.fromJson(new java.io.StringReader("{}"));
+    assertFalse(empty.activeNamingConvention);
+    assertFalse(empty.activeComplexPrintln);
+    assertFalse(empty.activeComplexReadInput);
+    assertFalse(empty.activeUnusedVariables);
+  }
 }
