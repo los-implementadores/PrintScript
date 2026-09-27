@@ -7,6 +7,8 @@ import org.printscript.interpreter.env.EnvProvider;
 import org.printscript.interpreter.env.SystemEnvProvider;
 import org.printscript.interpreter.input.InputProvider;
 import org.printscript.interpreter.input.StdinInputProvider;
+import org.printscript.interpreter.output.OutputProvider;
+import org.printscript.interpreter.output.StdoutOutputProvider;
 import org.printscript.interpreter.util.TypeCoercion;
 
 public class InterpreterVisitor implements ASTVisitor<Object> {
@@ -14,6 +16,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
   private final Environment env;
   private final InputProvider inputProvider;
   private final EnvProvider envProvider;
+  private final OutputProvider outputProvider;
   private final org.printscript.common.LanguageVersion version;
   private String expectedType;
 
@@ -41,7 +44,17 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
       InputProvider inputProvider,
       EnvProvider envProvider,
       org.printscript.common.LanguageVersion version) {
+    this(env, inputProvider, envProvider, new StdoutOutputProvider(), version);
+  }
+
+  public InterpreterVisitor(
+      Environment env,
+      InputProvider inputProvider,
+      EnvProvider envProvider,
+      OutputProvider outputProvider,
+      org.printscript.common.LanguageVersion version) {
     this.env = env;
+    this.outputProvider = outputProvider;
     this.inputProvider = inputProvider;
     this.envProvider = envProvider;
     this.version = version;
@@ -180,7 +193,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     } finally {
       this.expectedType = prev;
     }
-    System.out.println(formatPrintValue(val));
+    outputProvider.print(formatPrintValue(val));
     return null;
   }
 
@@ -206,7 +219,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     }
 
     String prompt = formatPrintValue(promptVal);
-    System.out.println(prompt);
+    outputProvider.print(prompt);
 
     String raw = inputProvider.readInput(prompt);
     if (raw == null) {

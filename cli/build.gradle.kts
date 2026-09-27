@@ -3,13 +3,8 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":common"))
-    implementation(project(":lexer"))
-    implementation(project(":parser"))
-    implementation(project(":interpreter"))
-    implementation(project(":formatter"))
-    implementation(project(":analyzer"))
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    // La CLI sólo conoce la capa de orquestación; lexer/parser/analyzer quedan detrás de `runner`.
+    implementation(project(":runner"))
 }
 
 application {
@@ -18,4 +13,5 @@ application {
 
 tasks.named<JavaExec>("run") {
     workingDir = rootProject.projectDir
+    standardInput = System.`in`
 }
