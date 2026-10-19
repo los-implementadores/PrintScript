@@ -17,10 +17,7 @@ import org.printscript.cli.io.Console;
 import org.printscript.cli.io.FileAccess;
 import org.printscript.common.LanguageVersion;
 import org.printscript.interpreter.env.EnvProvider;
-import org.printscript.runner.AnalysisService;
-import org.printscript.runner.ExecutionService;
-import org.printscript.runner.FormattingService;
-import org.printscript.runner.ValidationService;
+import org.printscript.runner.LanguageServices;
 
 /**
  * Arma los comandos y despacha una invocación. No sabe nada del lenguaje (eso vive en {@code
@@ -34,15 +31,16 @@ public class CliApplication {
   private final Console console;
   private final CommandRegistry registry;
 
-  public CliApplication(Console console, FileAccess files, EnvProvider environment) {
+  public CliApplication(
+      Console console, FileAccess files, EnvProvider environment, LanguageServices services) {
     this.console = console;
     this.registry =
         new CommandRegistry(
             List.of(
-                new ValidationCommand(new ValidationService(), console, files),
-                new AnalyzingCommand(new AnalysisService(), console, files),
-                new ExecutionCommand(new ExecutionService(), console, files, environment),
-                new FormattingCommand(new FormattingService(), console, files)));
+                new ValidationCommand(services.validation(), console, files),
+                new AnalyzingCommand(services.analysis(), console, files),
+                new ExecutionCommand(services.execution(), console, files, environment),
+                new FormattingCommand(services.formatting(), console, files)));
   }
 
   /** Corre la CLI y devuelve el exit code. */
