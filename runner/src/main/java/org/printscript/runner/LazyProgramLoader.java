@@ -5,6 +5,7 @@ import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
+import org.printscript.lexer.LexerFactory;
 import org.printscript.parser.ParserImpl;
 
 /** Arma lexer y parser de PrintScript y devuelve un programa que se parsea a medida que se lee. */

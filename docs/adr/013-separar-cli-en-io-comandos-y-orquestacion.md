@@ -14,7 +14,7 @@ A futuro se quiere exponer las mismas operaciones por una API HTTP (un endpoint 
 
 Se separa en tres capas:
 
-1. **Orquestación del lenguaje — módulo `runner` (puro).** Un servicio por operación: `ValidationService`, `AnalysisService`, `ExecutionService`, `FormattingService`. Reciben el código como `Reader` más `LanguageVersion` y la config ya parseada, y devuelven resultados (`List<Violation>`, `String` formateado) o lanzan excepción. No tocan consola ni filesystem. `LexerFactory` y `ProgramLoader` centralizan el armado del pipeline.
+1. **Orquestación del lenguaje — módulo `runner` (puro).** Un servicio por operación: `ValidationService`, `AnalysisService`, `ExecutionService`, `FormattingService`. Reciben el código como `Reader` más `LanguageVersion` y la config ya parseada, y devuelven resultados (`List<Violation>`, `String` formateado) o lanzan excepción. No tocan consola ni filesystem. `ProgramLoader` centraliza el armado del pipeline; el vocabulario del lenguaje (keywords y símbolos) queda en `LexerFactory`, dentro del módulo `lexer`, para que también lo pueda usar el adapter del TCK.
 2. **I/O impuro — `cli.io`.** `Console` (única vía a stdout/stderr/stdin) y `FileAccess` (leer/escribir archivos), con sus implementaciones `SystemConsole` y `LocalFileAccess`.
 3. **Command pattern — `cli.command`.** Cada `Command` adapta un servicio del `runner` a la terminal (abre archivos, invoca, imprime). `CommandRegistry` los indexa por nombre; el `InteractiveMenu` se construye a partir del registry. `CliApplication` hace el wiring y devuelve un exit code; `Main` sólo lo conecta a `System.*`.
 
@@ -29,3 +29,5 @@ El módulo `cli` depende únicamente de `runner`, lo que impide volver a acoplar
 - Stdin se lee desde un único `Console`, por lo que el menú interactivo y `readInput` ya no compiten por el buffer de `System.in`.
 - Un config de linter inválido ahora falla (exit code 1) en lugar de ignorarse silenciosamente.
 - Una operación desconocida ahora termina con exit code 1.
+- `validation` chequea sintaxis y semántica (antes sólo drenaba el parser).
+- Los errores se informan con el prefijo `[ERROR]` (antes `[ERROR TERMINAL]`).

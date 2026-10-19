@@ -16,6 +16,8 @@ import org.printscript.interpreter.ExecutionIo;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;
+import org.printscript.interpreter.semantic.SemanticException;
+import org.printscript.parser.ParseException;
 
 class RunnerServicesTest {
 
@@ -53,8 +55,21 @@ class RunnerServicesTest {
   @Test
   void validationFailsOnSyntaxError() {
     assertThrows(
-        RuntimeException.class,
+        ParseException.class,
         () -> services.validation().validate(new StringReader("let = ;"), LanguageVersion.V1_0));
+  }
+
+  @Test
+  void validationFailsOnSemanticError() {
+    SemanticException e =
+        assertThrows(
+            SemanticException.class,
+            () ->
+                services
+                    .validation()
+                    .validate(new StringReader("let x: number = \"hola\";"), LanguageVersion.V1_0));
+
+    assertTrue(e.getMessage().startsWith("Semantic Error"));
   }
 
   @Test
@@ -78,6 +93,6 @@ class RunnerServicesTest {
             .format(
                 new StringReader("let x:number=1;"), LanguageVersion.V1_0, new FormattingRules());
 
-    assertTrue(formatted.contains("let x"));
+    assertEquals("let x: number = 1;", formatted.trim());
   }
 }

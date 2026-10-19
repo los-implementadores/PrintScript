@@ -35,10 +35,10 @@ public class ExecutionCommand implements Command {
 
   @Override
   public void execute(CommandRequest request) throws IOException {
-    console.println("Ejecutando script...\n");
     // La salida y la entrada del programa se conectan a la misma consola que usa la CLI.
     ExecutionIo io = new ExecutionIo(prompt -> console.readLine(), environment, console::println);
     try (Reader source = files.openReader(request.filePath())) {
+      console.println("Ejecutando script...\n");
       service.execute(source, request.version(), io);
     }
     console.println("\nExecution finished.");

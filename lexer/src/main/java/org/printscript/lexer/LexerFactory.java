@@ -1,18 +1,15 @@
-package org.printscript.runner;
+package org.printscript.lexer;
 
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import org.printscript.common.token.TokenType;
-import org.printscript.lexer.IdentifierTokenMatcher;
-import org.printscript.lexer.Lexer;
-import org.printscript.lexer.LexerImpl;
-import org.printscript.lexer.NumberTokenMatcher;
-import org.printscript.lexer.StringTokenMatcher;
-import org.printscript.lexer.SymbolTokenMatcher;
-import org.printscript.lexer.TokenMatcher;
 
-/** Construye el {@link Lexer} con el set de keywords y símbolos de PrintScript. */
+/**
+ * Construye el {@link Lexer} con el vocabulario de PrintScript (keywords y símbolos). Es el punto
+ * de entrada recomendado para cualquier consumidor (runner, TCK) en vez de armar los matchers a
+ * mano.
+ */
 public final class LexerFactory {
 
   private static final Map<String, TokenType> KEYWORDS =

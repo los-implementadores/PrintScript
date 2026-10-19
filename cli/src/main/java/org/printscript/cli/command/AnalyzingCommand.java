@@ -33,11 +33,11 @@ public class AnalyzingCommand implements Command {
 
   @Override
   public void execute(CommandRequest request) throws IOException {
-    console.println("Analizando semantica y reglas estaticas (Linter)...");
     AnalyzerConfig config = loadConfig(request);
 
     List<Violation> violations;
     try (Reader source = files.openReader(request.filePath())) {
+      console.println("Analizando semantica y reglas estaticas (Linter)...");
       violations = service.analyze(source, request.version(), config);
     }
 

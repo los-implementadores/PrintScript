@@ -30,10 +30,10 @@ public class ValidationCommand implements Command {
 
   @Override
   public void execute(CommandRequest request) throws IOException {
-    console.println("Validando sintaxis del archivo...");
     try (Reader source = files.openReader(request.filePath())) {
+      console.println("Validando sintaxis y semantica del archivo...");
       service.validate(source, request.version());
     }
-    console.println("Validation successful. (Sin errores de sintaxis)");
+    console.println("Validation successful. (Sin errores de sintaxis ni semanticos)");
   }
 }

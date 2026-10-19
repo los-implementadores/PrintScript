@@ -28,7 +28,7 @@ public record LanguageServices(
         (version, io) -> new InterpreterImpl(new Environment(), io, version);
 
     return new LanguageServices(
-        new ValidationService(loader),
+        new ValidationService(loader, semanticAnalyzers),
         new AnalysisService(loader, semanticAnalyzers, StaticAnalyzerImpl::new),
         new ExecutionService(loader, semanticAnalyzers, interpreters),
         new FormattingService(loader, FormatterImpl::new));
