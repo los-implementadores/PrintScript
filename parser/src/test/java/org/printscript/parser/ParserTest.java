@@ -4,38 +4,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
 import org.printscript.common.ast.*;
-import org.printscript.common.token.TokenType;
 import org.printscript.lexer.*;
 
 class ParserTest {
 
-  private static final List<TokenMatcher> MATCHERS =
-      List.of(
-          new IdentifierTokenMatcher(
-              Map.of(
-                  "let", TokenType.LET,
-                  "number", TokenType.TYPE_NUMBER,
-                  "string", TokenType.TYPE_STRING)),
-          new NumberTokenMatcher(),
-          new StringTokenMatcher(),
-          new SymbolTokenMatcher(
-              Map.of(
-                  ':', TokenType.COLON,
-                  '=', TokenType.ASSIGN,
-                  ';', TokenType.SEMICOLON,
-                  '(', TokenType.LPAREN,
-                  ')', TokenType.RPAREN,
-                  '+', TokenType.PLUS,
-                  '-', TokenType.MINUS,
-                  '*', TokenType.STAR,
-                  '/', TokenType.SLASH)));
-
   private Program parse(String source) {
-    LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
+    Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer);
     Position start = new Position(1, 1, 1, 1);
     return new LazyProgram(parser, start);
@@ -212,7 +189,7 @@ class ParserTest {
   @Test
   void parserAsIteratorProducesStatementsLazily() {
     String source = "let a: number = 1;\nlet b: number = 2;";
-    LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
+    Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer);
     Position start = new Position(1, 1, 1, 1);
     Program program = new LazyProgram(parser, start);

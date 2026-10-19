@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
@@ -12,30 +11,13 @@ import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
 import org.printscript.common.ast.Statement;
 import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.token.TokenType;
 import org.printscript.lexer.*;
 
 /** Tests de #32: declaración de constantes con {@code const} (PrintScript 1.1). */
 class ConstParsingTest {
 
-  private static final List<TokenMatcher> MATCHERS =
-      List.of(
-          new IdentifierTokenMatcher(
-              Map.of(
-                  "let", TokenType.LET,
-                  "const", TokenType.CONST,
-                  "number", TokenType.TYPE_NUMBER,
-                  "string", TokenType.TYPE_STRING)),
-          new NumberTokenMatcher(),
-          new StringTokenMatcher(),
-          new SymbolTokenMatcher(
-              Map.of(
-                  ':', TokenType.COLON,
-                  '=', TokenType.ASSIGN,
-                  ';', TokenType.SEMICOLON)));
-
   private List<Statement> parse(String source, LanguageVersion version) {
-    LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
+    Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer, version);
     Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
     return program.toList();

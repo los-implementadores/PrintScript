@@ -3,12 +3,9 @@ package org.printscript.formatter;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
 import org.printscript.common.ast.*;
-import org.printscript.common.token.TokenType;
 import org.printscript.lexer.*;
 import org.printscript.parser.ParserImpl;
 
@@ -16,29 +13,8 @@ class FormatterTest {
 
   private static final Position POS = new Position(1, 1, 1, 1);
 
-  private static final List<TokenMatcher> MATCHERS =
-      List.of(
-          new IdentifierTokenMatcher(
-              Map.of(
-                  "let", TokenType.LET,
-                  "number", TokenType.TYPE_NUMBER,
-                  "string", TokenType.TYPE_STRING)),
-          new NumberTokenMatcher(),
-          new StringTokenMatcher(),
-          new SymbolTokenMatcher(
-              Map.of(
-                  ':', TokenType.COLON,
-                  '=', TokenType.ASSIGN,
-                  ';', TokenType.SEMICOLON,
-                  '(', TokenType.LPAREN,
-                  ')', TokenType.RPAREN,
-                  '+', TokenType.PLUS,
-                  '-', TokenType.MINUS,
-                  '*', TokenType.STAR,
-                  '/', TokenType.SLASH)));
-
   private Program parse(String source) {
-    LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
+    Lexer lexer = LexerFactory.create(new StringReader(source));
     ParserImpl parser = new ParserImpl(lexer);
     return new LazyProgram(parser, POS);
   }
