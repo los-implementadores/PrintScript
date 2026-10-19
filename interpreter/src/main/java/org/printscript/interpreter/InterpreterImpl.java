@@ -7,6 +7,8 @@ import org.printscript.interpreter.env.EnvProvider;
 import org.printscript.interpreter.env.SystemEnvProvider;
 import org.printscript.interpreter.input.InputProvider;
 import org.printscript.interpreter.input.StdinInputProvider;
+import org.printscript.interpreter.output.OutputProvider;
+import org.printscript.interpreter.output.StdoutOutputProvider;
 
 public class InterpreterImpl implements Interpreter {
 
@@ -29,7 +31,16 @@ public class InterpreterImpl implements Interpreter {
       InputProvider inputProvider,
       EnvProvider envProvider,
       LanguageVersion version) {
-    this.visitor = new InterpreterVisitor(env, inputProvider, envProvider, version);
+    this(env, inputProvider, envProvider, new StdoutOutputProvider(), version);
+  }
+
+  public InterpreterImpl(
+      Environment env,
+      InputProvider inputProvider,
+      EnvProvider envProvider,
+      OutputProvider outputProvider,
+      LanguageVersion version) {
+    this.visitor = new InterpreterVisitor(env, inputProvider, envProvider, outputProvider, version);
   }
 
   @Override

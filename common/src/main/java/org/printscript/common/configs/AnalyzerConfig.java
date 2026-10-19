@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.io.Reader;
 
 /** Representa la configuración externa */
@@ -36,22 +37,19 @@ public class AnalyzerConfig {
   }
 
   /**
-   * Carga las reglas desde un JSON usando Jackson. Si falla, imprime un error y devuelve la
-   * configuración por defecto.
+   * Carga las reglas desde un JSON usando Jackson.
    *
    * @param reader fuente de caracteres del JSON
    * @return las reglas parseadas
+   * @throws IllegalArgumentException si el JSON no es una configuración válida
    */
   public static AnalyzerConfig fromJson(Reader reader) {
     try {
       ObjectMapper mapper = new ObjectMapper();
       return mapper.readValue(reader, AnalyzerConfig.class);
-    } catch (Exception e) {
-      System.err.println(
-          "Error leyendo la configuración del Linter: "
-              + e.getMessage()
-              + ". Usando reglas por defecto.");
-      return new AnalyzerConfig();
+    } catch (IOException e) {
+      throw new IllegalArgumentException(
+          "Error leyendo la configuración del Linter: " + e.getMessage(), e);
     }
   }
 }

@@ -13,7 +13,8 @@ static code analyzer para el lenguaje PrintScript (subset de TypeScript).
 | `interpreter` | Recorre el AST y ejecuta el programa (incluye análisis semántico) |
 | `formatter` | Reformatea código fuente según reglas configurables (JSON) |
 | `analyzer` | Static code analyzer (pendiente) |
-| `cli` | Punto de entrada. Orquesta los módulos según la operación pedida |
+| `runner` | Orquestación del lenguaje: un servicio por operación (validar, analizar, ejecutar, formatear). Puro: sin consola ni archivos |
+| `cli` | Adaptador de terminal: comandos (`cli.command`), I/O (`cli.io`) y parseo de argumentos/menú. Depende sólo de `runner` |
 
 Cada módulo depende solo de lo que necesita (ver `build.gradle.kts` de cada uno).
 
