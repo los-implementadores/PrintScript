@@ -26,7 +26,7 @@ class AnalyzerVisitorTest {
   // --- REGLA 1: NAMING CONVENTION ---
 
   @Test
-  void testCamelCaseViolation() {
+  void reportsAVariableThatIsNotInCamelCase() {
     config.activeNamingConvention = true;
     config.namingConventionFormat = NamingConvention.CAMEL_CASE;
 
@@ -49,7 +49,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testSnakeCaseSuccess() {
+  void acceptsSnakeCaseWhenThatIsTheConfiguredConvention() {
     config.activeNamingConvention = true;
     config.namingConventionFormat = NamingConvention.SNAKE_CASE;
 
@@ -73,7 +73,7 @@ class AnalyzerVisitorTest {
   // --- REGLA 2: UNUSED VARIABLES ---
 
   @Test
-  void testUnusedVariableWarning() {
+  void warnsAboutAVariableThatIsNeverRead() {
     config.activeUnusedVariables = true;
 
     config.activeNamingConvention = false;
@@ -94,7 +94,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testUsedVariableNoWarning() {
+  void doesNotWarnAboutAVariableThatIsRead() {
     config.activeUnusedVariables = true;
 
     config.activeNamingConvention = false;
@@ -119,7 +119,7 @@ class AnalyzerVisitorTest {
   // --- REGLA 3: COMPLEX PRINTLN ---
 
   @Test
-  void testComplexPrintlnViolation() {
+  void reportsAnExpressionPassedToPrintln() {
     config.activeComplexPrintln = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -137,7 +137,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testSimplePrintlnSuccess() {
+  void acceptsALiteralOrIdentifierPassedToPrintln() {
     config.activeComplexPrintln = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -152,7 +152,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testViolationFormatting() {
+  void aViolationPrintsSeverityMessageAndPosition() {
     Position pos = new Position(1, 5, 1, 15);
     Violation violation = new Violation("Variable should be camelCase", Severity.WARNING, pos);
 
@@ -164,7 +164,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testComplexReadInputViolation() {
+  void reportsAnExpressionPassedToReadInput() {
     config.activeComplexReadInput = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -186,7 +186,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testSimpleReadInputSuccess() {
+  void acceptsALiteralPassedToReadInput() {
     config.activeComplexReadInput = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -201,7 +201,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testTckConfigCompatibility() {
+  void readsTheTckRuleNamesAndLeavesRulesOffByDefault() {
     String json =
         """
         {
