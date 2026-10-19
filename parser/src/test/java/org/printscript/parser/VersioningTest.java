@@ -1,6 +1,8 @@
 package org.printscript.parser;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import java.util.List;
@@ -11,7 +13,8 @@ import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
 import org.printscript.common.ast.Statement;
 import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.lexer.*;
+import org.printscript.lexer.Lexer;
+import org.printscript.lexer.LexerFactory;
 
 /**
  * Tests de #30: versionado del lenguaje. Verifica que el parser expone gramáticas distintas por

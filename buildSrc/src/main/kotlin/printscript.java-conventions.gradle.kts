@@ -32,6 +32,8 @@ publishing {
 checkstyle {
     toolVersion = "10.17.0"
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+    // Un warning frena el build (y el pre-commit). Si se pudiera ignorar, nadie lo miraría.
+    maxWarnings = 0
 }
 
 pmd {

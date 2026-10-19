@@ -1,6 +1,8 @@
 package org.printscript.analyzer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +12,14 @@ import org.printscript.analyzer.config.NamingConvention;
 import org.printscript.analyzer.violation.Severity;
 import org.printscript.analyzer.violation.Violation;
 import org.printscript.common.Position;
-import org.printscript.common.ast.*;
+import org.printscript.common.ast.AssignmentStatement;
+import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.Expression;
+import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.StringLiteral;
+import org.printscript.common.ast.VarDeclarationStatement;
 
 class AnalyzerVisitorTest {
 

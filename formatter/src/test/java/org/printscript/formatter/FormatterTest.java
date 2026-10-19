@@ -1,12 +1,16 @@
 package org.printscript.formatter;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
-import org.printscript.common.ast.*;
-import org.printscript.lexer.*;
+import org.printscript.common.ast.LazyProgram;
+import org.printscript.common.ast.Program;
+import org.printscript.lexer.Lexer;
+import org.printscript.lexer.LexerFactory;
 import org.printscript.parser.ParserImpl;
 
 class FormatterTest {

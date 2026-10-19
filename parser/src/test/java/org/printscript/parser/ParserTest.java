@@ -1,13 +1,30 @@
 package org.printscript.parser;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
-import org.printscript.common.ast.*;
-import org.printscript.lexer.*;
+import org.printscript.common.ast.AssignmentStatement;
+import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.ExpressionStatement;
+import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.LazyProgram;
+import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.Program;
+import org.printscript.common.ast.Statement;
+import org.printscript.common.ast.StringLiteral;
+import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.lexer.Lexer;
+import org.printscript.lexer.LexerFactory;
 
 class ParserTest {
 

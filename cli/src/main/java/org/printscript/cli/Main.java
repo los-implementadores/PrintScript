@@ -73,14 +73,7 @@ public class Main {
       return;
     }
 
-    String operation =
-        switch (opcion) {
-          case "1" -> "validation";
-          case "2" -> "analyzing";
-          case "3" -> "execution";
-          case "4" -> "formatting";
-          default -> null;
-        };
+    String operation = operationForOption(opcion);
 
     if (operation == null) {
       System.out.println("Opcion invalida. Saliendo...");
@@ -105,6 +98,16 @@ public class Main {
 
     // Ejecutamos el motor con los datos ingresados
     ejecutarModo(operation, filePath, configPath, versionLabel);
+  }
+
+  private static String operationForOption(String opcion) {
+    return switch (opcion) {
+      case "1" -> "validation";
+      case "2" -> "analyzing";
+      case "3" -> "execution";
+      case "4" -> "formatting";
+      default -> null;
+    };
   }
 
   private static void ejecutarModo(

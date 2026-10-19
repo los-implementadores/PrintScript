@@ -11,7 +11,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
-import org.printscript.common.ast.*;
+import org.printscript.common.ast.AssignmentStatement;
+import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.ExpressionStatement;
+import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.StringLiteral;
+import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
 
 class InterpreterTest {
