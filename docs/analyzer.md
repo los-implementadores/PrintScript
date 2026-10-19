@@ -1,67 +1,44 @@
-
----
-
 # Analyzer — Analizador Estático de Código (Linter)
 
-El analyzer (Static code analyzer) recibe nodos del AST y los recorre para notificar el incumplimiento de reglas, ya sea para imponer convenciones de formato o detectar malas prácticas, indicando la posición exacta del problema. Vive en el módulo `analyzer`, paquete `org.printscript.analyzer`.
+El analyzer (static code analyzer) recorre el AST y reporta las reglas que no se cumplen, ya sea
+para imponer convenciones o para detectar malas prácticas, con la posición exacta del problema.
+Vive en el módulo `analyzer`, que depende solo de `common` y de Jackson.
 
 ---
 
-## Archivos y su responsabilidad
+## Paquetes y archivos
 
-### `StaticAnalyzer.java` — interfaz pública
+| Paquete | Archivo | Responsabilidad |
+| --- | --- | --- |
+| `org.printscript.analyzer` | `StaticAnalyzer` | Interfaz pública: `analyze(Statement)` y `getViolations()` |
+| | `StaticAnalyzerImpl` | Fachada. Recibe una `AnalyzerConfig` o directamente una lista de reglas |
+| | `AnalyzerVisitor` | Recorre el AST (`ASTVisitor<Void>`) y le avisa a cada regla los nodos que visita |
+| `org.printscript.analyzer.rule` | `LintRule` | Interfaz de una regla |
+| | `LintRules` | Único lugar donde se registran las reglas configurables |
+| | `NamingConventionRule`, `SimpleArgumentRule`, `UnusedVariableRule` | Una clase por regla |
+| `org.printscript.analyzer.config` | `AnalyzerConfig`, `NamingConvention` | Configuración, leída de JSON con Jackson |
+| `org.printscript.analyzer.violation` | `Violation`, `Severity` | Lo que se reporta: mensaje, severidad (`WARNING` o `ERROR`) y `Position` |
 
-Define los métodos para analizar sentencias individualmente (para no sobrecargar la memoria) y luego recolectar los resultados:
-
-```java
-public interface StaticAnalyzer {
-    void analyze(Statement statement);
-    List<Violation> getViolations();
-}
-
-```
-
-### `StaticAnalyzerImpl.java` — implementación
-
-Recibe la configuración por constructor, instancia el visitor y actúa como fachada (wrapper) para exponer los métodos de la interfaz:
-
-```java
-public class StaticAnalyzerImpl implements StaticAnalyzer {
-    public StaticAnalyzerImpl(AnalyzerConfig config) { ... }
-    public void analyze(Statement statement) { statement.accept(visitor); }
-    public List<Violation> getViolations() { return visitor.getFinalViolations(); }
-}
-
-```
-
-### `AnalyzerVisitor.java` — el visitor
-
-Implementa `ASTVisitor<Void>`. A diferencia del formatter, no devuelve `String`. Su trabajo es recorrer el árbol evaluando cada nodo contra las reglas activas. Si detecta una infracción, crea un objeto `Violation` y lo guarda en una lista interna. Utiliza la clase `Environment` de `common` para llevar un registro del estado y uso de las variables.
-
-### `AnalyzerConfig.java` — configuración
-
-Objeto que contiene las reglas del linter. Se carga desde un archivo JSON (usando Jackson) o se inicializa con valores por defecto.
-
-### `Violation.java` y `Severity.java` — modelo de errores
-
-Representan el problema encontrado. Contienen el mensaje descriptivo, la severidad (`WARNING` o `ERROR`), y un objeto `Position` que indica la columna y fila de inicio y fin del problema.
+Hasta la versión 1.1.0 la configuración y las violaciones vivían en `common`; ver ADR-014.
 
 ---
 
 ## Reglas configurables
 
-| Regla | Tipo | Default | Efecto |
+Todas las reglas están **apagadas por defecto**. Cada una se puede activar con su clave propia o
+con la clave que usa el TCK.
+
+| Regla | Clave propia | Clave del TCK | Qué reporta |
 | --- | --- | --- | --- |
-| `activeNamingConvention` | boolean | `true` | Activa la validación de nombres de identificadores. |
-| `namingConventionFormat` | Enum | `camelCase` | Define si el formato debe ser `camelCase` o `snake_case`.
+| Formato de nombres | `activeNamingConvention` + `namingConventionFormat` (`"camelCase"` o `"snake_case"`) | `identifier_format` (`"camel case"` o `"snake case"`) | Variables cuyo nombre no sigue la convención |
+| Argumento simple en `println` | `activeComplexPrintln` | `mandatory-variable-or-literal-in-println` | Un `println` cuyo argumento no es un literal ni una variable |
+| Argumento simple en `readInput` (1.1) | `activeComplexReadInput` | `mandatory-variable-or-literal-in-readInput` | Lo mismo para `readInput` |
+| Variables sin usar | `activeUnusedVariables` | — | Variables declaradas que nunca se leen ni se reasignan |
 
-|
-| `activeComplexPrintln` | boolean | `true` | Restringe el uso de `println` a solo identificadores o literales, prohibiendo expresiones complejas.
+Las claves desconocidas se ignoran. Si el JSON no se puede leer, `AnalyzerConfig.fromJson` avisa
+por `stderr` y usa la configuración por defecto (todas las reglas apagadas).
 
-|
-| `activeUnusedVariables` | boolean | `true` | Detecta variables que fueron declaradas pero nunca se leyeron. |
-
-### Ejemplo de JSON de configuración (`linter_rules.json`)
+### Ejemplo de configuración (`linter_rules.json`)
 
 ```json
 {
@@ -70,7 +47,6 @@ Representan el problema encontrado. Contienen el mensaje descriptivo, la severid
   "activeComplexPrintln": true,
   "activeUnusedVariables": true
 }
-
 ```
 
 ---
@@ -78,81 +54,86 @@ Representan el problema encontrado. Contienen el mensaje descriptivo, la severid
 ## Uso típico
 
 ```java
-// 1. Cargar reglas desde JSON (o usar defaults si falla)
+// 1. Cargar las reglas desde JSON
 AnalyzerConfig config = AnalyzerConfig.fromJson(new FileReader("linter_rules.json"));
 
 // 2. Instanciar el analizador
 StaticAnalyzer staticAnalyzer = new StaticAnalyzerImpl(config);
 
-// 3. Iterar sobre el programa (Statement por Statement)
+// 3. Analizar sentencia por sentencia (no hace falta tener todo el programa en memoria)
 while (statementIterator.hasNext()) {
-    Statement stmt = statementIterator.next();
-    staticAnalyzer.analyze(stmt);
+    staticAnalyzer.analyze(statementIterator.next());
 }
 
-// 4. Obtener y mostrar resultados
-List<Violation> violations = staticAnalyzer.getViolations();
-for (Violation v : violations) {
-    System.out.println(v.toString());
+// 4. Pedir el reporte (se puede pedir más de una vez)
+for (Violation v : staticAnalyzer.getViolations()) {
+    System.out.println(v);
 }
-
 ```
 
 ---
 
-## Ejemplo de entrada → salida
+## Ejemplo de entrada y salida
 
-### Input (código con malas prácticas)
+Con la configuración `{"identifier_format": "camel case", "mandatory-variable-or-literal-in-println": true, "activeUnusedVariables": true}`:
 
 ```typescript
 let MiVariable: number = 5;
+let sinUso: number = 2;
 println(MiVariable + 1);
-
 ```
-
-### Output (Violaciones reportadas)
 
 ```text
-[WARNING] Variable 'MiVariable' should be in camelCase. at 1:5-1:15
-[WARNING] Complex expression in 'println'. Consider extracting to an intermediate variable. at 2:9-2:23
-[WARNING] Variable 'MiVariable' is declared but never used. at 1:5-1:15
-
+[WARNING] Variable 'MiVariable' should be in camelCase. at 1:1-1:27
+[WARNING] Complex expression in 'println'. Consider extracting to an intermediate variable. at 3:1-3:23
+[WARNING] Variable 'sinUso' is declared but never used. at 2:1-2:23
 ```
 
-Notar:
-
-* `MiVariable` rompe la regla de `camelCase`.
-* El `println` contiene una expresión binaria (`+`), lo cual rompe la regla de expresiones complejas.
-
-
-* Como `MiVariable` solo se reasignó/operó pero la regla detecta usos complejos, dependiendo de la implementación de "uso", puede marcarse como no leída de forma aislada.
+- `MiVariable` empieza con mayúscula, así que no es camelCase. La posición es la de la declaración.
+- El argumento de `println` es una suma, no un literal ni una variable.
+- `sinUso` nunca se lee. Las variables sin usar se reportan al final, porque recién ahí se sabe
+  que nadie las usó. `MiVariable` no aparece: se lee en el `println`.
 
 ---
 
 ## Diseño
 
 ```text
-AnalyzerConfig (configuración)
-       │
-       ▼
-StaticAnalyzerImpl (implements StaticAnalyzer)
-       │
-       ▼
-AnalyzerVisitor (implements ASTVisitor<Void>)
-       │   ├── Environment (guarda LinterMetadata)
-       │   └── List<Violation> (acumula warnings)
-       │
-       ├── visitVarDeclaration  → Verifica naming convention & registra variable
-       ├── visitCallExpr        → Verifica argumentos simples en println
-       └── visitIdentifier      → Marca la variable como "usada" en el Environment
-
+AnalyzerConfig ──LintRules.from(config)──► List<LintRule>
+                                                 │
+StaticAnalyzerImpl (fachada)                     │
+       │                                         │
+       ▼                                         ▼
+AnalyzerVisitor (ASTVisitor<Void>) ── avisa a cada regla ──► onDeclaration / onAssignment
+       │                                                     onCall / onIdentifier / onFinish
+       └── List<Violation> (acumula lo que reportan las reglas)
 ```
+
+El visitor solo recorre el árbol; no sabe qué reglas existen. Cada regla implementa `LintRule` y
+sobreescribe solo los nodos que le interesan:
+
+| Regla | Mira | Estado propio |
+| --- | --- | --- |
+| `NamingConventionRule` | declaraciones | ninguno |
+| `SimpleArgumentRule` | llamadas a la función que controla | ninguno |
+| `UnusedVariableRule` | declaraciones, asignaciones y lecturas; reporta en `onFinish` | qué variables se declararon y cuáles se usaron |
+
+### Cómo agregar una regla
+
+1. Escribir una clase que implemente `LintRule` en `org.printscript.analyzer.rule`.
+2. Si se activa desde el JSON, agregar su clave en `AnalyzerConfig`.
+3. Registrarla en `LintRules.from`.
+
+El visitor no se toca. Una regla que no viene del JSON se le puede pasar directo a
+`new StaticAnalyzerImpl(List.of(miRegla))`.
 
 ### Principios aplicados
 
-* **Visitor pattern**: Permite evaluar reglas complejas sobre el AST sin contaminar las clases del modelo de datos `Node` / `Statement`.
-* **Separation of Concerns**: Utiliza su propia instancia de `Environment` exclusivo para análisis estático, sin mezclarse con la memoria del intérprete ni con la tabla de tipos del analizador semántico.
-* **Stateful Analysis**: A diferencia de otras herramientas, el linter mantiene el estado (qué variables se declararon y usaron) a lo largo de toda la iteración del archivo para procesar reglas globales como variables sin usar.
+- **Open/Closed:** agregar una regla no modifica el recorrido. Es el mismo criterio que
+  `TokenMatcher` en el lexer y los parselets en el parser (ver ADR-015).
+- **Visitor:** las reglas se evalúan sobre el AST sin agregar lógica a los nodos.
+- **Estado aislado:** cada regla guarda su propio estado; el linter no comparte nada con la
+  memoria del intérprete ni con la tabla de tipos del semántico.
 
 ---
 
@@ -165,15 +146,15 @@ Lexer (Iterator<Token>)
 Parser (Iterator<Statement>)
   │
   ▼
-CLI / Main (Controla el flujo de memoria)
+CLI / Main (modo analyzing)
   │
-  ├─► SemanticAnalyzer.analyze(stmt) (Falla rápido si hay error de tipos)
+  ├─► SemanticAnalyzer.analyze(stmt)   (falla en el primer error de tipos)
   │
-  └─► StaticAnalyzer.analyze(stmt) (Acumula warnings pasivamente)
+  └─► StaticAnalyzer.analyze(stmt)     (acumula violaciones)
         │
         ▼
-List<Violation> (Reporte final al usuario)
-
+List<Violation> (reporte final)
 ```
 
-El analizador procesa la información fluyendo de a partes (sentencia por sentencia) para soportar mecanismos que permitan manejar fuentes extensas sin consumir toda la memoria disponible, cumpliendo con la restricción técnica del diseño del CLI.
+El analizador procesa el programa sentencia por sentencia, así que no necesita tenerlo entero en
+memoria.
