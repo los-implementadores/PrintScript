@@ -1,20 +1,29 @@
-name: CI
+name: CI/CD
 
+# Un solo pipeline. En un PR, verifica. En main y en tags v*, verifica y publica.
+# Lo que se publica sale del mismo build que corrió los tests (build once): no se
+# vuelve a compilar para empaquetar ni para subir los paquetes.
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
-# Cancela runs anteriores de la misma rama/PR cuando llega un push nuevo.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # En un PR, un push nuevo cancela la corrida vieja. En main y en tags nunca se
+  # cancela, para no cortar una publicación a la mitad.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
+  verify:
     name: Build & Test
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
+    # El código de un PR corre sin permisos de escritura.
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -27,10 +36,10 @@ jobs:
           java-version: "17"
 
       - name: Setup Gradle
-        # Cachea dependencias y artefactos de Gradle para acelerar los runs.
+        # Cachea dependencias y valida el checksum del Gradle wrapper.
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build (compile + checkstyle + pmd + spotless + test)
+      - name: Build (compile + spotless + checkstyle + pmd + test)
         run: ./gradlew build --no-daemon --stacktrace
 
       - name: Upload test reports
@@ -42,3 +51,88 @@ jobs:
           path: "**/build/reports/tests/test"
           if-no-files-found: ignore
           retention-days: 7
+
+  build-and-publish:
+    name: Build, Test & Publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # crear el GitHub Release (solo en tags)
+      packages: write # publicar en GitHub Packages
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve version
+        # En un tag vX.Y.Z la versión sale del tag; en main, de gradle.properties (SNAPSHOT).
+        id: version
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            echo "gradle-args=-Pversion=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            VERSION="$(grep '^version=' gradle.properties | cut -d= -f2)"
+            echo "gradle-args=" >> "$GITHUB_OUTPUT"
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Versión: $VERSION"
+
+      - name: Extract release notes from CHANGELOG
+        # Antes de compilar: un release sin su sección en el CHANGELOG no se publica.
+        if: github.ref_type == 'tag'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          awk -v header="## [$VERSION]" '
+            index($0, header) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::CHANGELOG.md no tiene una sección para la versión $VERSION"
+            exit 1
+          fi
+
+      - name: Build, test, package and publish
+        # Una sola invocación de Gradle: los jars que pasan los tests son los mismos
+        # que van al zip de la CLI y a GitHub Packages.
+        run: ./gradlew build :cli:distZip publish ${{ steps.version.outputs.gradle-args }} --no-daemon --stacktrace
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: "**/build/reports/tests/test"
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload CLI artifact
+        # En cada push (main o tag) deja el zip descargable desde Actions.
+        uses: actions/upload-artifact@v4
+        with:
+          name: printscript-cli-${{ steps.version.outputs.value }}
+          path: cli/build/distributions/*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create GitHub Release
+        # Solo en tags v*: publica el mismo zip, con las notas del CHANGELOG.
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cli/build/distributions/*.zip
+          body_path: release-notes.md
