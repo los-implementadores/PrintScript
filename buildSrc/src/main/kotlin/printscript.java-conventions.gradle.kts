@@ -97,3 +97,8 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// Cualquier compilación deja configurados los git hooks del repo (installGitHooks en el build raíz).
+tasks.named("compileJava") {
+    dependsOn(":installGitHooks")
+}
