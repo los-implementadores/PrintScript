@@ -5,6 +5,7 @@ import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
+import org.printscript.lexer.LexerFactory;
 import org.printscript.parser.ParserImpl;
 
 /** Convierte código fuente en un {@link Program} lazy (lexer + parser bajo demanda). */

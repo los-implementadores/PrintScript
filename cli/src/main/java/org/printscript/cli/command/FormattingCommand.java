@@ -32,11 +32,11 @@ public class FormattingCommand implements Command {
 
   @Override
   public void execute(CommandRequest request) throws IOException {
-    console.println("Formateando archivo...");
     FormattingRules rules = loadRules(request);
 
     String formatted;
     try (Reader source = files.openReader(request.filePath())) {
+      console.println("Formateando archivo...");
       formatted = service.format(source, request.version(), rules);
     }
     files.write(request.filePath(), formatted);

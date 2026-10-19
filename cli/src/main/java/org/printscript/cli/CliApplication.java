@@ -22,8 +22,10 @@ import org.printscript.runner.FormattingService;
 import org.printscript.runner.ValidationService;
 
 /**
- * Arma los comandos y despacha una invocación. No sabe nada del lenguaje (eso vive en {@code
- * org.printscript.runner}) ni de {@code System.*} (eso vive en {@code org.printscript.cli.io}).
+ * Arma los comandos y despacha una invocación. No arma el pipeline del lenguaje: lexer, parser y
+ * analyzer quedan detrás de {@code org.printscript.runner}, y la CLI sólo ve los tipos que los
+ * servicios exponen en su firma (configs, providers de I/O, violaciones). Tampoco toca {@code
+ * System.*}: eso vive en {@code org.printscript.cli.io}.
  */
 public class CliApplication {
 
