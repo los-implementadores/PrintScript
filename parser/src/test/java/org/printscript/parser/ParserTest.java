@@ -3,6 +3,7 @@ package org.printscript.parser;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,9 @@ class ParserTest {
 
   /** Parsea y materializa la lista de sentencias. */
   private List<Statement> parseStatements(String source) {
-    return parse(source).toList();
+    List<Statement> statements = new ArrayList<>();
+    parse(source).stream().forEachRemaining(statements::add);
+    return statements;
   }
 
   // ---------------------------------------------------------------- VarDeclaration
@@ -217,7 +220,7 @@ class ParserTest {
     Position start = new Position(1, 1, 1, 1);
     Program program = new LazyProgram(parser, start);
 
-    // consume de a uno via stream(), sin materializar toList()
+    // consume de a uno via stream(), sin materializar el programa
     java.util.Iterator<Statement> it = program.stream();
     assertTrue(it.hasNext());
     assertInstanceOf(VarDeclarationStatement.class, it.next());
