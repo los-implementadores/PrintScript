@@ -1,11 +1,20 @@
 package org.printscript.interpreter;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
-import org.printscript.common.ast.*;
+import org.printscript.common.ast.AssignmentStatement;
+import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.BooleanLiteral;
+import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.IfStatement;
+import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.StringLiteral;
+import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 

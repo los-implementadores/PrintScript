@@ -1,7 +1,11 @@
 # ADR-005: Interfaz `Parser` + implementación `ParserImpl`
 
-- **Estado:** Aceptado
+- **Estado:** Reemplazado por [ADR-007](007-parser-iterator-lazy-program.md)
 - **Fecha:** 2026-08-11
+
+> **Este ADR ya no describe el código.** La interfaz `Parser` sigue existiendo, pero ya no
+> tiene `parse() → Program`: desde ADR-007 el parser es un `Iterator<Statement>` y recibe un
+> `Iterator<Token>`. Se conserva como registro de la decisión original.
 
 ## Contexto
 

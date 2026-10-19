@@ -1,10 +1,11 @@
 package org.printscript.parser;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
@@ -12,8 +13,8 @@ import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
 import org.printscript.common.ast.Statement;
 import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.token.TokenType;
-import org.printscript.lexer.*;
+import org.printscript.lexer.Lexer;
+import org.printscript.lexer.LexerFactory;
 
 /**
  * Tests de #30: versionado del lenguaje. Verifica que el parser expone gramáticas distintas por
@@ -22,27 +23,8 @@ import org.printscript.lexer.*;
  */
 class VersioningTest {
 
-  /** Lexer que ya reconoce "boolean" como tipo, para poder ejercitar el gating por versión. */
-  private static final List<TokenMatcher> MATCHERS =
-      List.of(
-          new IdentifierTokenMatcher(
-              Map.of(
-                  "let", TokenType.LET,
-                  "number", TokenType.TYPE_NUMBER,
-                  "string", TokenType.TYPE_STRING,
-                  "boolean", TokenType.TYPE_BOOLEAN)),
-          new NumberTokenMatcher(),
-          new StringTokenMatcher(),
-          new SymbolTokenMatcher(
-              Map.of(
-                  ':', TokenType.COLON,
-                  '=', TokenType.ASSIGN,
-                  ';', TokenType.SEMICOLON,
-                  '(', TokenType.LPAREN,
-                  ')', TokenType.RPAREN)));
-
   private List<Statement> parseWith(String source, LanguageVersion version) {
-    LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
+    Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer, version);
     Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
     return program.toList();

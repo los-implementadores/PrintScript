@@ -5,19 +5,17 @@ import java.io.FileWriter;
 import java.io.Reader;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import org.printscript.analyzer.StaticAnalyzer;
 import org.printscript.analyzer.StaticAnalyzerImpl;
+import org.printscript.analyzer.config.AnalyzerConfig;
+import org.printscript.analyzer.violation.Violation;
 import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
 import org.printscript.common.ast.Statement;
-import org.printscript.common.configs.AnalyzerConfig;
 import org.printscript.common.env.Environment;
-import org.printscript.common.linterViolations.Violation;
-import org.printscript.common.token.TokenType;
 import org.printscript.formatter.Formatter;
 import org.printscript.formatter.FormatterImpl;
 import org.printscript.formatter.FormattingRules;
@@ -27,13 +25,8 @@ import org.printscript.interpreter.env.SystemEnvProvider;
 import org.printscript.interpreter.input.StdinInputProvider;
 import org.printscript.interpreter.semantic.SemanticAnalyzer;
 import org.printscript.interpreter.semantic.SemanticAnalyzerImpl;
-import org.printscript.lexer.IdentifierTokenMatcher;
 import org.printscript.lexer.Lexer;
-import org.printscript.lexer.LexerImpl;
-import org.printscript.lexer.NumberTokenMatcher;
-import org.printscript.lexer.StringTokenMatcher;
-import org.printscript.lexer.SymbolTokenMatcher;
-import org.printscript.lexer.TokenMatcher;
+import org.printscript.lexer.LexerFactory;
 import org.printscript.parser.Parser;
 import org.printscript.parser.ParserImpl;
 
@@ -80,14 +73,7 @@ public class Main {
       return;
     }
 
-    String operation =
-        switch (opcion) {
-          case "1" -> "validation";
-          case "2" -> "analyzing";
-          case "3" -> "execution";
-          case "4" -> "formatting";
-          default -> null;
-        };
+    String operation = operationForOption(opcion);
 
     if (operation == null) {
       System.out.println("Opcion invalida. Saliendo...");
@@ -114,6 +100,16 @@ public class Main {
     ejecutarModo(operation, filePath, configPath, versionLabel);
   }
 
+  private static String operationForOption(String opcion) {
+    return switch (opcion) {
+      case "1" -> "validation";
+      case "2" -> "analyzing";
+      case "3" -> "execution";
+      case "4" -> "formatting";
+      default -> null;
+    };
+  }
+
   private static void ejecutarModo(
       String operation, String filePath, String configPath, String versionLabel) {
     final LanguageVersion version;
@@ -127,36 +123,7 @@ public class Main {
 
     try (Reader reader = new FileReader(filePath)) {
 
-      List<TokenMatcher> matchers =
-          List.of(
-              new IdentifierTokenMatcher(
-                  Map.ofEntries(
-                      Map.entry("let", TokenType.LET),
-                      Map.entry("const", TokenType.CONST),
-                      Map.entry("if", TokenType.IF),
-                      Map.entry("else", TokenType.ELSE),
-                      Map.entry("number", TokenType.TYPE_NUMBER),
-                      Map.entry("string", TokenType.TYPE_STRING),
-                      Map.entry("boolean", TokenType.TYPE_BOOLEAN),
-                      Map.entry("true", TokenType.BOOLEAN_LITERAL),
-                      Map.entry("false", TokenType.BOOLEAN_LITERAL))),
-              new NumberTokenMatcher(),
-              new StringTokenMatcher(),
-              new SymbolTokenMatcher(
-                  Map.ofEntries(
-                      Map.entry(':', TokenType.COLON),
-                      Map.entry('=', TokenType.ASSIGN),
-                      Map.entry(';', TokenType.SEMICOLON),
-                      Map.entry('(', TokenType.LPAREN),
-                      Map.entry(')', TokenType.RPAREN),
-                      Map.entry('{', TokenType.LBRACE),
-                      Map.entry('}', TokenType.RBRACE),
-                      Map.entry('+', TokenType.PLUS),
-                      Map.entry('-', TokenType.MINUS),
-                      Map.entry('*', TokenType.STAR),
-                      Map.entry('/', TokenType.SLASH))));
-
-      Lexer lexer = new LexerImpl(reader, matchers);
+      Lexer lexer = LexerFactory.create(reader);
 
       // 2. Configuracion del Parser
       Parser parser = new ParserImpl(lexer, version);

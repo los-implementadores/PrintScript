@@ -52,3 +52,7 @@ La clase `StreamingFormatter` implementa `Iterator<String>` procesando el códig
 - **Cero regresiones:** Todos los tests preexistentes del visitor de AST continúan pasando sin modificaciones.
 - **Conformidad 100% con el TCK:** El adaptador en `printscript-tck` (`PrintScriptFormatterAdapter`) se reduce a un puente limpio de pocas líneas que delega directamente en `FormatterImpl` de Maven, resolviendo los 23 tests de formateo.
 - **Consistencia de diseño:** `Lexer`, `Parser` y `Formatter` comparten ahora el mismo paradigma de procesamiento perezoso/iterable definido en ADR-007.
+
+> **Actualización:** desde [ADR-014](014-cada-modulo-es-dueno-de-sus-tipos.md) las claves se leen
+> con Jackson (`@JsonProperty` + `@JsonAlias`) en lugar de `@SerializedName` de Gson. Las claves
+> aceptadas y el criterio de este ADR no cambiaron.

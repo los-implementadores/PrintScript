@@ -1,41 +1,35 @@
 package org.printscript.parser;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
-import org.printscript.common.ast.*;
-import org.printscript.common.token.TokenType;
-import org.printscript.lexer.*;
+import org.printscript.common.ast.AssignmentStatement;
+import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.ExpressionStatement;
+import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.LazyProgram;
+import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.Program;
+import org.printscript.common.ast.Statement;
+import org.printscript.common.ast.StringLiteral;
+import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.lexer.Lexer;
+import org.printscript.lexer.LexerFactory;
 
 class ParserTest {
 
-  private static final List<TokenMatcher> MATCHERS =
-      List.of(
-          new IdentifierTokenMatcher(
-              Map.of(
-                  "let", TokenType.LET,
-                  "number", TokenType.TYPE_NUMBER,
-                  "string", TokenType.TYPE_STRING)),
-          new NumberTokenMatcher(),
-          new StringTokenMatcher(),
-          new SymbolTokenMatcher(
-              Map.of(
-                  ':', TokenType.COLON,
-                  '=', TokenType.ASSIGN,
-                  ';', TokenType.SEMICOLON,
-                  '(', TokenType.LPAREN,
-                  ')', TokenType.RPAREN,
-                  '+', TokenType.PLUS,
-                  '-', TokenType.MINUS,
-                  '*', TokenType.STAR,
-                  '/', TokenType.SLASH)));
-
   private Program parse(String source) {
-    LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
+    Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer);
     Position start = new Position(1, 1, 1, 1);
     return new LazyProgram(parser, start);
@@ -212,7 +206,7 @@ class ParserTest {
   @Test
   void parserAsIteratorProducesStatementsLazily() {
     String source = "let a: number = 1;\nlet b: number = 2;";
-    LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
+    Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer);
     Position start = new Position(1, 1, 1, 1);
     Program program = new LazyProgram(parser, start);
