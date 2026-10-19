@@ -1,6 +1,7 @@
 package org.printscript.interpreter;
 
 import java.util.Iterator;
+import java.util.List;
 import org.printscript.common.LanguageVersion;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
@@ -11,7 +12,9 @@ import org.printscript.interpreter.util.ValueFormatter;
 
 public class InterpreterVisitor implements ASTVisitor<Object> {
 
-  private final Environment env;
+  /** Scope actual: cambia al entrar y al salir de cada bloque. */
+  private Environment env;
+
   private final ExecutionIo io;
   private final BuiltinFunctions builtins;
   private final LanguageVersion version;
@@ -67,15 +70,24 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
       throw new ExecutionException("if condition must be boolean.", node.getPosition());
     }
     if (b) {
-      for (Statement stmt : node.getThenBlock()) {
-        stmt.accept(this);
-      }
+      executeBlock(node.getThenBlock());
     } else if (node.hasElse()) {
-      for (Statement stmt : node.getElseBlock()) {
-        stmt.accept(this);
-      }
+      executeBlock(node.getElseBlock());
     }
     return null;
+  }
+
+  /** Ejecuta un bloque en su propio scope: lo que declara deja de existir al salir. */
+  private void executeBlock(List<Statement> block) {
+    Environment outer = env;
+    env = outer.childScope();
+    try {
+      for (Statement stmt : block) {
+        stmt.accept(this);
+      }
+    } finally {
+      env = outer;
+    }
   }
 
   @Override

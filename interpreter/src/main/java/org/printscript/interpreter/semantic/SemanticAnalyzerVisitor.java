@@ -1,6 +1,7 @@
 package org.printscript.interpreter.semantic;
 
 import java.util.Iterator;
+import java.util.List;
 import org.printscript.common.LanguageVersion;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
@@ -10,7 +11,9 @@ import org.printscript.interpreter.builtin.TypeChecker;
 
 public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
 
-  private final Environment env;
+  /** Scope actual: cambia al entrar y al salir de cada bloque, igual que en el intérprete. */
+  private Environment env;
+
   private final BuiltinFunctions builtins;
   private final LanguageVersion version;
   private final TypeChecker typeChecker = new VisitorTypeChecker();
@@ -37,7 +40,7 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     String varName = node.getName().getName();
     String declaredType = node.getTypeName();
 
-    if (env.isDeclared(varName)) {
+    if (env.isDeclaredInThisScope(varName)) {
       throw new SemanticException(
           "Variable '" + varName + "' is already declared.", node.getPosition());
     }
@@ -92,15 +95,25 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
       throw new SemanticException(
           "if condition must be boolean, found " + condType + ".", node.getPosition());
     }
-    for (Statement stmt : node.getThenBlock()) {
-      stmt.accept(this);
-    }
+    // Cada rama en su propio scope: lo que se declara en una no existe en la otra ni después del
+    // if.
+    analyzeBlock(node.getThenBlock());
     if (node.hasElse()) {
-      for (Statement stmt : node.getElseBlock()) {
-        stmt.accept(this);
-      }
+      analyzeBlock(node.getElseBlock());
     }
     return null;
+  }
+
+  private void analyzeBlock(List<Statement> block) {
+    Environment outer = env;
+    env = outer.childScope();
+    try {
+      for (Statement stmt : block) {
+        stmt.accept(this);
+      }
+    } finally {
+      env = outer;
+    }
   }
 
   @Override
