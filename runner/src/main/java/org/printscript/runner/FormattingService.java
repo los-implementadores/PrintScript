@@ -1,10 +1,14 @@
 package org.printscript.runner;
 
 import java.io.Reader;
+import java.io.Writer;
 import org.printscript.common.LanguageVersion;
 import org.printscript.formatter.FormattingRules;
 
-/** Devuelve el código fuente formateado según las reglas. No escribe en ningún lado. */
+/**
+ * Formatea un programa en streaming: parsea una sentencia, la formatea y la escribe antes de pedir
+ * la siguiente, así nunca está el programa entero en memoria.
+ */
 public class FormattingService {
 
   private final ProgramLoader loader;
@@ -15,7 +19,13 @@ public class FormattingService {
     this.formatters = formatters;
   }
 
-  public String format(Reader source, LanguageVersion version, FormattingRules rules) {
-    return formatters.create(rules).format(loader.load(source, version));
+  /**
+   * Un error de sintaxis corta la escritura a mitad de camino: quien escribe en un archivo tiene
+   * que descartar lo escrito si este método falla.
+   *
+   * @param target donde se escribe el código formateado, a medida que se produce
+   */
+  public void format(Reader source, LanguageVersion version, FormattingRules rules, Writer target) {
+    formatters.create(rules).format(loader.load(source, version), target);
   }
 }

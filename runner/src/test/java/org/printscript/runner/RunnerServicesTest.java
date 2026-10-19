@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -86,13 +87,33 @@ class RunnerServicesTest {
   }
 
   @Test
-  void formattingReturnsFormattedSource() {
-    String formatted =
-        services
-            .formatting()
-            .format(
-                new StringReader("let x:number=1;"), LanguageVersion.V1_0, new FormattingRules());
+  void formattingWritesTheFormattedSourceToTheTarget() {
+    StringWriter target = new StringWriter();
 
-    assertEquals("let x: number = 1;", formatted.trim());
+    services
+        .formatting()
+        .format(
+            new StringReader("let x:number=1;"),
+            LanguageVersion.V1_0,
+            new FormattingRules(),
+            target);
+
+    assertEquals("let x: number = 1;", target.toString().trim());
+  }
+
+  @Test
+  void formattingFailsOnSyntaxError() {
+    StringWriter target = new StringWriter();
+
+    assertThrows(
+        ParseException.class,
+        () ->
+            services
+                .formatting()
+                .format(
+                    new StringReader("let = ;"),
+                    LanguageVersion.V1_0,
+                    new FormattingRules(),
+                    target));
   }
 }

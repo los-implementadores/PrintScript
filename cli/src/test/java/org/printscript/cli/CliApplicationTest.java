@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -63,6 +65,35 @@ class CliApplicationTest {
 
     assertEquals(CliApplication.EXIT_ERROR, code);
     assertTrue(console.err().contains("Semantic Error"));
+  }
+
+  @Test
+  void formattingRewritesTheFileWithTheConfiguredRules() {
+    files.put("script.ps", "let x:number=1;\nprintln(x);");
+
+    int code = app.run(new String[] {"formatting", "script.ps"});
+
+    assertEquals(CliApplication.EXIT_OK, code);
+    assertEquals("let x: number = 1;\n\nprintln(x);\n", files.get("script.ps"));
+  }
+
+  @Test
+  void formattingASyntaxErrorLeavesTheFileUntouched() {
+    files.put("script.ps", "let = ;");
+
+    int code = app.run(new String[] {"formatting", "script.ps"});
+
+    assertEquals(CliApplication.EXIT_ERROR, code);
+    assertEquals("let = ;", files.get("script.ps"));
+  }
+
+  @Test
+  void formattingAMissingFileFailsBeforePrintingProgress() {
+    int code = app.run(new String[] {"formatting", "nope.ps"});
+
+    assertEquals(CliApplication.EXIT_ERROR, code);
+    assertTrue(console.err().contains("File not found: nope.ps"));
+    assertFalse(console.out().contains("Formateando archivo..."));
   }
 
   @Test
@@ -130,9 +161,18 @@ class CliApplicationTest {
       return new StringReader(content);
     }
 
+    String get(String path) {
+      return contents.get(path);
+    }
+
     @Override
-    public void write(String path, String content) {
-      contents.put(path, content);
+    public void rewrite(String path, ContentWriter content) throws IOException {
+      if (!contents.containsKey(path)) {
+        throw new NoSuchFileException(path);
+      }
+      StringWriter writer = new StringWriter();
+      content.writeTo(writer);
+      contents.put(path, writer.toString());
     }
   }
 }

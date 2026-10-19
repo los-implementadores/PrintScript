@@ -33,13 +33,18 @@ public class FormattingCommand implements Command {
   @Override
   public void execute(CommandRequest request) throws IOException {
     FormattingRules rules = loadRules(request);
+    String path = request.filePath();
 
-    String formatted;
-    try (Reader source = files.openReader(request.filePath())) {
-      console.println("Formateando archivo...");
-      formatted = service.format(source, request.version(), rules);
-    }
-    files.write(request.filePath(), formatted);
+    // rewrite escribe en un temporal y sólo reemplaza el archivo si el formateo terminó bien. Si el
+    // archivo no existe falla antes de llamarnos, así que el progreso no se anuncia.
+    files.rewrite(
+        path,
+        target -> {
+          try (Reader source = files.openReader(path)) {
+            console.println("Formateando archivo...");
+            service.format(source, request.version(), rules, target);
+          }
+        });
     console.println("Formatting successful. El archivo ha sido formateado.");
   }
 

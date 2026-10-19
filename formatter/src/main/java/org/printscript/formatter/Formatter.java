@@ -29,6 +29,15 @@ public interface Formatter {
   String format(Program program);
 
   /**
+   * Formatea un programa a partir de su AST y lo escribe de a una sentencia, a medida que el
+   * programa se recorre. No arma el resultado entero en memoria.
+   *
+   * @param program el AST del programa a formatear
+   * @param writer destino donde escribir el código formateado
+   */
+  void format(Program program, Writer writer);
+
+  /**
    * Formatea código fuente en streaming desde un {@link Reader} hacia un {@link Writer}.
    *
    * @param reader fuente de caracteres de entrada
