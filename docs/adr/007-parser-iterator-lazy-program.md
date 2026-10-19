@@ -1,6 +1,6 @@
 # ADR-007: Parser como `Iterator<Statement>` y `Program` como interfaz lazy
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado. La parte de `Program.toList()` fue reemplazada por ADR-017 (`Program` se recorre una sola vez).
 - **Fecha:** 2026-08-11
 
 ## Contexto
