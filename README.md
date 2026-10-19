@@ -27,6 +27,7 @@ Cada módulo depende solo de lo que necesita (ver `build.gradle.kts` de cada uno
 ./gradlew spotlessCheck  # Verificar formato
 ./gradlew checkstyleMain # Verificar estilo
 ./gradlew pmdMain        # Análisis estático
+./gradlew coverageReport # Cobertura de todo el proyecto (build/reports/jacoco/coverageReport)
 ./gradlew installGitHooks # Instalar pre-commit y pre-push hooks
 ```
 
@@ -49,6 +50,7 @@ Cada módulo depende solo de lo que necesita (ver `build.gradle.kts` de cada uno
 - **Spotless** + google-java-format — formateo automático
 - **Checkstyle** — estilo de código (Google Java Style adaptado)
 - **PMD** — análisis estático
+- **JaCoCo** — cobertura. `./gradlew build` falla si la cobertura de todo el proyecto baja de 90% de líneas o 75% de ramas
 - **Git hooks** — pre-commit (formato + estilo + PMD), pre-push (tests)
 
 ## Estado
