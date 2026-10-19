@@ -4,50 +4,51 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.printscript.analyzer.config.AnalyzerConfig;
-import org.printscript.analyzer.config.NamingConvention;
-import org.printscript.analyzer.violation.Severity;
+import org.printscript.analyzer.rule.LintRule;
+import org.printscript.analyzer.rule.LintRules;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.Position;
-import org.printscript.common.ast.*;
-import org.printscript.common.env.Environment;
+import org.printscript.common.ast.ASTVisitor;
+import org.printscript.common.ast.AssignmentStatement;
+import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.BooleanLiteral;
+import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.Expression;
+import org.printscript.common.ast.ExpressionStatement;
+import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.IfStatement;
+import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.Program;
+import org.printscript.common.ast.Statement;
+import org.printscript.common.ast.StringLiteral;
+import org.printscript.common.ast.VarDeclarationStatement;
 
+/**
+ * Recorre el AST y le avisa a cada {@link LintRule} los nodos que visita. No conoce ninguna regla
+ * en particular: agregar una no cambia esta clase.
+ */
 public class AnalyzerVisitor implements ASTVisitor<Void> {
 
-  private final AnalyzerConfig config;
+  private final List<LintRule> rules;
   private final List<Violation> violations = new ArrayList<>();
 
-  private final Environment env = new Environment();
-  private final List<String> declaredVariableNames = new ArrayList<>();
-
-  // Clase auxiliar para guardar en el "value" del Environment
-  private static class LinterMetadata {
-    final Position position;
-    boolean isUsed;
-
-    LinterMetadata(Position position) {
-      this.position = position;
-      this.isUsed = false;
-    }
+  public AnalyzerVisitor(List<LintRule> rules) {
+    this.rules = List.copyOf(rules);
   }
 
   public AnalyzerVisitor(AnalyzerConfig config) {
-    this.config = config;
+    this(LintRules.from(config));
   }
 
+  /**
+   * Devuelve las violaciones encontradas hasta ahora, incluidas las de las reglas que reportan al
+   * final. Se puede llamar más de una vez sin duplicar resultados.
+   */
   public List<Violation> getFinalViolations() {
-    if (config.activeUnusedVariables) {
-      for (String varName : declaredVariableNames) {
-        LinterMetadata meta = (LinterMetadata) env.get(varName);
-        if (!meta.isUsed) {
-          violations.add(
-              new Violation(
-                  "Variable '" + varName + "' is declared but never used.",
-                  Severity.WARNING,
-                  meta.position));
-        }
-      }
+    List<Violation> result = new ArrayList<>(violations);
+    for (LintRule rule : rules) {
+      rule.onFinish(result::add);
     }
-    return violations;
+    return result;
   }
 
   @Override
@@ -61,31 +62,9 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
 
   @Override
   public Void visitVarDeclaration(VarDeclarationStatement node) {
-    String varName = node.getName().getName();
-    Position position = node.getPosition();
-    String typeName = node.getTypeName();
-
-    // 1. Regla: Convención de nombres
-    if (config.activeNamingConvention) {
-      if (config.namingConventionFormat.equals(NamingConvention.CAMEL_CASE)
-          && !varName.matches("^[a-z]+([A-Z][a-z0-9]+)*$")) {
-        violations.add(
-            new Violation(
-                "Variable '" + varName + "' should be in camelCase.", Severity.WARNING, position));
-      } else if (config.namingConventionFormat.equals(NamingConvention.SNAKE_CASE)
-          && !varName.matches("^[a-z]+(_[a-z0-9]+)*$")) {
-        violations.add(
-            new Violation(
-                "Variable '" + varName + "' should be in snake_case.", Severity.WARNING, position));
-      }
+    for (LintRule rule : rules) {
+      rule.onDeclaration(node, violations::add);
     }
-
-    // 2. Registramos la variable en el Environment
-    if (!env.isDeclared(varName)) {
-      env.define(varName, typeName, new LinterMetadata(position));
-      declaredVariableNames.add(varName);
-    }
-
     if (node.getInitializer() != null) {
       node.getInitializer().accept(this);
     }
@@ -95,12 +74,8 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
   @Override
   public Void visitAssignment(AssignmentStatement node) {
     node.getValue().accept(this);
-    String varName = node.getTarget().getName();
-
-    // Registra el uso de la variable
-    if (env.isDeclared(varName)) {
-      LinterMetadata meta = (LinterMetadata) env.get(varName);
-      meta.isUsed = true;
+    for (LintRule rule : rules) {
+      rule.onAssignment(node, violations::add);
     }
     return null;
   }
@@ -134,41 +109,13 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
 
   @Override
   public Void visitCallExpression(CallExpression node) {
-    validateCallArguments(node);
-
-    for (Node arg : node.getArguments()) {
-      if (arg instanceof Expression expr) {
-        expr.accept(this);
-      }
+    for (LintRule rule : rules) {
+      rule.onCall(node, violations::add);
+    }
+    for (Expression arg : node.getArguments()) {
+      arg.accept(this);
     }
     return null;
-  }
-
-  private void validateCallArguments(CallExpression node) {
-    if (node.getArguments().isEmpty()) {
-      return;
-    }
-    String callee = node.getCallee();
-    boolean isRestricted =
-        ("println".equals(callee) && config.activeComplexPrintln)
-            || ("readInput".equals(callee) && config.activeComplexReadInput);
-
-    if (isRestricted && !isLiteralOrIdentifier(node.getArguments().get(0))) {
-      violations.add(
-          new Violation(
-              "Complex expression in '"
-                  + callee
-                  + "'. Consider extracting to an intermediate variable.",
-              Severity.WARNING,
-              node.getPosition()));
-    }
-  }
-
-  private boolean isLiteralOrIdentifier(Node argument) {
-    return argument instanceof NumberLiteral
-        || argument instanceof StringLiteral
-        || argument instanceof BooleanLiteral
-        || argument instanceof Identifier;
   }
 
   @Override
@@ -188,10 +135,8 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
 
   @Override
   public Void visitIdentifier(Identifier node) {
-    String varName = node.getName();
-    if (env.isDeclared(varName)) {
-      LinterMetadata meta = (LinterMetadata) env.get(varName);
-      meta.isUsed = true; // variable leida
+    for (LintRule rule : rules) {
+      rule.onIdentifier(node, violations::add);
     }
     return null;
   }
