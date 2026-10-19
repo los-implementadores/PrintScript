@@ -12,6 +12,7 @@ import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;
@@ -29,7 +30,8 @@ class InterpreterTest {
     output = new CollectingOutputProvider();
     ExecutionIo io =
         new ExecutionIo(new ProgrammaticInputProvider(), new MapEnvProvider(Map.of()), output);
-    interpreter = new InterpreterVisitor(env, io, LanguageVersion.V1_0);
+    interpreter =
+        new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_0);
   }
 
   @Test

@@ -1,21 +1,25 @@
 package org.printscript.interpreter.semantic;
 
 import java.util.Iterator;
+import org.printscript.common.LanguageVersion;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.builtin.BuiltinFunction;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.builtin.TypeChecker;
 
 public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
 
   private final Environment env;
-  private final org.printscript.common.LanguageVersion version;
+  private final BuiltinFunctions builtins;
+  private final LanguageVersion version;
+  private final TypeChecker typeChecker = new VisitorTypeChecker();
   private String expectedType;
 
-  public SemanticAnalyzerVisitor(Environment env) {
-    this(env, org.printscript.common.LanguageVersion.V1_0);
-  }
-
-  public SemanticAnalyzerVisitor(Environment env, org.printscript.common.LanguageVersion version) {
+  public SemanticAnalyzerVisitor(
+      Environment env, BuiltinFunctions builtins, LanguageVersion version) {
     this.env = env;
+    this.builtins = builtins;
     this.version = version;
   }
 
@@ -39,14 +43,7 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     }
 
     if (node.getInitializer() != null) {
-      String prev = this.expectedType;
-      String exprType;
-      try {
-        this.expectedType = declaredType;
-        exprType = node.getInitializer().accept(this);
-      } finally {
-        this.expectedType = prev;
-      }
+      String exprType = typeOf(node.getInitializer(), declaredType);
       if (!declaredType.equals(exprType)) {
         throw new SemanticException(
             "Cannot assign " + exprType + " to variable of type " + declaredType,
@@ -73,15 +70,7 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     }
 
     String varType = env.getType(varName);
-    String prev = this.expectedType;
-    String exprType;
-    try {
-      this.expectedType = varType;
-      exprType = node.getValue().accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
+    String exprType = typeOf(node.getValue(), varType);
     if (!varType.equals(exprType)) {
       throw new SemanticException(
           "Cannot assign " + exprType + " to variable of type " + varType, node.getPosition());
@@ -144,82 +133,10 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
 
   @Override
   public String visitCallExpression(CallExpression node) {
-    if (node.getCallee().equals("println")) {
-      return analyzePrintln(node);
-    }
-    if (node.getCallee().equals("readInput")) {
-      return analyzeReadInput(node);
-    }
-    if (node.getCallee().equals("readEnv")) {
-      return analyzeReadEnv(node);
-    }
-    throw new SemanticException("Unknown function '" + node.getCallee() + "'", node.getPosition());
-  }
-
-  private String analyzePrintln(CallExpression node) {
-    if (node.getArguments().size() != 1) {
-      throw new SemanticException("println expects 1 argument.", node.getPosition());
-    }
-    String prev = this.expectedType;
-    try {
-      this.expectedType = "string";
-      node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-    return null;
-  }
-
-  private String analyzeReadInput(CallExpression node) {
-    if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new SemanticException(
-          "Function 'readInput' is only supported in PrintScript 1.1.", node.getPosition());
-    }
-    if (node.getArguments().size() != 1) {
-      throw new SemanticException("readInput expects 1 argument.", node.getPosition());
-    }
-
-    String prev = this.expectedType;
-    String argType;
-    try {
-      this.expectedType = "string";
-      argType = node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
-    if (!"string".equals(argType)) {
-      throw new SemanticException(
-          "readInput argument must be of type string, found " + argType, node.getPosition());
-    }
-
-    return expectedType != null ? expectedType : "string";
-  }
-
-  private String analyzeReadEnv(CallExpression node) {
-    if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new SemanticException(
-          "Function 'readEnv' is only supported in PrintScript 1.1.", node.getPosition());
-    }
-    if (node.getArguments().size() != 1) {
-      throw new SemanticException("readEnv expects 1 argument.", node.getPosition());
-    }
-
-    String prev = this.expectedType;
-    String argType;
-    try {
-      this.expectedType = "string";
-      argType = node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
-    if (!"string".equals(argType)) {
-      throw new SemanticException(
-          "readEnv argument must be of type string, found " + argType, node.getPosition());
-    }
-
-    return expectedType != null ? expectedType : "string";
+    BuiltinFunction function =
+        builtins.resolve(
+            node, version, detail -> new SemanticException(detail, node.getPosition()));
+    return function.checkTypes(typeChecker, node);
   }
 
   @Override
@@ -244,5 +161,29 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
           "Variable '" + node.getName() + "' is not declared.", node.getPosition());
     }
     return env.getType(node.getName());
+  }
+
+  /** Tipo de una expresión analizada con {@code type} como tipo esperado. */
+  private String typeOf(Expression expression, String type) {
+    String previous = this.expectedType;
+    try {
+      this.expectedType = type;
+      return expression.accept(this);
+    } finally {
+      this.expectedType = previous;
+    }
+  }
+
+  private final class VisitorTypeChecker implements TypeChecker {
+
+    @Override
+    public String typeOf(Expression expression, String type) {
+      return SemanticAnalyzerVisitor.this.typeOf(expression, type);
+    }
+
+    @Override
+    public String expectedType() {
+      return expectedType;
+    }
   }
 }

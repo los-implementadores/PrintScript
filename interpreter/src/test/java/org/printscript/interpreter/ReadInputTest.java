@@ -16,6 +16,7 @@ import org.printscript.common.ast.NumberLiteral;
 import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.InputProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
@@ -37,7 +38,7 @@ class ReadInputTest {
 
   private InterpreterVisitor interpreterWith(InputProvider input) {
     ExecutionIo io = new ExecutionIo(input, new MapEnvProvider(Map.of()), output);
-    return new InterpreterVisitor(env, io, LanguageVersion.V1_1);
+    return new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_1);
   }
 
   @Test
@@ -160,7 +161,8 @@ class ReadInputTest {
 
   @Test
   void semanticAnalyzerAcceptsReadInputInV1_1() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_1);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
 
     CallExpression call =
         new CallExpression("readInput", List.of(new StringLiteral("Prompt: ", dummyPos)), dummyPos);
@@ -172,7 +174,8 @@ class ReadInputTest {
 
   @Test
   void semanticAnalyzerRejectsReadInputInV1_0() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_0);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_0);
 
     CallExpression call =
         new CallExpression("readInput", List.of(new StringLiteral("Prompt: ", dummyPos)), dummyPos);
@@ -185,7 +188,8 @@ class ReadInputTest {
 
   @Test
   void semanticAnalyzerRejectsNonStringPrompt() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_1);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
 
     CallExpression call =
         new CallExpression("readInput", List.of(new NumberLiteral(123.0, dummyPos)), dummyPos);
@@ -198,7 +202,8 @@ class ReadInputTest {
 
   @Test
   void semanticAnalyzerRejectsWrongArgumentCount() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_1);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
 
     CallExpression noArgs = new CallExpression("readInput", List.of(), dummyPos);
     VarDeclarationStatement decl =

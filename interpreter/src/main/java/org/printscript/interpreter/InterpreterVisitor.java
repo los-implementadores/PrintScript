@@ -1,21 +1,28 @@
 package org.printscript.interpreter;
 
 import java.util.Iterator;
+import org.printscript.common.LanguageVersion;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
-import org.printscript.interpreter.util.TypeCoercion;
+import org.printscript.interpreter.builtin.BuiltinFunction;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.builtin.CallContext;
+import org.printscript.interpreter.util.ValueFormatter;
 
 public class InterpreterVisitor implements ASTVisitor<Object> {
 
   private final Environment env;
   private final ExecutionIo io;
-  private final org.printscript.common.LanguageVersion version;
+  private final BuiltinFunctions builtins;
+  private final LanguageVersion version;
+  private final CallContext callContext = new VisitorCallContext();
   private String expectedType;
 
   public InterpreterVisitor(
-      Environment env, ExecutionIo io, org.printscript.common.LanguageVersion version) {
+      Environment env, ExecutionIo io, BuiltinFunctions builtins, LanguageVersion version) {
     this.env = env;
     this.io = io;
+    this.builtins = builtins;
     this.version = version;
   }
 
@@ -30,37 +37,19 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
 
   @Override
   public Object visitVarDeclaration(VarDeclarationStatement node) {
-    String name = node.getName().getName();
     String type = node.getTypeName();
     Object value = null;
-
     if (node.getInitializer() != null) {
-      String prev = this.expectedType;
-      try {
-        this.expectedType = type;
-        value = node.getInitializer().accept(this);
-      } finally {
-        this.expectedType = prev;
-      }
+      value = evaluate(node.getInitializer(), type);
     }
-
-    env.define(name, type, value, node.isConst());
+    env.define(node.getName().getName(), type, value, node.isConst());
     return null;
   }
 
   @Override
   public Object visitAssignment(AssignmentStatement node) {
     String name = node.getTarget().getName();
-    String varType = env.getType(name);
-    String prev = this.expectedType;
-    Object value;
-    try {
-      this.expectedType = varType;
-      value = node.getValue().accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
+    Object value = evaluate(node.getValue(), env.getType(name));
     env.assign(name, value);
     return null;
   }
@@ -97,7 +86,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
 
     if (op.equals("+")) {
       if (left instanceof String || right instanceof String) {
-        return formatPrintValue(left) + formatPrintValue(right);
+        return ValueFormatter.display(left) + ValueFormatter.display(right);
       }
       return ((Double) left) + ((Double) right);
     }
@@ -120,91 +109,10 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
 
   @Override
   public Object visitCallExpression(CallExpression node) {
-    if (node.getCallee().equals("println")) {
-      return executePrintln(node);
-    }
-    if (node.getCallee().equals("readInput")) {
-      return executeReadInput(node);
-    }
-    if (node.getCallee().equals("readEnv")) {
-      return executeReadEnv(node);
-    }
-    throw new ExecutionException("Unknown function '" + node.getCallee() + "'", node.getPosition());
-  }
-
-  private Object executePrintln(CallExpression node) {
-    if (node.getArguments().isEmpty()) {
-      throw new ExecutionException("println expects 1 argument.", node.getPosition());
-    }
-    String prev = this.expectedType;
-    Object val;
-    try {
-      this.expectedType = "string";
-      val = node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-    io.output().print(formatPrintValue(val));
-    return null;
-  }
-
-  private Object executeReadInput(CallExpression node) {
-    if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new ExecutionException(
-          "readInput is only supported in PrintScript 1.1.", node.getPosition());
-    }
-    if (node.getArguments().size() != 1) {
-      throw new ExecutionException("readInput expects 1 argument.", node.getPosition());
-    }
-
-    String prev = this.expectedType;
-    Object promptVal;
-    try {
-      this.expectedType = "string";
-      promptVal = node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
-    String prompt = formatPrintValue(promptVal);
-    io.output().print(prompt);
-
-    String raw = io.input().readInput(prompt);
-    if (raw == null) {
-      throw new ExecutionException("End of input reached while reading input.", node.getPosition());
-    }
-
-    String targetType = expectedType != null ? expectedType : "string";
-    return TypeCoercion.coerce(raw, targetType, node.getPosition(), "input");
-  }
-
-  private Object executeReadEnv(CallExpression node) {
-    if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new ExecutionException(
-          "readEnv is only supported in PrintScript 1.1.", node.getPosition());
-    }
-    if (node.getArguments().size() != 1) {
-      throw new ExecutionException("readEnv expects 1 argument.", node.getPosition());
-    }
-
-    String prev = this.expectedType;
-    Object nameVal;
-    try {
-      this.expectedType = "string";
-      nameVal = node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
-    String varName = formatPrintValue(nameVal);
-    String raw = io.env().getEnv(varName);
-    if (raw == null) {
-      throw new ExecutionException(
-          "Environment variable '" + varName + "' is not defined.", node.getPosition());
-    }
-
-    String targetType = expectedType != null ? expectedType : "string";
-    return TypeCoercion.coerce(raw, targetType, node.getPosition(), "env variable");
+    BuiltinFunction function =
+        builtins.resolve(
+            node, version, detail -> new ExecutionException(detail, node.getPosition()));
+    return function.call(callContext, node);
   }
 
   @Override
@@ -227,10 +135,32 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     return env.get(node.getName());
   }
 
-  private String formatPrintValue(Object val) {
-    if (val instanceof Double d && d % 1 == 0) {
-      return String.valueOf(d.longValue());
+  /** Evalúa una expresión con {@code type} como tipo esperado (lo usan readInput y readEnv). */
+  private Object evaluate(Expression expression, String type) {
+    String previous = this.expectedType;
+    try {
+      this.expectedType = type;
+      return expression.accept(this);
+    } finally {
+      this.expectedType = previous;
     }
-    return String.valueOf(val);
+  }
+
+  private final class VisitorCallContext implements CallContext {
+
+    @Override
+    public Object evaluate(Expression expression, String type) {
+      return InterpreterVisitor.this.evaluate(expression, type);
+    }
+
+    @Override
+    public String expectedType() {
+      return expectedType;
+    }
+
+    @Override
+    public ExecutionIo io() {
+      return io;
+    }
   }
 }

@@ -16,6 +16,7 @@ import org.printscript.common.ast.NumberLiteral;
 import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
 import org.printscript.interpreter.env.EnvProvider;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
@@ -37,7 +38,7 @@ class ReadEnvTest {
 
   private InterpreterVisitor interpreterWith(EnvProvider environment) {
     ExecutionIo io = new ExecutionIo(new ProgrammaticInputProvider(), environment, output);
-    return new InterpreterVisitor(env, io, LanguageVersion.V1_1);
+    return new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_1);
   }
 
   @Test
@@ -168,7 +169,8 @@ class ReadEnvTest {
 
   @Test
   void semanticAnalyzerAcceptsReadEnvInV1_1() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_1);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
 
     CallExpression call =
         new CallExpression("readEnv", List.of(new StringLiteral("API_URL", dummyPos)), dummyPos);
@@ -180,7 +182,8 @@ class ReadEnvTest {
 
   @Test
   void semanticAnalyzerRejectsReadEnvInV1_0() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_0);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_0);
 
     CallExpression call =
         new CallExpression("readEnv", List.of(new StringLiteral("API_URL", dummyPos)), dummyPos);
@@ -193,7 +196,8 @@ class ReadEnvTest {
 
   @Test
   void semanticAnalyzerRejectsNonStringArg() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_1);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
 
     CallExpression call =
         new CallExpression("readEnv", List.of(new NumberLiteral(42.0, dummyPos)), dummyPos);
@@ -206,7 +210,8 @@ class ReadEnvTest {
 
   @Test
   void semanticAnalyzerRejectsWrongArgCount() {
-    SemanticAnalyzerVisitor analyzer = new SemanticAnalyzerVisitor(env, LanguageVersion.V1_1);
+    SemanticAnalyzerVisitor analyzer =
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
 
     CallExpression call = new CallExpression("readEnv", List.of(), dummyPos);
     VarDeclarationStatement decl =

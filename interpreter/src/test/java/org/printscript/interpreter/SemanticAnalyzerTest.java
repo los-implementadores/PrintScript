@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 import org.printscript.interpreter.semantic.SemanticException;
 
@@ -19,7 +21,7 @@ class SemanticAnalyzerTest {
   @BeforeEach
   void setUp() {
     env = new Environment();
-    analyzer = new SemanticAnalyzerVisitor(env);
+    analyzer = new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_0);
   }
 
   @Test
