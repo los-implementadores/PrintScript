@@ -41,18 +41,12 @@ Parser parser = new ParserImpl(lexer);
 Program program = new LazyProgram(parser, startPos);
 ```
 
-A partir de ahí cada módulo elige cómo consumirlo:
+A partir de ahí cada módulo lo recorre una sola vez, de a una sentencia (ver ADR-017):
 
 ```java
-// Interpreter — procesa de a uno, bajo consumo de memoria:
 Iterator<Statement> it = program.stream();
 while (it.hasNext()) {
     it.next().accept(interpreterVisitor);
-}
-
-// Analyzer — necesita el árbol completo:
-for (Statement stmt : program.toList()) {
-    stmt.accept(analyzerVisitor);
 }
 ```
 
@@ -216,6 +210,5 @@ ParserImpl (Iterator<Statement>)
   ▼
 LazyProgram (implements Program)
   │
-  ├── .stream()  → Iterator<Statement>   para interpreter / formatter
-  └── .toList()  → List<Statement>       para analyzer
+  └── .stream()  → Iterator<Statement>   un solo recorrido, para todos los módulos
 ```

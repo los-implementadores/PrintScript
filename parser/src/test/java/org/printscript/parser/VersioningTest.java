@@ -3,6 +3,7 @@ package org.printscript.parser;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,9 @@ class VersioningTest {
     LexerImpl lexer = new LexerImpl(new StringReader(source), MATCHERS);
     Parser parser = new ParserImpl(lexer, version);
     Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
-    return program.toList();
+    List<Statement> statements = new ArrayList<>();
+    program.stream().forEachRemaining(statements::add);
+    return statements;
   }
 
   @Test

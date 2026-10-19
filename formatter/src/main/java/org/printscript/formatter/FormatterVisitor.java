@@ -1,5 +1,6 @@
 package org.printscript.formatter;
 
+import java.util.Iterator;
 import java.util.List;
 import org.printscript.common.ast.*;
 
@@ -19,18 +20,20 @@ public class FormatterVisitor implements ASTVisitor<String> {
 
   @Override
   public String visitProgram(Program node) {
-    List<Statement> statements = node.toList();
+    Iterator<Statement> statements = node.stream();
     StringBuilder sb = new StringBuilder();
+    boolean first = true;
 
-    for (int i = 0; i < statements.size(); i++) {
-      Statement stmt = statements.get(i);
+    while (statements.hasNext()) {
+      Statement stmt = statements.next();
 
-      if (i > 0 && shouldAddExtraNewline(stmt)) {
+      if (!first && shouldAddExtraNewline(stmt)) {
         sb.append("\n".repeat(rules.getNewlineBeforePrintln()));
       }
 
       sb.append(stmt.accept(this));
       sb.append('\n');
+      first = false;
     }
 
     return sb.toString();

@@ -17,12 +17,16 @@ import java.util.Queue;
 import org.junit.jupiter.api.Test;
 import org.printscript.cli.io.Console;
 import org.printscript.cli.io.FileAccess;
+import org.printscript.interpreter.env.MapEnvProvider;
+import org.printscript.runner.LanguageServices;
 
 class CliApplicationTest {
 
   private final FakeConsole console = new FakeConsole();
   private final InMemoryFiles files = new InMemoryFiles();
-  private final CliApplication app = new CliApplication(console, files);
+  private final CliApplication app =
+      new CliApplication(
+          console, files, new MapEnvProvider(Map.of()), LanguageServices.printScript());
 
   @Test
   void unknownOperationExitsWithError() {

@@ -6,16 +6,14 @@ import java.util.List;
 import org.printscript.common.Position;
 
 /**
- * Implementación de {@link Program} que materializa todas las sentencias en una lista inmutable en
- * el momento de construcción.
+ * Implementación de {@link Program} sobre una lista de sentencias ya armada.
  *
- * <p>Usar cuando se necesita el árbol completo disponible de inmediato, por ejemplo en el analyzer
- * (que puede hacer múltiples pasadas) o en tests.
+ * <p>Útil en tests, donde el programa se construye a mano. Admite varios recorridos, pero los
+ * consumidores de {@link Program} no deben depender de eso (ver el contrato de {@link Program}).
  *
  * <pre>
  *   Program program = new EagerProgram(List.of(stmt1, stmt2), pos);
- *   program.toList();   // devuelve la lista inmutable directamente
- *   program.stream();   // itera sobre la misma lista
+ *   program.stream();   // itera sobre la lista
  * </pre>
  */
 public final class EagerProgram implements Program {
@@ -32,15 +30,6 @@ public final class EagerProgram implements Program {
     this.position = position;
   }
 
-  /**
-   * Devuelve la lista inmutable de sentencias cargada en construcción. O(1), sin trabajo adicional.
-   */
-  @Override
-  public List<Statement> toList() {
-    return statements;
-  }
-
-  /** Devuelve un iterator sobre la lista inmutable. No consume memoria adicional. */
   @Override
   public Iterator<Statement> stream() {
     return statements.iterator();
