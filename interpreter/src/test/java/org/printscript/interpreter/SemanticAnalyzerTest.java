@@ -8,6 +8,7 @@ import org.printscript.common.Position;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
+import org.printscript.interpreter.semantic.SemanticException;
 
 class SemanticAnalyzerTest {
 
@@ -42,7 +43,7 @@ class SemanticAnalyzerTest {
             new StringLiteral("veinte", dummyPos),
             dummyPos);
 
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> stmt.accept(analyzer));
+    RuntimeException exception = assertThrows(SemanticException.class, () -> stmt.accept(analyzer));
     assertTrue(exception.getMessage().contains("Cannot assign string to variable of type number"));
   }
 
@@ -53,7 +54,7 @@ class SemanticAnalyzerTest {
         new AssignmentStatement(
             new Identifier("x", dummyPos), new NumberLiteral(10.0, dummyPos), dummyPos);
 
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> stmt.accept(analyzer));
+    RuntimeException exception = assertThrows(SemanticException.class, () -> stmt.accept(analyzer));
     assertTrue(exception.getMessage().contains("Variable 'x' is not declared"));
   }
 
@@ -78,7 +79,7 @@ class SemanticAnalyzerTest {
         new VarDeclarationStatement(
             new Identifier("ok", dummyPos), "boolean", new NumberLiteral(5.0, dummyPos), dummyPos);
 
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> stmt.accept(analyzer));
+    RuntimeException exception = assertThrows(SemanticException.class, () -> stmt.accept(analyzer));
     assertTrue(exception.getMessage().contains("Cannot assign number to variable of type boolean"));
   }
 
@@ -99,7 +100,7 @@ class SemanticAnalyzerTest {
             new Identifier("pi", dummyPos), new NumberLiteral(4.0, dummyPos), dummyPos);
 
     RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> reassign.accept(analyzer));
+        assertThrows(SemanticException.class, () -> reassign.accept(analyzer));
     assertTrue(exception.getMessage().contains("Cannot reassign constant 'pi'"));
   }
 
@@ -129,7 +130,7 @@ class SemanticAnalyzerTest {
         new BinaryExpression(
             new StringLiteral("hola", dummyPos), "-", new NumberLiteral(5.0, dummyPos), dummyPos);
 
-    RuntimeException exception = assertThrows(RuntimeException.class, () -> expr.accept(analyzer));
+    RuntimeException exception = assertThrows(SemanticException.class, () -> expr.accept(analyzer));
     assertTrue(exception.getMessage().contains("Operator '-' requires numeric operands"));
   }
 
@@ -147,7 +148,7 @@ class SemanticAnalyzerTest {
     IfStatement ifStmt =
         new IfStatement(new NumberLiteral(5.0, dummyPos), java.util.List.of(), null, dummyPos);
     RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> ifStmt.accept(analyzer));
+        assertThrows(SemanticException.class, () -> ifStmt.accept(analyzer));
     assertTrue(exception.getMessage().contains("if condition must be boolean"));
   }
 }

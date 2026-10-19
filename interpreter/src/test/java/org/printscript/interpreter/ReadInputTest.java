@@ -20,6 +20,7 @@ import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
+import org.printscript.interpreter.semantic.SemanticException;
 
 class ReadInputTest {
 
@@ -101,7 +102,7 @@ class ReadInputTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("n", dummyPos), "number", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(interpreter));
+    RuntimeException ex = assertThrows(ExecutionException.class, () -> decl.accept(interpreter));
     assertTrue(ex.getMessage().contains("Cannot coerce input 'no_es_numero' to number"));
     assertTrue(ex.getMessage().contains(dummyPos.toString()));
   }
@@ -118,7 +119,7 @@ class ReadInputTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("b", dummyPos), "boolean", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(interpreter));
+    RuntimeException ex = assertThrows(ExecutionException.class, () -> decl.accept(interpreter));
     assertTrue(ex.getMessage().contains("Cannot coerce input 'Hola' to boolean"));
     assertTrue(ex.getMessage().contains(dummyPos.toString()));
   }
@@ -180,7 +181,7 @@ class ReadInputTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("n", dummyPos), "number", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(analyzer));
+    RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
     assertTrue(ex.getMessage().contains("only supported in PrintScript 1.1"));
   }
 
@@ -193,7 +194,7 @@ class ReadInputTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("n", dummyPos), "number", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(analyzer));
+    RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
     assertTrue(ex.getMessage().contains("readInput argument must be of type string"));
   }
 
@@ -205,7 +206,7 @@ class ReadInputTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("n", dummyPos), "number", noArgs, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(analyzer));
+    RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
     assertTrue(ex.getMessage().contains("readInput expects 1 argument"));
   }
 }

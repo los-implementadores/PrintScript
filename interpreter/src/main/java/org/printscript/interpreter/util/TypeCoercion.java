@@ -1,6 +1,7 @@
 package org.printscript.interpreter.util;
 
 import org.printscript.common.Position;
+import org.printscript.interpreter.ExecutionException;
 
 /**
  * Utilidad compartida para la coerción de tipos desde fuentes textuales ({@code readInput}, {@code
@@ -27,14 +28,8 @@ public final class TypeCoercion {
         try {
           yield Double.parseDouble(raw.trim());
         } catch (NumberFormatException e) {
-          throw new RuntimeException(
-              "Execution Error at "
-                  + pos
-                  + ": Cannot coerce "
-                  + descriptor
-                  + " '"
-                  + raw
-                  + "' to number.");
+          throw new ExecutionException(
+              "Cannot coerce " + descriptor + " '" + raw + "' to number.", pos);
         }
       }
       case "boolean" -> {
@@ -44,14 +39,8 @@ public final class TypeCoercion {
         } else if ("false".equalsIgnoreCase(trimmed)) {
           yield Boolean.FALSE;
         } else {
-          throw new RuntimeException(
-              "Execution Error at "
-                  + pos
-                  + ": Cannot coerce "
-                  + descriptor
-                  + " '"
-                  + raw
-                  + "' to boolean.");
+          throw new ExecutionException(
+              "Cannot coerce " + descriptor + " '" + raw + "' to boolean.", pos);
         }
       }
       default -> raw;

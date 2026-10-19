@@ -116,8 +116,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
   public Object visitIf(IfStatement node) {
     Object cond = node.getCondition().accept(this);
     if (!(cond instanceof Boolean b)) {
-      throw new RuntimeException(
-          "Execution Error at " + node.getPosition() + ": if condition must be boolean.");
+      throw new ExecutionException("if condition must be boolean.", node.getPosition());
     }
     if (b) {
       for (Statement stmt : node.getThenBlock()) {
@@ -152,12 +151,11 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
       case "*" -> l * r;
       case "/" -> {
         if (r == 0) {
-          throw new RuntimeException(
-              "Execution Error at " + node.getPosition() + ": Division by zero.");
+          throw new ExecutionException("Division by zero.", node.getPosition());
         }
         yield l / r;
       }
-      default -> throw new RuntimeException("Unknown operator: " + op);
+      default -> throw new ExecutionException("Unknown operator: " + op, node.getPosition());
     };
   }
 
@@ -172,18 +170,12 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     if (node.getCallee().equals("readEnv")) {
       return executeReadEnv(node);
     }
-    throw new RuntimeException(
-        "Execution Error at "
-            + node.getPosition()
-            + ": Unknown function '"
-            + node.getCallee()
-            + "'");
+    throw new ExecutionException("Unknown function '" + node.getCallee() + "'", node.getPosition());
   }
 
   private Object executePrintln(CallExpression node) {
     if (node.getArguments().isEmpty()) {
-      throw new RuntimeException(
-          "Execution Error at " + node.getPosition() + ": println expects 1 argument.");
+      throw new ExecutionException("println expects 1 argument.", node.getPosition());
     }
     String prev = this.expectedType;
     Object val;
@@ -199,14 +191,11 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
 
   private Object executeReadInput(CallExpression node) {
     if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new RuntimeException(
-          "Execution Error at "
-              + node.getPosition()
-              + ": readInput is only supported in PrintScript 1.1.");
+      throw new ExecutionException(
+          "readInput is only supported in PrintScript 1.1.", node.getPosition());
     }
     if (node.getArguments().size() != 1) {
-      throw new RuntimeException(
-          "Execution Error at " + node.getPosition() + ": readInput expects 1 argument.");
+      throw new ExecutionException("readInput expects 1 argument.", node.getPosition());
     }
 
     String prev = this.expectedType;
@@ -223,10 +212,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
 
     String raw = inputProvider.readInput(prompt);
     if (raw == null) {
-      throw new RuntimeException(
-          "Execution Error at "
-              + node.getPosition()
-              + ": End of input reached while reading input.");
+      throw new ExecutionException("End of input reached while reading input.", node.getPosition());
     }
 
     String targetType = expectedType != null ? expectedType : "string";
@@ -235,14 +221,11 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
 
   private Object executeReadEnv(CallExpression node) {
     if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new RuntimeException(
-          "Execution Error at "
-              + node.getPosition()
-              + ": readEnv is only supported in PrintScript 1.1.");
+      throw new ExecutionException(
+          "readEnv is only supported in PrintScript 1.1.", node.getPosition());
     }
     if (node.getArguments().size() != 1) {
-      throw new RuntimeException(
-          "Execution Error at " + node.getPosition() + ": readEnv expects 1 argument.");
+      throw new ExecutionException("readEnv expects 1 argument.", node.getPosition());
     }
 
     String prev = this.expectedType;
@@ -257,12 +240,8 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     String varName = formatPrintValue(nameVal);
     String raw = envProvider.getEnv(varName);
     if (raw == null) {
-      throw new RuntimeException(
-          "Execution Error at "
-              + node.getPosition()
-              + ": Environment variable '"
-              + varName
-              + "' is not defined.");
+      throw new ExecutionException(
+          "Environment variable '" + varName + "' is not defined.", node.getPosition());
     }
 
     String targetType = expectedType != null ? expectedType : "string";

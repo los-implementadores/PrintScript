@@ -22,6 +22,7 @@ import org.printscript.common.env.Environment;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.StdinInputProvider;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
+import org.printscript.interpreter.semantic.SemanticException;
 
 class ReadEnvTest {
 
@@ -104,7 +105,7 @@ class ReadEnvTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("missing", dummyPos), "string", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(interpreter));
+    RuntimeException ex = assertThrows(ExecutionException.class, () -> decl.accept(interpreter));
     assertTrue(ex.getMessage().contains("Environment variable 'NOT_FOUND' is not defined"));
     assertTrue(ex.getMessage().contains(dummyPos.toString()));
   }
@@ -120,7 +121,7 @@ class ReadEnvTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("port", dummyPos), "number", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(interpreter));
+    RuntimeException ex = assertThrows(ExecutionException.class, () -> decl.accept(interpreter));
     assertTrue(ex.getMessage().contains("Cannot coerce env variable 'invalid_port' to number"));
     assertTrue(ex.getMessage().contains(dummyPos.toString()));
   }
@@ -136,7 +137,7 @@ class ReadEnvTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("flag", dummyPos), "boolean", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(interpreter));
+    RuntimeException ex = assertThrows(ExecutionException.class, () -> decl.accept(interpreter));
     assertTrue(ex.getMessage().contains("Cannot coerce env variable 'Hola' to boolean"));
     assertTrue(ex.getMessage().contains(dummyPos.toString()));
   }
@@ -196,7 +197,7 @@ class ReadEnvTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("url", dummyPos), "string", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(analyzer));
+    RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
     assertTrue(ex.getMessage().contains("only supported in PrintScript 1.1"));
   }
 
@@ -209,7 +210,7 @@ class ReadEnvTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("url", dummyPos), "string", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(analyzer));
+    RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
     assertTrue(ex.getMessage().contains("readEnv argument must be of type string"));
   }
 
@@ -221,7 +222,7 @@ class ReadEnvTest {
     VarDeclarationStatement decl =
         new VarDeclarationStatement(new Identifier("url", dummyPos), "string", call, dummyPos);
 
-    RuntimeException ex = assertThrows(RuntimeException.class, () -> decl.accept(analyzer));
+    RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
     assertTrue(ex.getMessage().contains("readEnv expects 1 argument"));
   }
 }
