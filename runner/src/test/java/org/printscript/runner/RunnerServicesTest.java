@@ -11,6 +11,7 @@ import org.printscript.common.LanguageVersion;
 import org.printscript.common.configs.AnalyzerConfig;
 import org.printscript.common.linterViolations.Violation;
 import org.printscript.formatter.FormattingRules;
+import org.printscript.interpreter.ExecutionIo;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;

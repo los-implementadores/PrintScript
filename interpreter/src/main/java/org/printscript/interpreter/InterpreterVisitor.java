@@ -3,60 +3,19 @@ package org.printscript.interpreter;
 import java.util.Iterator;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
-import org.printscript.interpreter.env.EnvProvider;
-import org.printscript.interpreter.env.SystemEnvProvider;
-import org.printscript.interpreter.input.InputProvider;
-import org.printscript.interpreter.input.StdinInputProvider;
-import org.printscript.interpreter.output.OutputProvider;
-import org.printscript.interpreter.output.StdoutOutputProvider;
 import org.printscript.interpreter.util.TypeCoercion;
 
 public class InterpreterVisitor implements ASTVisitor<Object> {
 
   private final Environment env;
-  private final InputProvider inputProvider;
-  private final EnvProvider envProvider;
-  private final OutputProvider outputProvider;
+  private final ExecutionIo io;
   private final org.printscript.common.LanguageVersion version;
   private String expectedType;
 
-  public InterpreterVisitor(Environment env) {
-    this(
-        env,
-        new StdinInputProvider(),
-        new SystemEnvProvider(),
-        org.printscript.common.LanguageVersion.V1_0);
-  }
-
-  public InterpreterVisitor(Environment env, InputProvider inputProvider) {
-    this(env, inputProvider, new SystemEnvProvider(), org.printscript.common.LanguageVersion.V1_1);
-  }
-
   public InterpreterVisitor(
-      Environment env,
-      InputProvider inputProvider,
-      org.printscript.common.LanguageVersion version) {
-    this(env, inputProvider, new SystemEnvProvider(), version);
-  }
-
-  public InterpreterVisitor(
-      Environment env,
-      InputProvider inputProvider,
-      EnvProvider envProvider,
-      org.printscript.common.LanguageVersion version) {
-    this(env, inputProvider, envProvider, new StdoutOutputProvider(), version);
-  }
-
-  public InterpreterVisitor(
-      Environment env,
-      InputProvider inputProvider,
-      EnvProvider envProvider,
-      OutputProvider outputProvider,
-      org.printscript.common.LanguageVersion version) {
+      Environment env, ExecutionIo io, org.printscript.common.LanguageVersion version) {
     this.env = env;
-    this.outputProvider = outputProvider;
-    this.inputProvider = inputProvider;
-    this.envProvider = envProvider;
+    this.io = io;
     this.version = version;
   }
 
@@ -185,7 +144,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     } finally {
       this.expectedType = prev;
     }
-    outputProvider.print(formatPrintValue(val));
+    io.output().print(formatPrintValue(val));
     return null;
   }
 
@@ -208,9 +167,9 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     }
 
     String prompt = formatPrintValue(promptVal);
-    outputProvider.print(prompt);
+    io.output().print(prompt);
 
-    String raw = inputProvider.readInput(prompt);
+    String raw = io.input().readInput(prompt);
     if (raw == null) {
       throw new ExecutionException("End of input reached while reading input.", node.getPosition());
     }
@@ -238,7 +197,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     }
 
     String varName = formatPrintValue(nameVal);
-    String raw = envProvider.getEnv(varName);
+    String raw = io.env().getEnv(varName);
     if (raw == null) {
       throw new ExecutionException(
           "Environment variable '" + varName + "' is not defined.", node.getPosition());

@@ -2,10 +2,8 @@ package org.printscript.interpreter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.LanguageVersion;
@@ -18,33 +16,35 @@ import org.printscript.common.ast.NumberLiteral;
 import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.env.MapEnvProvider;
+import org.printscript.interpreter.input.InputProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
+import org.printscript.interpreter.output.CollectingOutputProvider;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 import org.printscript.interpreter.semantic.SemanticException;
 
 class ReadInputTest {
 
   private Environment env;
+  private CollectingOutputProvider output;
   private final Position dummyPos = new Position(1, 1, 1, 20);
-  private final PrintStream standardOut = System.out;
-  private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
 
   @BeforeEach
   void setUp() {
     env = new Environment();
-    System.setOut(new PrintStream(outputStreamCaptor));
+    output = new CollectingOutputProvider();
   }
 
-  @AfterEach
-  void tearDown() {
-    System.setOut(standardOut);
+  private InterpreterVisitor interpreterWith(InputProvider input) {
+    ExecutionIo io = new ExecutionIo(input, new MapEnvProvider(Map.of()), output);
+    return new InterpreterVisitor(env, io, LanguageVersion.V1_1);
   }
 
   @Test
   void readsNumberSuccessfully() {
     // let n: number = readInput("Edad: ");
     ProgrammaticInputProvider provider = new ProgrammaticInputProvider("25");
-    InterpreterVisitor interpreter = new InterpreterVisitor(env, provider, LanguageVersion.V1_1);
+    InterpreterVisitor interpreter = interpreterWith(provider);
 
     CallExpression call =
         new CallExpression("readInput", List.of(new StringLiteral("Edad: ", dummyPos)), dummyPos);
@@ -54,14 +54,14 @@ class ReadInputTest {
     decl.accept(interpreter);
 
     assertEquals(25.0, env.get("n"));
-    assertTrue(outputStreamCaptor.toString().contains("Edad: "));
+    assertTrue(output.getLines().contains("Edad: "));
   }
 
   @Test
   void readsStringSuccessfully() {
     // let name: string = readInput("Nombre: ");
     ProgrammaticInputProvider provider = new ProgrammaticInputProvider("Juan");
-    InterpreterVisitor interpreter = new InterpreterVisitor(env, provider, LanguageVersion.V1_1);
+    InterpreterVisitor interpreter = interpreterWith(provider);
 
     CallExpression call =
         new CallExpression("readInput", List.of(new StringLiteral("Nombre: ", dummyPos)), dummyPos);
@@ -71,14 +71,14 @@ class ReadInputTest {
     decl.accept(interpreter);
 
     assertEquals("Juan", env.get("name"));
-    assertTrue(outputStreamCaptor.toString().contains("Nombre: "));
+    assertTrue(output.getLines().contains("Nombre: "));
   }
 
   @Test
   void readsBooleanSuccessfully() {
     // let active: boolean = readInput("Activo?: ");
     ProgrammaticInputProvider provider = new ProgrammaticInputProvider("true");
-    InterpreterVisitor interpreter = new InterpreterVisitor(env, provider, LanguageVersion.V1_1);
+    InterpreterVisitor interpreter = interpreterWith(provider);
 
     CallExpression call =
         new CallExpression(
@@ -95,7 +95,7 @@ class ReadInputTest {
   void throwsOnInvalidNumberCoercion() {
     // let n: number = readInput("Edad: "); con entrada "no_es_numero"
     ProgrammaticInputProvider provider = new ProgrammaticInputProvider("no_es_numero");
-    InterpreterVisitor interpreter = new InterpreterVisitor(env, provider, LanguageVersion.V1_1);
+    InterpreterVisitor interpreter = interpreterWith(provider);
 
     CallExpression call =
         new CallExpression("readInput", List.of(new StringLiteral("Edad: ", dummyPos)), dummyPos);
@@ -111,7 +111,7 @@ class ReadInputTest {
   void throwsOnInvalidBooleanCoercion() {
     // let b: boolean = readInput("Acepta?: "); con entrada "Hola" (ejemplo de la consigna)
     ProgrammaticInputProvider provider = new ProgrammaticInputProvider("Hola");
-    InterpreterVisitor interpreter = new InterpreterVisitor(env, provider, LanguageVersion.V1_1);
+    InterpreterVisitor interpreter = interpreterWith(provider);
 
     CallExpression call =
         new CallExpression(
@@ -129,7 +129,7 @@ class ReadInputTest {
     // let x: number = 0; x = readInput("Nuevo valor: ");
     env.define("x", "number", 0.0);
     ProgrammaticInputProvider provider = new ProgrammaticInputProvider("99.5");
-    InterpreterVisitor interpreter = new InterpreterVisitor(env, provider, LanguageVersion.V1_1);
+    InterpreterVisitor interpreter = interpreterWith(provider);
 
     CallExpression call =
         new CallExpression(
@@ -146,7 +146,7 @@ class ReadInputTest {
   void readsInsidePrintln() {
     // println(readInput("Eco: "));
     ProgrammaticInputProvider provider = new ProgrammaticInputProvider("Mensaje de prueba");
-    InterpreterVisitor interpreter = new InterpreterVisitor(env, provider, LanguageVersion.V1_1);
+    InterpreterVisitor interpreter = interpreterWith(provider);
 
     CallExpression readCall =
         new CallExpression("readInput", List.of(new StringLiteral("Eco: ", dummyPos)), dummyPos);
@@ -155,9 +155,7 @@ class ReadInputTest {
 
     stmt.accept(interpreter);
 
-    String output = outputStreamCaptor.toString();
-    assertTrue(output.contains("Eco: "));
-    assertTrue(output.contains("Mensaje de prueba"));
+    assertEquals(List.of("Eco: ", "Mensaje de prueba"), output.getLines());
   }
 
   @Test

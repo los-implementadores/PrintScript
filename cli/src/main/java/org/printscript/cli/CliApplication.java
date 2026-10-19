@@ -16,6 +16,7 @@ import org.printscript.cli.interactive.InteractiveMenu;
 import org.printscript.cli.io.Console;
 import org.printscript.cli.io.FileAccess;
 import org.printscript.common.LanguageVersion;
+import org.printscript.interpreter.env.EnvProvider;
 import org.printscript.runner.AnalysisService;
 import org.printscript.runner.ExecutionService;
 import org.printscript.runner.FormattingService;
@@ -33,14 +34,14 @@ public class CliApplication {
   private final Console console;
   private final CommandRegistry registry;
 
-  public CliApplication(Console console, FileAccess files) {
+  public CliApplication(Console console, FileAccess files, EnvProvider environment) {
     this.console = console;
     this.registry =
         new CommandRegistry(
             List.of(
                 new ValidationCommand(new ValidationService(), console, files),
                 new AnalyzingCommand(new AnalysisService(), console, files),
-                new ExecutionCommand(new ExecutionService(), console, files),
+                new ExecutionCommand(new ExecutionService(), console, files, environment),
                 new FormattingCommand(new FormattingService(), console, files)));
   }
 
