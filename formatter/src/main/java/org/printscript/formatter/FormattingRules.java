@@ -1,59 +1,60 @@
 package org.printscript.formatter;
 
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.io.Reader;
 
 /**
  * Reglas de formateo configurables para el formatter de PrintScript.
  *
  * <p>Soporta configuraciones estándar en camelCase y las reglas específicas del TCK en kebab-case.
+ * Las claves desconocidas se ignoran.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FormattingRules {
 
-  @SerializedName(
-      value = "spaceBeforeColon",
-      alternate = {"enforce-spacing-before-colon-in-declaration"})
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  @JsonProperty("spaceBeforeColon")
+  @JsonAlias("enforce-spacing-before-colon-in-declaration")
   private Boolean spaceBeforeColon;
 
-  @SerializedName(
-      value = "spaceAfterColon",
-      alternate = {"enforce-spacing-after-colon-in-declaration"})
+  @JsonProperty("spaceAfterColon")
+  @JsonAlias("enforce-spacing-after-colon-in-declaration")
   private Boolean spaceAfterColon;
 
-  @SerializedName(
-      value = "spaceAroundAssign",
-      alternate = {"enforce-spacing-around-equals"})
+  @JsonProperty("spaceAroundAssign")
+  @JsonAlias("enforce-spacing-around-equals")
   private Boolean spaceAroundAssign;
 
-  @SerializedName("enforce-no-spacing-around-equals")
+  @JsonProperty("enforce-no-spacing-around-equals")
   private Boolean noSpacingAroundAssign;
 
-  @SerializedName(
-      value = "spaceAroundOperators",
-      alternate = {"mandatory-space-surrounding-operations"})
+  @JsonProperty("spaceAroundOperators")
+  @JsonAlias("mandatory-space-surrounding-operations")
   private Boolean spaceAroundOperators;
 
-  @SerializedName(
-      value = "newlineBeforePrintln",
-      alternate = {"line-breaks-after-println"})
+  @JsonProperty("newlineBeforePrintln")
+  @JsonAlias("line-breaks-after-println")
   private Integer newlineBeforePrintln;
 
-  @SerializedName(
-      value = "indentSize",
-      alternate = {"indent-inside-if"})
+  @JsonProperty("indentSize")
+  @JsonAlias("indent-inside-if")
   private Integer indentSize;
 
-  @SerializedName("mandatory-line-break-after-statement")
+  @JsonProperty("mandatory-line-break-after-statement")
   private Boolean lineBreakAfterStatement;
 
-  @SerializedName("mandatory-single-space-separation")
+  @JsonProperty("mandatory-single-space-separation")
   private Boolean singleSpaceSeparation;
 
-  @SerializedName("if-brace-below-line")
+  @JsonProperty("if-brace-below-line")
   private Boolean ifBraceBelowLine;
 
-  @SerializedName("if-brace-same-line")
+  @JsonProperty("if-brace-same-line")
   private Boolean ifBraceSameLine;
 
   /** Constructor con valores por defecto. */
@@ -64,9 +65,14 @@ public class FormattingRules {
    *
    * @param reader fuente de caracteres del JSON
    * @return las reglas parseadas
+   * @throws IllegalArgumentException si el JSON no es una configuración válida
    */
   public static FormattingRules fromJson(Reader reader) {
-    return new Gson().fromJson(reader, FormattingRules.class);
+    try {
+      return MAPPER.readValue(reader, FormattingRules.class);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Configuración de formato inválida: " + e.getMessage(), e);
+    }
   }
 
   // --- Getters para estrategia AST (con defaults históricos) ---

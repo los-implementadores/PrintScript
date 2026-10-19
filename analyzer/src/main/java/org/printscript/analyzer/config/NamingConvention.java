@@ -1,4 +1,4 @@
-package org.printscript.common.configs;
+package org.printscript.analyzer.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

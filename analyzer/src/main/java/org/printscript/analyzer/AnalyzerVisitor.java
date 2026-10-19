@@ -3,13 +3,13 @@ package org.printscript.analyzer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.printscript.analyzer.config.AnalyzerConfig;
+import org.printscript.analyzer.config.NamingConvention;
+import org.printscript.analyzer.violation.Severity;
+import org.printscript.analyzer.violation.Violation;
 import org.printscript.common.Position;
 import org.printscript.common.ast.*;
-import org.printscript.common.configs.AnalyzerConfig;
-import org.printscript.common.configs.NamingConvention;
 import org.printscript.common.env.Environment;
-import org.printscript.common.linterViolations.Severity;
-import org.printscript.common.linterViolations.Violation;
 
 public class AnalyzerVisitor implements ASTVisitor<Void> {
 
