@@ -93,15 +93,23 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
   @Override
   public Void visitIf(IfStatement node) {
     node.getCondition().accept(this);
-    for (Statement stmt : node.getThenBlock()) {
-      stmt.accept(this);
-    }
+    visitBlock(node.getThenBlock());
     if (node.hasElse()) {
-      for (Statement stmt : node.getElseBlock()) {
-        stmt.accept(this);
-      }
+      visitBlock(node.getElseBlock());
     }
     return null;
+  }
+
+  private void visitBlock(List<Statement> block) {
+    for (LintRule rule : rules) {
+      rule.onBlockStart();
+    }
+    for (Statement stmt : block) {
+      stmt.accept(this);
+    }
+    for (LintRule rule : rules) {
+      rule.onBlockEnd();
+    }
   }
 
   @Override

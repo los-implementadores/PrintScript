@@ -24,4 +24,4 @@ PrintScript es un subset de TypeScript, y en TypeScript `let` y `const` tienen s
 
 - El chequeo semántico y la ejecución coinciden: usar una variable fuera del bloque que la declaró es un error semántico, con posición, antes de ejecutar esa sentencia.
 - Las dos ramas pueden declarar el mismo nombre.
-- El linter (`analyzer`) sigue usando una tabla plana para la regla de variables sin usar: sólo produce advertencias, y una variable que se sombrea en un bloque puede contarse como usada cuando no lo está.
+- El linter también respeta los scopes. `LintRule` tiene dos eventos más, `onBlockStart` y `onBlockEnd`, que `AnalyzerVisitor` dispara alrededor de cada rama del `if`. `UnusedVariableRule` lleva un stack de scopes: un uso cuenta para la declaración visible más cercana, así que una variable tapada en un bloque, o la de una rama cuando sólo la otra usa ese nombre, se reporta como sin usar.
