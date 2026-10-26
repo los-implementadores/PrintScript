@@ -1,11 +1,15 @@
 package org.printscript.interpreter.semantic;
 
 import java.util.Iterator;
+import java.util.List;
+import org.printscript.common.LanguageVersion;
+import org.printscript.common.Position;
 import org.printscript.common.ast.ASTVisitor;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.BinaryExpression;
 import org.printscript.common.ast.BooleanLiteral;
 import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.Expression;
 import org.printscript.common.ast.ExpressionStatement;
 import org.printscript.common.ast.Identifier;
 import org.printscript.common.ast.IfStatement;
@@ -15,19 +19,24 @@ import org.printscript.common.ast.Statement;
 import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.builtin.BuiltinFunction;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.builtin.TypeChecker;
 
 public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
 
-  private final Environment env;
-  private final org.printscript.common.LanguageVersion version;
+  /** Scope actual: cambia al entrar y al salir de cada bloque, igual que en el intérprete. */
+  private Environment env;
+
+  private final BuiltinFunctions builtins;
+  private final LanguageVersion version;
+  private final TypeChecker typeChecker = new VisitorTypeChecker();
   private String expectedType;
 
-  public SemanticAnalyzerVisitor(Environment env) {
-    this(env, org.printscript.common.LanguageVersion.V1_0);
-  }
-
-  public SemanticAnalyzerVisitor(Environment env, org.printscript.common.LanguageVersion version) {
+  public SemanticAnalyzerVisitor(
+      Environment env, BuiltinFunctions builtins, LanguageVersion version) {
     this.env = env;
+    this.builtins = builtins;
     this.version = version;
   }
 
@@ -45,32 +54,17 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     String varName = node.getName().getName();
     String declaredType = node.getTypeName();
 
-    if (env.isDeclared(varName)) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Variable '"
-              + varName
-              + "' is already declared.");
+    if (env.isDeclaredInThisScope(varName)) {
+      throw new SemanticException(
+          "Variable '" + varName + "' is already declared.", node.getPosition());
     }
 
     if (node.getInitializer() != null) {
-      String prev = this.expectedType;
-      String exprType;
-      try {
-        this.expectedType = declaredType;
-        exprType = node.getInitializer().accept(this);
-      } finally {
-        this.expectedType = prev;
-      }
+      String exprType = typeOf(node.getInitializer(), declaredType);
       if (!declaredType.equals(exprType)) {
-        throw new RuntimeException(
-            "Semantic Error at "
-                + node.getPosition()
-                + ": Cannot assign "
-                + exprType
-                + " to variable of type "
-                + declaredType);
+        throw new SemanticException(
+            "Cannot assign " + exprType + " to variable of type " + declaredType,
+            node.getPosition());
       }
     }
 
@@ -83,41 +77,20 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     String varName = node.getTarget().getName();
 
     if (!env.isDeclared(varName)) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Variable '"
-              + varName
-              + "' is not declared.");
+      throw new SemanticException(
+          "Variable '" + varName + "' is not declared.", node.getPosition());
     }
 
     if (env.isConst(varName)) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Cannot reassign constant '"
-              + varName
-              + "'.");
+      throw new SemanticException(
+          "Cannot reassign constant '" + varName + "'.", node.getPosition());
     }
 
     String varType = env.getType(varName);
-    String prev = this.expectedType;
-    String exprType;
-    try {
-      this.expectedType = varType;
-      exprType = node.getValue().accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
+    String exprType = typeOf(node.getValue(), varType);
     if (!varType.equals(exprType)) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Cannot assign "
-              + exprType
-              + " to variable of type "
-              + varType);
+      throw new SemanticException(
+          "Cannot assign " + exprType + " to variable of type " + varType, node.getPosition());
     }
 
     return null;
@@ -133,22 +106,28 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   public String visitIf(IfStatement node) {
     String condType = node.getCondition().accept(this);
     if (!"boolean".equals(condType)) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": if condition must be boolean, found "
-              + condType
-              + ".");
+      throw new SemanticException(
+          "if condition must be boolean, found " + condType + ".", node.getPosition());
     }
-    for (Statement stmt : node.getThenBlock()) {
-      stmt.accept(this);
-    }
+    // Cada rama en su propio scope: lo que se declara en una no existe en la otra ni después del
+    // if.
+    analyzeBlock(node.getThenBlock());
     if (node.hasElse()) {
-      for (Statement stmt : node.getElseBlock()) {
-        stmt.accept(this);
-      }
+      analyzeBlock(node.getElseBlock());
     }
     return null;
+  }
+
+  private void analyzeBlock(List<Statement> block) {
+    Environment outer = env;
+    env = outer.childScope();
+    try {
+      for (Statement stmt : block) {
+        stmt.accept(this);
+      }
+    } finally {
+      env = outer;
+    }
   }
 
   @Override
@@ -162,126 +141,29 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
         return "string";
       }
       if (!leftType.equals("number") || !rightType.equals("number")) {
-        throw new RuntimeException(
-            "Semantic Error at "
-                + node.getPosition()
-                + ": Operator '+' requires numeric or string operands.");
+        throw new SemanticException(
+            "Operator '+' requires numeric or string operands.", node.getPosition());
       }
       return "number";
     }
 
     if (op.equals("-") || op.equals("*") || op.equals("/")) {
       if (!leftType.equals("number") || !rightType.equals("number")) {
-        throw new RuntimeException(
-            "Semantic Error at "
-                + node.getPosition()
-                + ": Operator '"
-                + op
-                + "' requires numeric operands.");
+        throw new SemanticException(
+            "Operator '" + op + "' requires numeric operands.", node.getPosition());
       }
       return "number";
     }
 
-    throw new RuntimeException(
-        "Semantic Error at " + node.getPosition() + ": Unknown operator " + op);
+    throw new SemanticException("Unknown operator " + op, node.getPosition());
   }
 
   @Override
   public String visitCallExpression(CallExpression node) {
-    if (node.getCallee().equals("println")) {
-      return analyzePrintln(node);
-    }
-    if (node.getCallee().equals("readInput")) {
-      return analyzeReadInput(node);
-    }
-    if (node.getCallee().equals("readEnv")) {
-      return analyzeReadEnv(node);
-    }
-    throw new RuntimeException(
-        "Semantic Error at "
-            + node.getPosition()
-            + ": Unknown function '"
-            + node.getCallee()
-            + "'");
-  }
-
-  private String analyzePrintln(CallExpression node) {
-    if (node.getArguments().size() != 1) {
-      throw new RuntimeException(
-          "Semantic Error at " + node.getPosition() + ": println expects 1 argument.");
-    }
-    String prev = this.expectedType;
-    try {
-      this.expectedType = "string";
-      node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-    return null;
-  }
-
-  private String analyzeReadInput(CallExpression node) {
-    if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Function 'readInput' is only supported in PrintScript 1.1.");
-    }
-    if (node.getArguments().size() != 1) {
-      throw new RuntimeException(
-          "Semantic Error at " + node.getPosition() + ": readInput expects 1 argument.");
-    }
-
-    String prev = this.expectedType;
-    String argType;
-    try {
-      this.expectedType = "string";
-      argType = node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
-    if (!"string".equals(argType)) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": readInput argument must be of type string, found "
-              + argType);
-    }
-
-    return expectedType != null ? expectedType : "string";
-  }
-
-  private String analyzeReadEnv(CallExpression node) {
-    if (version == org.printscript.common.LanguageVersion.V1_0) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Function 'readEnv' is only supported in PrintScript 1.1.");
-    }
-    if (node.getArguments().size() != 1) {
-      throw new RuntimeException(
-          "Semantic Error at " + node.getPosition() + ": readEnv expects 1 argument.");
-    }
-
-    String prev = this.expectedType;
-    String argType;
-    try {
-      this.expectedType = "string";
-      argType = node.getArguments().get(0).accept(this);
-    } finally {
-      this.expectedType = prev;
-    }
-
-    if (!"string".equals(argType)) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": readEnv argument must be of type string, found "
-              + argType);
-    }
-
-    return expectedType != null ? expectedType : "string";
+    BuiltinFunction function =
+        builtins.resolve(
+            node, version, detail -> new SemanticException(detail, node.getPosition()));
+    return function.checkTypes(typeChecker, node);
   }
 
   @Override
@@ -302,13 +184,38 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   @Override
   public String visitIdentifier(Identifier node) {
     if (!env.isDeclared(node.getName())) {
-      throw new RuntimeException(
-          "Semantic Error at "
-              + node.getPosition()
-              + ": Variable '"
-              + node.getName()
-              + "' is not declared.");
+      throw new SemanticException(
+          "Variable '" + node.getName() + "' is not declared.", node.getPosition());
     }
     return env.getType(node.getName());
+  }
+
+  /** Tipo de una expresión analizada con {@code type} como tipo esperado. */
+  private String typeOf(Expression expression, String type) {
+    String previous = this.expectedType;
+    try {
+      this.expectedType = type;
+      return expression.accept(this);
+    } finally {
+      this.expectedType = previous;
+    }
+  }
+
+  private final class VisitorTypeChecker implements TypeChecker {
+
+    @Override
+    public String typeOf(Expression expression, String type) {
+      return SemanticAnalyzerVisitor.this.typeOf(expression, type);
+    }
+
+    @Override
+    public String expectedType() {
+      return expectedType;
+    }
+
+    @Override
+    public RuntimeException error(String detail, Position position) {
+      return new SemanticException(detail, position);
+    }
   }
 }

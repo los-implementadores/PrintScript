@@ -32,6 +32,15 @@ public interface LintRule {
   default void onIdentifier(Identifier node, Consumer<Violation> report) {}
 
   /**
+   * Se llama al entrar a un bloque ({@code if} o {@code else}), antes de recorrer sus sentencias.
+   * Lo que se declara adentro deja de existir en {@link #onBlockEnd}.
+   */
+  default void onBlockStart() {}
+
+  /** Se llama al salir de un bloque, después de recorrer sus sentencias. */
+  default void onBlockEnd() {}
+
+  /**
    * Se llama al pedir el reporte, para las reglas que necesitan haber visto todo el programa (por
    * ejemplo, variables sin usar). Puede llamarse más de una vez, así que no debe cambiar el estado
    * de la regla.

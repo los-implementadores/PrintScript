@@ -3,12 +3,8 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":common"))
-    implementation(project(":lexer"))
-    implementation(project(":parser"))
-    implementation(project(":interpreter"))
-    implementation(project(":formatter"))
-    implementation(project(":analyzer"))
+    // La CLI sólo conoce la capa de orquestación; lexer/parser/analyzer quedan detrás de `runner`.
+    implementation(project(":runner"))
 }
 
 application {

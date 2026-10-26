@@ -3,10 +3,10 @@ package org.printscript.common.ast;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -41,6 +41,12 @@ class ASTTest {
 
   private Program program(Statement... stmts) {
     return new EagerProgram(List.of(stmts), POS);
+  }
+
+  private List<Statement> statements(Program program) {
+    List<Statement> statements = new ArrayList<>();
+    program.stream().forEachRemaining(statements::add);
+    return statements;
   }
 
   // -------------------------------------------------------------------------
@@ -100,7 +106,7 @@ class ASTTest {
   }
 
   // -------------------------------------------------------------------------
-  // Program: toList() y stream()
+  // Program: stream()
   // -------------------------------------------------------------------------
 
   @Test
@@ -112,7 +118,7 @@ class ASTTest {
 
     Program program = program(decA, decB, print);
 
-    List<Statement> stmts = program.toList();
+    List<Statement> stmts = statements(program);
     assertEquals(3, stmts.size());
     assertInstanceOf(VarDeclarationStatement.class, stmts.get(0));
     assertInstanceOf(VarDeclarationStatement.class, stmts.get(1));
@@ -120,13 +126,13 @@ class ASTTest {
   }
 
   @Test
-  void toListEsInmutable() {
+  void eagerProgramNoSeModificaDesdeElIterator() {
     Program program =
         program(new ExpressionStatement(new CallExpression("println", List.of(num(1)), POS), POS));
 
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> program.toList().add(new ExpressionStatement(num(2), POS)));
+    Iterator<Statement> it = program.stream();
+    it.next();
+    assertThrows(UnsupportedOperationException.class, it::remove);
   }
 
   @Test
@@ -144,18 +150,16 @@ class ASTTest {
   }
 
   @Test
-  void lazyProgramToListMaterializaYCachea() {
-    Statement stmt = new VarDeclarationStatement(id("x"), "number", num(5), POS);
-    Iterator<Statement> source = List.of(stmt).iterator();
-    LazyProgram lazy = new LazyProgram(source, POS);
+  void lazyProgramAdmiteUnSoloRecorrido() {
+    Statement stmt1 = new VarDeclarationStatement(id("a"), "number", num(1), POS);
+    Statement stmt2 = new VarDeclarationStatement(id("b"), "number", num(2), POS);
+    LazyProgram lazy = new LazyProgram(List.of(stmt1, stmt2).iterator(), POS);
 
-    // primera llamada: drena el iterator
-    List<Statement> first = lazy.toList();
-    assertEquals(1, first.size());
+    Iterator<Statement> it = lazy.stream();
+    it.next();
 
-    // segunda llamada: devuelve el cache (el iterator ya está agotado)
-    List<Statement> second = lazy.toList();
-    assertSame(first, second);
+    // un segundo recorrido sólo vería lo que quedaba: falla en vez de mentir
+    assertThrows(IllegalStateException.class, lazy::stream);
   }
 
   @Test
@@ -188,9 +192,7 @@ class ASTTest {
           @Override
           public String visitProgram(Program n) {
             StringBuilder sb = new StringBuilder();
-            for (Statement s : n.toList()) {
-              sb.append(s.accept(this));
-            }
+            n.stream().forEachRemaining(s -> sb.append(s.accept(this)));
             return sb.toString();
           }
 

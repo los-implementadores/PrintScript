@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.LanguageVersion;
@@ -24,7 +25,9 @@ class IfStatementParsingTest {
     Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer, version);
     Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
-    return program.toList();
+    List<Statement> statements = new ArrayList<>();
+    program.stream().forEachRemaining(statements::add);
+    return statements;
   }
 
   @Test

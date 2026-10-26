@@ -1,5 +1,10 @@
 package org.printscript.formatter;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.util.Iterator;
 import java.util.List;
 import org.printscript.common.ast.ASTVisitor;
 import org.printscript.common.ast.AssignmentStatement;
@@ -32,21 +37,35 @@ public class FormatterVisitor implements ASTVisitor<String> {
 
   @Override
   public String visitProgram(Program node) {
-    List<Statement> statements = node.toList();
-    StringBuilder sb = new StringBuilder();
+    StringWriter out = new StringWriter();
+    try {
+      writeProgram(node, out);
+    } catch (IOException e) {
+      // StringWriter no lanza IOException.
+      throw new UncheckedIOException(e);
+    }
+    return out.toString();
+  }
 
-    for (int i = 0; i < statements.size(); i++) {
-      Statement stmt = statements.get(i);
+  /**
+   * Escribe el programa formateado de a una sentencia, a medida que se recorre: en memoria sólo
+   * está la sentencia que se está formateando.
+   */
+  public void writeProgram(Program node, Writer target) throws IOException {
+    Iterator<Statement> statements = node.stream();
+    boolean first = true;
 
-      if (i > 0 && shouldAddExtraNewline(stmt)) {
-        sb.append("\n".repeat(rules.getNewlineBeforePrintln()));
+    while (statements.hasNext()) {
+      Statement stmt = statements.next();
+
+      if (!first && shouldAddExtraNewline(stmt)) {
+        target.write("\n".repeat(rules.getNewlineBeforePrintln()));
       }
 
-      sb.append(stmt.accept(this));
-      sb.append('\n');
+      target.write(stmt.accept(this));
+      target.write('\n');
+      first = false;
     }
-
-    return sb.toString();
   }
 
   @Override

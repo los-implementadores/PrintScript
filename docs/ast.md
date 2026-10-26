@@ -249,30 +249,27 @@ new IfStatement(
 ### `Program.java` — raíz del árbol (interfaz)
 
 El nodo raíz. Representa el programa completo como una secuencia de `Statement`.
-Es una **interfaz** con dos métodos:
+Es una **interfaz** con un solo método:
 
-- `toList()` — materializa y devuelve todas las sentencias como lista inmutable.
-  Usar cuando se necesita el árbol completo (p.ej. el formatter por AST).
-- `stream()` — devuelve un `Iterator<Statement>` lazy. Usar cuando se procesa
-  de a uno sin necesitar todo en memoria (p.ej. el interpreter).
+- `stream()` — devuelve un `Iterator<Statement>`. El contrato es que un `Program`
+  se recorre **una sola vez** (ver ADR-020): quien necesite varias pasadas se
+  guarda las sentencias él mismo.
 
 Hay dos implementaciones:
 
 | Clase | Cuándo usar |
 |---|---|
-| `EagerProgram` | Lista inmutable cargada en construcción. Para tests. |
-| `LazyProgram` | Envuelve un `Iterator<Statement>` (el parser). Drena on-demand. |
+| `LazyProgram` | Envuelve un `Iterator<Statement>` (el parser). Drena on-demand; un segundo `stream()` lanza `IllegalStateException`. |
+| `EagerProgram` | Envuelve una lista ya armada. Para tests. |
 
 ```java
-// Eager — árbol completo en memoria desde el inicio:
-Program program = new EagerProgram(List.of(decA, decB, printStmt), pos);
-program.toList();   // [VarDecl, VarDecl, ExprStmt]
-
 // Lazy — envuelve el parser, drena cuando hace falta:
-Parser parser = new ParserImpl(lexer);
 Program program = new LazyProgram(parser, pos);
 program.stream();   // Iterator<Statement> que avanza el parser de a uno
-program.toList();   // drena el iterator completo y cachea el resultado
+
+// Eager — programa armado a mano:
+Program program = new EagerProgram(List.of(decA, decB, printStmt), pos);
+program.stream();   // itera sobre la lista
 ```
 
 ---
@@ -334,10 +331,9 @@ LazyProgram               ├── VarDeclarationStatement
   │ Program               ├── ExpressionStatement
   │                       └── IfStatement
   │                  Program  (interfaz raíz)
-  ├── .stream()       ├── EagerProgram  (lista inmutable)
-  │   Iterator<Stmt>  └── LazyProgram   (drena parser on-demand)
-  └── .toList()       ASTVisitor<T>  (interfaz)
-      List<Stmt>
+  └── .stream()       ├── EagerProgram  (lista armada, tests)
+      Iterator<Stmt>  └── LazyProgram   (drena parser on-demand)
+      (una pasada)    ASTVisitor<T>  (interfaz)
   │
   ├── Interpreter
   │   implements

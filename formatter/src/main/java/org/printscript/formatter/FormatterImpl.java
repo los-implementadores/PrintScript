@@ -28,6 +28,15 @@ public class FormatterImpl implements Formatter {
   }
 
   @Override
+  public void format(Program program, Writer writer) {
+    try {
+      new FormatterVisitor(rules).writeProgram(program, writer);
+    } catch (IOException e) {
+      throw new UncheckedIOException("Error al escribir código formateado", e);
+    }
+  }
+
+  @Override
   public void format(Reader reader, Writer writer) {
     try {
       new StreamingFormatter(reader, rules).writeTo(writer);

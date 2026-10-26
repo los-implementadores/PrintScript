@@ -6,6 +6,7 @@ plugins {
     pmd
     id("com.diffplug.spotless")
     `maven-publish`
+    jacoco
 }
 
 publishing {
@@ -96,6 +97,16 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.named("jacocoTestReport"))
+}
+
+// Reporte de cobertura de cada módulo en build/reports/jacoco/test/html.
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.named("test"))
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }
 
 // Cualquier compilación deja configurados los git hooks del repo (installGitHooks en el build raíz).

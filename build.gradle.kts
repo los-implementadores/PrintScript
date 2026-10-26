@@ -1,5 +1,34 @@
-// Root project — no aplica plugins propios.
-// La configuración común está en buildSrc/src/main/kotlin/printscript.java-conventions.gradle.kts
+// Root project. La configuración común de los módulos está en
+// buildSrc/src/main/kotlin/printscript.java-conventions.gradle.kts
+
+plugins {
+    base
+    jacoco
+}
+
+repositories {
+    mavenCentral()
+}
+
+// La raíz resuelve JaCoCo para la cobertura de todo el proyecto: se lockea igual que los módulos
+// (ver printscript.java-conventions), en el gradle.lockfile de la raíz.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+tasks.register("resolveAndLockAll") {
+    description = "Resuelve todas las dependencias para regenerar los lockfiles (con --write-locks)."
+    group = "build setup"
+    notCompatibleWithConfigurationCache("Resuelve configuraciones al ejecutarse")
+    doFirst {
+        require(gradle.startParameter.isWriteDependencyLocks) {
+            "Hay que correrlo con --write-locks"
+        }
+    }
+    doLast {
+        configurations.filter { it.isCanBeResolved }.forEach { it.resolve() }
+    }
+}
 
 // Hace que git use los hooks versionados en hooks/ (core.hooksPath). Corre solo antes de cualquier
 // compilación (ver printscript.java-conventions), así nadie tiene que acordarse de instalarlos.
@@ -31,4 +60,52 @@ val installGitHooks by tasks.registering(Exec::class) {
         current.isEmpty()
     }
     commandLine("git", "config", "core.hooksPath", "hooks")
+}
+
+// Cobertura de todo el proyecto: cuenta los tests de cualquier módulo (las clases de common, por
+// ejemplo, las ejercitan sobre todo los tests del parser y del intérprete).
+val modules = subprojects.map { it.name }
+val testTasks = modules.map { ":$it:test" }
+val coverageExecutionData = files(modules.map { "$it/build/jacoco/test.exec" })
+val coverageClasses = files(modules.map { "$it/build/classes/java/main" })
+val coverageSources = files(modules.map { "$it/src/main/java" })
+
+val coverageReport by tasks.registering(JacocoReport::class) {
+    description = "Reporte de cobertura de todos los módulos (build/reports/jacoco/coverageReport)."
+    group = "verification"
+    dependsOn(testTasks)
+    executionData(coverageExecutionData)
+    classDirectories.setFrom(coverageClasses)
+    sourceDirectories.setFrom(coverageSources)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+// Un piso de cobertura sólo sirve si frena el build: si baja del mínimo, `check` falla. El mínimo es
+// la cobertura que había al agregarlo; se sube cuando la cobertura sube, nunca se baja.
+val coverageVerification by tasks.registering(JacocoCoverageVerification::class) {
+    description = "Falla si la cobertura de líneas de todo el proyecto baja del mínimo."
+    group = "verification"
+    dependsOn(testTasks)
+    executionData(coverageExecutionData)
+    classDirectories.setFrom(coverageClasses)
+    sourceDirectories.setFrom(coverageSources)
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                minimum = "0.90".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                minimum = "0.75".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(coverageReport, coverageVerification)
 }

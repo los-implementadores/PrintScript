@@ -1,41 +1,60 @@
 package org.printscript.cli;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.printscript.cli.io.LocalFileAccess;
+import org.printscript.cli.io.SystemConsole;
+import org.printscript.interpreter.env.MapEnvProvider;
+import org.printscript.runner.LanguageServices;
 
+/**
+ * Corre la CLI de punta a punta sobre archivos reales, armada igual que en {@link Main} salvo por
+ * los streams de la consola y las variables de entorno, que son de memoria. Así los tests no tocan
+ * {@code System.out} ni {@code System.in} (estado global) y pueden correr en paralelo.
+ */
 class MainE2ETest {
-
-  private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-  private final PrintStream originalOut = System.out;
 
   @TempDir Path tempDir;
 
-  @BeforeEach
-  public void setUpStreams() {
-    System.setOut(new PrintStream(outContent));
+  private final ByteArrayOutputStream out = new ByteArrayOutputStream();
+  private final ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+  private int runCli(String stdin, Map<String, String> environment, String... args) {
+    SystemConsole console =
+        new SystemConsole(
+            new PrintStream(out, true, UTF_8),
+            new PrintStream(err, true, UTF_8),
+            new ByteArrayInputStream(stdin.getBytes(UTF_8)));
+    CliApplication cli =
+        new CliApplication(
+            console,
+            new LocalFileAccess(),
+            new MapEnvProvider(environment),
+            LanguageServices.printScript());
+    return cli.run(args);
   }
 
-  @AfterEach
-  public void restoreStreams() {
-    System.setOut(originalOut);
+  private int runCli(String... args) {
+    return runCli("", Map.of(), args);
   }
 
-  // Helper para obtener fácilmente las rutas de src/test/resources
-  private Path getResourcePath(String fileName) throws Exception {
+  private String output() {
+    return out.toString(UTF_8);
+  }
+
+  private Path resource(String fileName) throws Exception {
     URL resource = getClass().getClassLoader().getResource(fileName);
     if (resource == null) {
       throw new IllegalArgumentException("No se encontró el archivo en resources: " + fileName);
@@ -44,93 +63,70 @@ class MainE2ETest {
   }
 
   @Test
-  void testAnalyzerDetectsComplexPrintln() throws Exception {
-    // 1. Obtenemos las rutas absolutas de los archivos en resources
-    Path scriptPath = getResourcePath("analyzer_script.ps");
-    Path configPath = getResourcePath("linter_rules.json");
+  void analyzingReportsAComplexExpressionInsidePrintln() throws Exception {
+    String script = resource("analyzer_script.ps").toString();
+    String config = resource("linter_rules.json").toString();
 
-    // 2. Ejecutamos el CLI directamente sobre los resources (el linter no modifica archivos)
-    String[] args = {"analyzing", scriptPath.toString(), "--config", configPath.toString()};
-    Main.main(args);
+    int code = runCli("analyzing", script, "--config", config);
 
-    // 3. Verificamos la salida
-    String consoleOutput = outContent.toString();
-    assertTrue(consoleOutput.contains("Linter found violations:"));
-    assertTrue(consoleOutput.contains("[WARNING] Complex expression in 'println'"));
+    assertEquals(CliApplication.EXIT_OK, code);
+    assertTrue(output().contains("Linter found violations:"));
+    assertTrue(output().contains("[WARNING] Complex expression in 'println'"));
   }
 
   @Test
-  void testFormatterModifiesFile() throws Exception {
-    // 1. Obtenemos el archivo original de resources
-    Path originalScriptPath = getResourcePath("format_test.ps");
-    Path configPath = getResourcePath("formatter_rules.json");
+  void formattingRewritesTheFileWithTheConfiguredRules() throws Exception {
+    // Se formatea una copia para no modificar el archivo de resources.
+    Path script = tempDir.resolve("format_test_copy.ps");
+    Files.copy(resource("format_test.ps"), script);
+    String config = resource("formatter_rules.json").toString();
 
-    // 2. Copiamos el script al tempDir para no sobreescribir el código fuente del proyecto
-    Path scriptPathToFormat = tempDir.resolve("format_test_copy.ps");
-    Files.copy(originalScriptPath, scriptPathToFormat);
+    int code = runCli("formatting", script.toString(), "--config", config);
 
-    // 3. Ejecutamos el CLI sobre la COPIA temporal
-    String[] args = {
-      "formatting", scriptPathToFormat.toString(), "--config", configPath.toString()
-    };
-    Main.main(args);
-
-    // 4. Leemos el archivo resultante y verificamos los cambios
-    String resultingCode = Files.readString(scriptPathToFormat);
-
-    String expectedCode = "let name: string = \"Joe\";\n\nprintln(name);\n";
-
-    assertEquals(expectedCode.trim(), resultingCode.trim());
-    assertTrue(outContent.toString().contains("Formatting successful"));
+    assertEquals(CliApplication.EXIT_OK, code);
+    assertEquals("let name: string = \"Joe\";\n\nprintln(name);", Files.readString(script).trim());
+    assertTrue(output().contains("Formatting successful"));
   }
 
   @Test
-  void testExecutionRunsScriptAndPrintsOutput() throws Exception {
-    // 1. Obtenemos la ruta del script de ejecución desde resources
-    Path scriptPath = getResourcePath("execution_script.ps");
+  void executionPrintsTheProgramOutputBetweenTheCliMessages() throws Exception {
+    int code = runCli("execution", resource("execution_script.ps").toString());
 
-    // 2. Ejecutamos el CLI en modo "execution"
-    String[] args = {"execution", scriptPath.toString()};
-    Main.main(args);
-
-    // 3. Verificamos la salida de la consola
-    String consoleOutput = outContent.toString();
-
-    // Verificamos los mensajes de la CLI
-    assertTrue(consoleOutput.contains("Ejecutando script..."));
-    assertTrue(consoleOutput.contains("Execution finished."));
-
-    // Verificamos el output real del intérprete
-    assertTrue(consoleOutput.contains("Result: 3"));
+    assertEquals(CliApplication.EXIT_OK, code);
+    String output = output();
+    assertTrue(output.indexOf("Ejecutando script...") < output.indexOf("Result: 3"));
+    assertTrue(output.indexOf("Result: 3") < output.indexOf("Execution finished."));
   }
 
   @Test
-  void testExecutionWithReadInputInV1_1() throws Exception {
-    InputStream originalIn = System.in;
-    try {
-      System.setIn(new ByteArrayInputStream("Matias\n25\n".getBytes(StandardCharsets.UTF_8)));
-      Path scriptPath = getResourcePath("read_input_script.ps");
+  void executionReadsUserInputFromTheConsoleInVersion11() throws Exception {
+    String script = resource("read_input_script.ps").toString();
 
-      String[] args = {"execution", scriptPath.toString(), "--version", "1.1"};
-      Main.main(args);
+    int code = runCli("Matias\n25\n", Map.of(), "execution", script, "--version", "1.1");
 
-      String consoleOutput = outContent.toString();
-      assertTrue(consoleOutput.contains("Nombre: "));
-      assertTrue(consoleOutput.contains("Edad: "));
-      assertTrue(consoleOutput.contains("Hola Matias edad 25"));
-    } finally {
-      System.setIn(originalIn);
-    }
+    assertEquals(CliApplication.EXIT_OK, code);
+    assertTrue(output().contains("Nombre: "));
+    assertTrue(output().contains("Edad: "));
+    assertTrue(output().contains("Hola Matias edad 25"));
   }
 
   @Test
-  void testExecutionWithReadEnvInV1_1() throws Exception {
-    Path scriptPath = getResourcePath("read_env_script.ps");
+  void executionReadsEnvironmentVariablesInVersion11() throws Exception {
+    String script = resource("read_env_script.ps").toString();
 
-    String[] args = {"execution", scriptPath.toString(), "--version", "1.1"};
-    Main.main(args);
+    int code = runCli("", Map.of("PATH", "/usr/bin"), "execution", script, "--version", "1.1");
 
-    String consoleOutput = outContent.toString();
-    assertTrue(consoleOutput.contains("Path found"));
+    assertEquals(CliApplication.EXIT_OK, code);
+    assertTrue(output().contains("Path found"));
+  }
+
+  @Test
+  void executionOfAMissingEnvironmentVariableExitsWithAnError() throws Exception {
+    String script = resource("read_env_script.ps").toString();
+
+    int code = runCli("", Map.of(), "execution", script, "--version", "1.1");
+
+    assertEquals(CliApplication.EXIT_ERROR, code);
+    assertTrue(err.toString(UTF_8).contains("Environment variable 'PATH' is not defined."));
   }
 }

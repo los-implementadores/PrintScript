@@ -111,7 +111,8 @@ StaticAnalyzerImpl (fachada)                     │
        │                                         │
        ▼                                         ▼
 AnalyzerVisitor (ASTVisitor<Void>) ── avisa a cada regla ──► onDeclaration / onAssignment
-       │                                                     onCall / onIdentifier / onFinish
+       │                                                     onCall / onIdentifier
+       │                                                     onBlockStart / onBlockEnd / onFinish
        └── List<Violation> (acumula lo que reportan las reglas)
 ```
 
@@ -122,7 +123,7 @@ sobreescribe solo los nodos que le interesan:
 | --- | --- | --- |
 | `NamingConventionRule` | declaraciones | ninguno |
 | `SimpleArgumentRule` | llamadas a la función que controla | ninguno |
-| `UnusedVariableRule` | declaraciones, asignaciones y lecturas; reporta en `onFinish` | qué variables se declararon y cuáles se usaron |
+| `UnusedVariableRule` | declaraciones, asignaciones, lecturas y bloques; reporta en `onFinish` | qué variables se declararon, en qué scope y cuáles se usaron |
 
 ### Cómo agregar una regla
 

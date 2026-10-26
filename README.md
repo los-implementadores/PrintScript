@@ -13,7 +13,8 @@ static code analyzer para el lenguaje PrintScript (subset de TypeScript).
 | `interpreter` | Recorre el AST y ejecuta el programa (incluye análisis semántico) |
 | `formatter` | Reformatea código fuente según reglas configurables (JSON) |
 | `analyzer` | Static code analyzer (linter): reglas configurables (JSON) que reportan violaciones con su posición |
-| `cli` | Punto de entrada. Orquesta los módulos según la operación pedida |
+| `runner` | Orquestación del lenguaje: un servicio por operación (validar, analizar, ejecutar, formatear). Puro: sin consola ni archivos |
+| `cli` | Adaptador de terminal: comandos (`cli.command`), I/O (`cli.io`) y parseo de argumentos/menú. Depende sólo de `runner` |
 
 Cada módulo depende solo de lo que necesita (ver `build.gradle.kts` de cada uno).
 
@@ -29,6 +30,7 @@ proyecto para compilar, Gradle la descarga sola.
 ./gradlew spotlessCheck  # Verificar formato
 ./gradlew checkstyleMain # Verificar estilo
 ./gradlew pmdMain        # Análisis estático
+./gradlew coverageReport # Cobertura de todo el proyecto (build/reports/jacoco/coverageReport)
 ```
 
 Los git hooks (`hooks/pre-commit` y `hooks/pre-push`) se configuran solos la primera vez que se
@@ -60,6 +62,8 @@ compila: Gradle hace `git config core.hooksPath hooks`. No hay que instalarlos a
 - **Spotless** + google-java-format — formateo automático.
 - **Checkstyle** — estilo de código (Google Java Style). Un warning hace fallar el build.
 - **PMD** — análisis estático de malas prácticas y complejidad.
+- **JaCoCo** — cobertura de todo el proyecto. `./gradlew build` falla si baja de 90 % de líneas o
+  75 % de ramas; el reporte queda en `build/reports/jacoco/coverageReport`.
 - **Git hooks** — pre-commit (formato + Checkstyle + PMD), pre-push (tests). Se saltean con
   `--no-verify`; la red final es el CI.
 - **Lockfiles** — cada módulo tiene un `gradle.lockfile` con la versión exacta de todas sus

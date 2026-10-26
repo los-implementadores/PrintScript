@@ -4,12 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.BinaryExpression;
@@ -20,27 +19,26 @@ import org.printscript.common.ast.NumberLiteral;
 import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
+import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.env.MapEnvProvider;
+import org.printscript.interpreter.input.ProgrammaticInputProvider;
+import org.printscript.interpreter.output.CollectingOutputProvider;
 
 class InterpreterTest {
 
   private Environment env;
   private InterpreterVisitor interpreter;
+  private CollectingOutputProvider output;
   private final Position dummyPos = new Position(1, 1, 1, 10);
-
-  // Para capturar el System.out.println
-  private final PrintStream standardOut = System.out;
-  private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
 
   @BeforeEach
   void setUp() {
     env = new Environment();
-    interpreter = new InterpreterVisitor(env);
-    System.setOut(new PrintStream(outputStreamCaptor));
-  }
-
-  @AfterEach
-  void tearDown() {
-    System.setOut(standardOut);
+    output = new CollectingOutputProvider();
+    ExecutionIo io =
+        new ExecutionIo(new ProgrammaticInputProvider(), new MapEnvProvider(Map.of()), output);
+    interpreter =
+        new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_0);
   }
 
   @Test
@@ -79,7 +77,7 @@ class InterpreterTest {
     stmt.accept(interpreter);
 
     // Verificamos que salió por consola correctamente
-    assertEquals("Joe Doe", outputStreamCaptor.toString().trim());
+    assertEquals(List.of("Joe Doe"), output.getLines());
   }
 
   @Test
@@ -92,7 +90,7 @@ class InterpreterTest {
     stmt.accept(interpreter);
 
     // El formatter interno del intérprete debería sacarle el .0
-    assertEquals("42", outputStreamCaptor.toString().trim());
+    assertEquals(List.of("42"), output.getLines());
   }
 
   @Test

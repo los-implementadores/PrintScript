@@ -14,10 +14,14 @@ import org.printscript.analyzer.violation.Violation;
 import org.printscript.common.Position;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.BooleanLiteral;
 import org.printscript.common.ast.CallExpression;
 import org.printscript.common.ast.Expression;
+import org.printscript.common.ast.ExpressionStatement;
 import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.IfStatement;
 import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.Statement;
 import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 
@@ -35,7 +39,7 @@ class AnalyzerVisitorTest {
   // --- REGLA 1: NAMING CONVENTION ---
 
   @Test
-  void testCamelCaseViolation() {
+  void reportsAVariableThatIsNotInCamelCase() {
     config.activeNamingConvention = true;
     config.namingConventionFormat = NamingConvention.CAMEL_CASE;
 
@@ -58,7 +62,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testSnakeCaseSuccess() {
+  void acceptsSnakeCaseWhenThatIsTheConfiguredConvention() {
     config.activeNamingConvention = true;
     config.namingConventionFormat = NamingConvention.SNAKE_CASE;
 
@@ -82,7 +86,7 @@ class AnalyzerVisitorTest {
   // --- REGLA 2: UNUSED VARIABLES ---
 
   @Test
-  void testUnusedVariableWarning() {
+  void warnsAboutAVariableThatIsNeverRead() {
     config.activeUnusedVariables = true;
 
     config.activeNamingConvention = false;
@@ -103,7 +107,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testUsedVariableNoWarning() {
+  void doesNotWarnAboutAVariableThatIsRead() {
     config.activeUnusedVariables = true;
 
     config.activeNamingConvention = false;
@@ -125,10 +129,67 @@ class AnalyzerVisitorTest {
     assertTrue(violations.isEmpty());
   }
 
+  @Test
+  void warnsAboutAnOuterVariableWhenOnlyTheOneDeclaredInsideTheBlockIsRead() {
+    config.activeUnusedVariables = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+    Position outer = new Position(1, 1, 1, 20);
+
+    declaration("x", outer).accept(visitor);
+    ifElse(List.of(declaration("x", new Position(2, 3, 2, 22)), println("x")), null)
+        .accept(visitor);
+
+    List<Violation> violations = visitor.getFinalViolations();
+    assertEquals(1, violations.size());
+    assertEquals(outer, violations.get(0).getPosition());
+  }
+
+  @Test
+  void warnsAboutAVariableOfOneBranchWhenOnlyTheOtherBranchReadsTheSameName() {
+    config.activeUnusedVariables = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+    Position thenBranch = new Position(2, 3, 2, 22);
+
+    ifElse(
+            List.of(declaration("y", thenBranch)),
+            List.of(declaration("y", new Position(4, 3, 4, 22)), println("y")))
+        .accept(visitor);
+
+    List<Violation> violations = visitor.getFinalViolations();
+    assertEquals(1, violations.size());
+    assertEquals(thenBranch, violations.get(0).getPosition());
+  }
+
+  @Test
+  void doesNotWarnAboutAnOuterVariableReadInsideABlock() {
+    config.activeUnusedVariables = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+
+    declaration("x", defaultPos).accept(visitor);
+    ifElse(List.of(println("x")), null).accept(visitor);
+
+    assertTrue(visitor.getFinalViolations().isEmpty());
+  }
+
+  private VarDeclarationStatement declaration(String name, Position position) {
+    return new VarDeclarationStatement(
+        new Identifier(name, position), "number", new NumberLiteral(1, position), position);
+  }
+
+  private Statement println(String name) {
+    return new ExpressionStatement(
+        new CallExpression("println", List.of(new Identifier(name, defaultPos)), defaultPos),
+        defaultPos);
+  }
+
+  private IfStatement ifElse(List<Statement> thenBlock, List<Statement> elseBlock) {
+    return new IfStatement(new BooleanLiteral(true, defaultPos), thenBlock, elseBlock, defaultPos);
+  }
+
   // --- REGLA 3: COMPLEX PRINTLN ---
 
   @Test
-  void testComplexPrintlnViolation() {
+  void reportsAnExpressionPassedToPrintln() {
     config.activeComplexPrintln = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -146,7 +207,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testSimplePrintlnSuccess() {
+  void acceptsALiteralOrIdentifierPassedToPrintln() {
     config.activeComplexPrintln = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -161,7 +222,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testViolationFormatting() {
+  void aViolationPrintsSeverityMessageAndPosition() {
     Position pos = new Position(1, 5, 1, 15);
     Violation violation = new Violation("Variable should be camelCase", Severity.WARNING, pos);
 
@@ -173,7 +234,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testComplexReadInputViolation() {
+  void reportsAnExpressionPassedToReadInput() {
     config.activeComplexReadInput = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -195,7 +256,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testSimpleReadInputSuccess() {
+  void acceptsALiteralPassedToReadInput() {
     config.activeComplexReadInput = true;
     AnalyzerVisitor visitor = new AnalyzerVisitor(config);
 
@@ -210,7 +271,7 @@ class AnalyzerVisitorTest {
   }
 
   @Test
-  void testTckConfigCompatibility() {
+  void readsTheTckRuleNamesAndLeavesRulesOffByDefault() {
     String json =
         """
         {
