@@ -1,4 +1,4 @@
-# ADR-013: Separar la CLI en I/O, comandos y orquestación del lenguaje
+# ADR-016: Separar la CLI en I/O, comandos y orquestación del lenguaje
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-09-27
