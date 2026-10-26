@@ -4,7 +4,6 @@ import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.CallExpression;
 import org.printscript.interpreter.ExecutionIo;
-import org.printscript.interpreter.semantic.SemanticException;
 import org.printscript.interpreter.util.TypeCoercion;
 import org.printscript.interpreter.util.ValueFormatter;
 
@@ -30,7 +29,7 @@ abstract class ExternalTextFunction implements BuiltinFunction {
   public String checkTypes(TypeChecker checker, CallExpression call) {
     String argumentType = checker.typeOf(call.getArguments().get(0), "string");
     if (!"string".equals(argumentType)) {
-      throw new SemanticException(
+      throw checker.error(
           name() + " argument must be of type string, found " + argumentType, call.getPosition());
     }
     return resultType(checker.expectedType());

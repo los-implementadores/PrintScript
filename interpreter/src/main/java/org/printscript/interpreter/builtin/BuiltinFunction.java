@@ -25,7 +25,8 @@ public interface BuiltinFunction {
    * Chequea los tipos de los argumentos. La versión y la aridad ya fueron validadas.
    *
    * @return el tipo del resultado, o {@code null} si la función no devuelve valor
-   * @throws org.printscript.interpreter.semantic.SemanticException si un argumento es inválido
+   * @throws RuntimeException el error que arma {@link TypeChecker#error} si un argumento es
+   *     inválido
    */
   String checkTypes(TypeChecker checker, CallExpression call);
 

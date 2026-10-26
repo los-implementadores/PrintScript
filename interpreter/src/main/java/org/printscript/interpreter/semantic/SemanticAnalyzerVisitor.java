@@ -3,6 +3,7 @@ package org.printscript.interpreter.semantic;
 import java.util.Iterator;
 import java.util.List;
 import org.printscript.common.LanguageVersion;
+import org.printscript.common.Position;
 import org.printscript.common.ast.*;
 import org.printscript.common.env.Environment;
 import org.printscript.interpreter.builtin.BuiltinFunction;
@@ -197,6 +198,11 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     @Override
     public String expectedType() {
       return expectedType;
+    }
+
+    @Override
+    public RuntimeException error(String detail, Position position) {
+      return new SemanticException(detail, position);
     }
   }
 }
