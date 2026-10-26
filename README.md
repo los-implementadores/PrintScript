@@ -88,9 +88,14 @@ Para publicar un release:
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
-   El pipeline compila con la versión `X.Y.Z`, publica los paquetes y crea el GitHub Release con
-   el zip de la CLI y las notas de esa sección del CHANGELOG. Si la sección no existe, no publica.
+   El pipeline valida que el tag tenga la forma `vX.Y.Z`, compila con la versión `X.Y.Z`, crea el
+   GitHub Release con el zip de la CLI y las notas de esa sección del CHANGELOG, y al final publica
+   los paquetes. Si la sección no existe, no publica nada.
 3. Subir `gradle.properties` a la siguiente versión `-SNAPSHOT`.
+
+Publicar los paquetes es el último paso porque es el único que no se puede repetir: GitHub
+Packages no acepta volver a subir una versión de release. Si ese paso falla a la mitad, antes de
+hacer "Re-run" hay que borrar en GitHub Packages las versiones `X.Y.Z` que llegaron a subirse.
 
 ## Estado
 

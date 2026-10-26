@@ -75,10 +75,17 @@ jobs:
 
       - name: Resolve version
         # En un tag vX.Y.Z la versión sale del tag; en main, de gradle.properties (SNAPSHOT).
+        # El tag se valida antes de usarlo: una versión de release mal escrita no se puede volver
+        # a publicar en GitHub Packages. Además, el valor nunca se inserta como expresión dentro de un
+        # script: se pasa por env.
         id: version
         run: |
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
             VERSION="${GITHUB_REF_NAME#v}"
+            if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::El tag $GITHUB_REF_NAME no tiene la forma vX.Y.Z"
+              exit 1
+            fi
             echo "gradle-args=-Pversion=$VERSION" >> "$GITHUB_OUTPUT"
           else
             VERSION="$(grep '^version=' gradle.properties | cut -d= -f2)"
@@ -103,13 +110,10 @@ jobs:
             exit 1
           fi
 
-      - name: Build, test, package and publish
-        # Una sola invocación de Gradle: los jars que pasan los tests son los mismos
-        # que van al zip de la CLI y a GitHub Packages.
-        run: ./gradlew build :cli:distZip publish ${{ steps.version.outputs.gradle-args }} --no-daemon --stacktrace
+      - name: Build, test and package
+        run: ./gradlew build :cli:distZip $GRADLE_ARGS --no-daemon --stacktrace
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GRADLE_ARGS: ${{ steps.version.outputs.gradle-args }}
 
       - name: Upload test reports
         if: always()
@@ -130,9 +134,20 @@ jobs:
           retention-days: 30
 
       - name: Create GitHub Release
-        # Solo en tags v*: publica el mismo zip, con las notas del CHANGELOG.
+        # Solo en tags v*: el mismo zip, con las notas del CHANGELOG. Va antes de publicar los
+        # paquetes porque publicar es lo único que no se puede repetir: si algo falla acá, el
+        # re-run no choca con una versión ya publicada.
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
           files: cli/build/distributions/*.zip
           body_path: release-notes.md
+
+      - name: Publish to GitHub Packages
+        # Mismo workspace y mismos argumentos que el build: Gradle encuentra los jars al día y
+        # publica esos, sin volver a compilar (build once).
+        run: ./gradlew publish $GRADLE_ARGS --no-daemon --stacktrace
+        env:
+          GRADLE_ARGS: ${{ steps.version.outputs.gradle-args }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
