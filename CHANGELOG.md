@@ -23,8 +23,9 @@ sección no se publica (ver "Versiones y releases" en el README).
   sin dependencias externas. Por eso la próxima versión es la 2.0.0 (ADR-014).
 - El linter funciona con reglas (`LintRule`) registradas en `LintRules`. Agregar una regla ya no
   modifica `AnalyzerVisitor`, y `StaticAnalyzerImpl` acepta una lista de reglas propias (ADR-015).
-- El formatter lee su configuración con Jackson en lugar de Gson. Un JSON mal formado ahora lanza
-  `IllegalArgumentException`.
+- El formatter lee su configuración con Jackson en lugar de Gson. Solo acepta JSON estándar (Gson
+  también aceptaba comentarios, comillas simples y claves sin comillas), y un JSON mal formado
+  lanza `IllegalArgumentException`.
 - `analyzer` ya no depende de `lexer` ni de `parser`.
 - Checkstyle usa la indentación de google-java-format y un warning hace fallar el build.
 - CI y CD son un solo workflow: lo que se publica sale del mismo build que corrió los tests.

@@ -3,7 +3,10 @@ package org.printscript.formatter;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.StreamReadFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.io.Reader;
 
@@ -16,7 +19,16 @@ import java.io.Reader;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FormattingRules {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  /**
+   * Como hacía Gson: no cierra el {@code Reader} (es de quien lo abrió) y rechaza contenido de más
+   * después del JSON. A diferencia de Gson, solo acepta JSON estándar: sin comentarios, comillas
+   * simples ni claves sin comillas.
+   */
+  private static final ObjectMapper MAPPER =
+      JsonMapper.builder()
+          .disable(StreamReadFeature.AUTO_CLOSE_SOURCE)
+          .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+          .build();
 
   @JsonProperty("spaceBeforeColon")
   @JsonAlias("enforce-spacing-before-colon-in-declaration")

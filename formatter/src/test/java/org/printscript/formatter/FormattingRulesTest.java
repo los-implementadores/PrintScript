@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.Reader;
 import java.io.StringReader;
 import org.junit.jupiter.api.Test;
 
@@ -88,5 +89,35 @@ class FormattingRulesTest {
   @Test
   void rejectsMalformedJson() {
     assertThrows(IllegalArgumentException.class, () -> parse("{\"indent-inside-if\": "));
+  }
+
+  @Test
+  void rejectsContentAfterTheJson() {
+    assertThrows(IllegalArgumentException.class, () -> parse("{\"indentSize\": 2} basura"));
+  }
+
+  @Test
+  void acceptsOnlyStandardJson() {
+    assertThrows(IllegalArgumentException.class, () -> parse("{'indentSize': 2}"));
+    assertThrows(IllegalArgumentException.class, () -> parse("{indentSize: 2}"));
+    assertThrows(
+        IllegalArgumentException.class, () -> parse("{ // comentario\n \"indentSize\": 2}"));
+  }
+
+  @Test
+  void doesNotCloseTheReader() {
+    boolean[] closed = {false};
+    Reader reader =
+        new StringReader("{\"indentSize\": 2}") {
+          @Override
+          public void close() {
+            closed[0] = true;
+            super.close();
+          }
+        };
+
+    FormattingRules.fromJson(reader);
+
+    assertFalse(closed[0]);
   }
 }

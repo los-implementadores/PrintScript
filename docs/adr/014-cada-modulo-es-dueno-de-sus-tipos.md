@@ -31,8 +31,14 @@ módulo al que pertenecen:
   el lexer completo y `defaultMatchers()` devuelve los matchers para quien quiera sumar otros.
 - `analyzer` depende solo de `common` (y de Jackson).
 - El formatter lee su configuración con Jackson (`@JsonProperty` + `@JsonAlias`). Un test
-  (`FormattingRulesTest`) fija cómo se leen las claves propias y las del TCK; corrido contra la
-  versión con Gson da el mismo resultado, salvo el tipo de excepción ante un JSON mal formado.
+  (`FormattingRulesTest`) fija cómo se leen las claves propias y las del TCK. Con JSON estándar
+  (el del TCK y el de los configs del repo) da lo mismo que Gson. Lo que cambia:
+  - Gson leía en modo *lenient* y aceptaba comentarios, comillas simples y claves sin comillas;
+    ahora solo se acepta JSON estándar.
+  - Un JSON mal formado lanza `IllegalArgumentException` en lugar de `JsonSyntaxException`.
+  - Igual que Gson, se rechaza contenido de más después del JSON (`FAIL_ON_TRAILING_TOKENS`) y no
+    se cierra el `Reader` recibido (`AUTO_CLOSE_SOURCE` apagado); Jackson por defecto hace lo
+    contrario en los dos casos.
 
 Se descartó dejar clases "puente" deprecadas en `common`: `common` no puede depender de `analyzer`
 (sería un ciclo), así que el puente tendría que duplicar el código y mantener Jackson en `common`,
