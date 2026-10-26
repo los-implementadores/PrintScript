@@ -13,5 +13,6 @@ application {
 
 tasks.named<JavaExec>("run") {
     workingDir = rootProject.projectDir
+    // Sin esto Gradle le pasa un stdin vacío al programa, y el menú interactivo y readInput fallan.
     standardInput = System.`in`
 }

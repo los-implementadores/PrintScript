@@ -4,8 +4,7 @@ plugins {
 
 dependencies {
     implementation(project(":common"))
-    implementation("com.google.code.gson:gson:2.11.0")
-    testImplementation(project(":common"))
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
     testImplementation(project(":lexer"))
     testImplementation(project(":parser"))
 }

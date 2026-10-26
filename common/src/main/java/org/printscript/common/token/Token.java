@@ -29,8 +29,12 @@ public final class Token {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Token)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Token)) {
+      return false;
+    }
     Token token = (Token) o;
     return type == token.type
         && Objects.equals(lexeme, token.lexeme)

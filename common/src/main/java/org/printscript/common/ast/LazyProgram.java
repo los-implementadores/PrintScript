@@ -116,7 +116,9 @@ public final class LazyProgram implements Program {
 
     @Override
     public Statement next() {
-      if (!source.hasNext()) throw new NoSuchElementException();
+      if (!source.hasNext()) {
+        throw new NoSuchElementException();
+      }
       return source.next();
     }
   }

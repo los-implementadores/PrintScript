@@ -1,7 +1,19 @@
 package org.printscript.interpreter;
 
 import java.util.Iterator;
-import org.printscript.common.ast.*;
+import org.printscript.common.ast.ASTVisitor;
+import org.printscript.common.ast.AssignmentStatement;
+import org.printscript.common.ast.BinaryExpression;
+import org.printscript.common.ast.BooleanLiteral;
+import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.ExpressionStatement;
+import org.printscript.common.ast.Identifier;
+import org.printscript.common.ast.IfStatement;
+import org.printscript.common.ast.NumberLiteral;
+import org.printscript.common.ast.Program;
+import org.printscript.common.ast.Statement;
+import org.printscript.common.ast.StringLiteral;
+import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
 import org.printscript.interpreter.env.EnvProvider;
 import org.printscript.interpreter.env.SystemEnvProvider;

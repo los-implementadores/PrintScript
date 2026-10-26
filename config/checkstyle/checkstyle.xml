@@ -38,8 +38,10 @@
         <module name="MemberName">
             <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
         </module>
+        <!-- Igual que Google Java Style: permite "_" después del segundo carácter, para nombres
+             de test como rejectsConstInV1_0. -->
         <module name="MethodName">
-            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+            <property name="format" value="^[a-z][a-zA-Z0-9][a-zA-Z0-9_]*$"/>
         </module>
         <module name="ParameterName">
             <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
@@ -98,10 +100,15 @@
         <!-- Miscellaneous -->
         <module name="ArrayTypeStyle"/>
         <module name="UpperEll"/>
+        <!-- Mismos valores que google-java-format (Spotless): 2 espacios por bloque y 4 al
+             partir una línea. Con 4 por bloque, todo el código formateado daba warning. -->
         <module name="Indentation">
-            <property name="basicOffset" value="4"/>
-            <property name="caseIndent" value="4"/>
-            <property name="arrayInitIndent" value="4"/>
+            <property name="basicOffset" value="2"/>
+            <property name="braceAdjustment" value="2"/>
+            <property name="caseIndent" value="2"/>
+            <property name="throwsIndent" value="4"/>
+            <property name="lineWrappingIndentation" value="4"/>
+            <property name="arrayInitIndent" value="2"/>
         </module>
 
         <!-- Modifier order -->
