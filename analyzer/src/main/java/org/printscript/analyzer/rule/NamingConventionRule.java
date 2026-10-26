@@ -1,5 +1,6 @@
 package org.printscript.analyzer.rule;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.printscript.analyzer.config.NamingConvention;
 import org.printscript.analyzer.violation.Severity;
@@ -12,7 +13,9 @@ public final class NamingConventionRule implements LintRule {
   private final NamingConvention convention;
 
   public NamingConventionRule(NamingConvention convention) {
-    this.convention = convention;
+    this.convention =
+        Objects.requireNonNull(
+            convention, "La regla de nombres necesita una convención (camelCase o snake_case)");
   }
 
   @Override

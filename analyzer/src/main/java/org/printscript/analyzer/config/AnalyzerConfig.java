@@ -13,7 +13,6 @@ public class AnalyzerConfig {
   @JsonProperty("activeNamingConvention")
   public boolean activeNamingConvention = false;
 
-  @JsonProperty("namingConventionFormat")
   public NamingConvention namingConventionFormat = NamingConvention.CAMEL_CASE;
 
   @JsonProperty("activeComplexPrintln")
@@ -26,6 +25,14 @@ public class AnalyzerConfig {
 
   @JsonProperty("activeUnusedVariables")
   public boolean activeUnusedVariables = false;
+
+  /** Un {@code null} en el JSON deja el default, igual que en {@code identifier_format}. */
+  @JsonProperty("namingConventionFormat")
+  public void setNamingConventionFormat(NamingConvention format) {
+    if (format != null) {
+      this.namingConventionFormat = format;
+    }
+  }
 
   @JsonProperty("identifier_format")
   public void setIdentifierFormat(NamingConvention format) {

@@ -35,8 +35,14 @@ con la clave que usa el TCK.
 | Argumento simple en `readInput` (1.1) | `activeComplexReadInput` | `mandatory-variable-or-literal-in-readInput` | Lo mismo para `readInput` |
 | Variables sin usar | `activeUnusedVariables` | — | Variables declaradas que nunca se leen ni se reasignan |
 
-Las claves desconocidas se ignoran. Si el JSON no se puede leer, `AnalyzerConfig.fromJson` avisa
-por `stderr` y usa la configuración por defecto (todas las reglas apagadas).
+Las claves desconocidas se ignoran.
+
+> **Problema conocido:** si el JSON no se puede leer, `AnalyzerConfig.fromJson` avisa con una
+> línea en `stderr` y sigue con la configuración por defecto, o sea, con **todas las reglas
+> apagadas**. Basta un typo (`"identifier_format": "kebab case"`) para que el CLI diga
+> «Analyzing successful» con exit 0 sin haber aplicado ninguna regla. Además, queda al revés que
+> el formatter, que ante un JSON roto falla. Lo correcto es fallar; el PR #57 cambia `fromJson`
+> para que lance una excepción.
 
 ### Ejemplo de configuración (`linter_rules.json`)
 
