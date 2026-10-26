@@ -16,15 +16,17 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
   private final AnalyzerConfig config;
   private final List<Violation> violations = new ArrayList<>();
 
-  private final Environment env = new Environment();
-  private final List<String> declaredVariableNames = new ArrayList<>();
+  private Environment env = new Environment();
+  private final List<LinterMetadata> declarations = new ArrayList<>();
 
   // Clase auxiliar para guardar en el "value" del Environment
   private static class LinterMetadata {
+    final String name;
     final Position position;
     boolean isUsed;
 
-    LinterMetadata(Position position) {
+    LinterMetadata(String name, Position position) {
+      this.name = name;
       this.position = position;
       this.isUsed = false;
     }
@@ -36,12 +38,11 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
 
   public List<Violation> getFinalViolations() {
     if (config.activeUnusedVariables) {
-      for (String varName : declaredVariableNames) {
-        LinterMetadata meta = (LinterMetadata) env.get(varName);
+      for (LinterMetadata meta : declarations) {
         if (!meta.isUsed) {
           violations.add(
               new Violation(
-                  "Variable '" + varName + "' is declared but never used.",
+                  "Variable '" + meta.name + "' is declared but never used.",
                   Severity.WARNING,
                   meta.position));
         }
@@ -81,9 +82,10 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
     }
 
     // 2. Registramos la variable en el Environment
-    if (!env.isDeclared(varName)) {
-      env.define(varName, typeName, new LinterMetadata(position));
-      declaredVariableNames.add(varName);
+    if (!env.isDeclaredInThisScope(varName)) {
+      LinterMetadata meta = new LinterMetadata(varName, position);
+      env.define(varName, typeName, meta);
+      declarations.add(meta);
     }
 
     if (node.getInitializer() != null) {
@@ -114,15 +116,23 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
   @Override
   public Void visitIf(IfStatement node) {
     node.getCondition().accept(this);
-    for (Statement stmt : node.getThenBlock()) {
-      stmt.accept(this);
-    }
+    analyzeBlock(node.getThenBlock());
     if (node.hasElse()) {
-      for (Statement stmt : node.getElseBlock()) {
-        stmt.accept(this);
-      }
+      analyzeBlock(node.getElseBlock());
     }
     return null;
+  }
+
+  private void analyzeBlock(List<Statement> block) {
+    Environment outer = env;
+    env = outer.childScope();
+    try {
+      for (Statement stmt : block) {
+        stmt.accept(this);
+      }
+    } finally {
+      env = outer;
+    }
   }
 
   @Override

@@ -116,6 +116,63 @@ class AnalyzerVisitorTest {
     assertTrue(violations.isEmpty());
   }
 
+  @Test
+  void warnsAboutAnOuterVariableWhenOnlyTheOneDeclaredInsideTheBlockIsRead() {
+    config.activeUnusedVariables = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+    Position outer = new Position(1, 1, 1, 20);
+
+    declaration("x", outer).accept(visitor);
+    ifElse(List.of(declaration("x", new Position(2, 3, 2, 22)), println("x")), null)
+        .accept(visitor);
+
+    List<Violation> violations = visitor.getFinalViolations();
+    assertEquals(1, violations.size());
+    assertEquals(outer, violations.get(0).getPosition());
+  }
+
+  @Test
+  void warnsAboutAVariableOfOneBranchWhenOnlyTheOtherBranchReadsTheSameName() {
+    config.activeUnusedVariables = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+    Position thenBranch = new Position(2, 3, 2, 22);
+
+    ifElse(
+            List.of(declaration("y", thenBranch)),
+            List.of(declaration("y", new Position(4, 3, 4, 22)), println("y")))
+        .accept(visitor);
+
+    List<Violation> violations = visitor.getFinalViolations();
+    assertEquals(1, violations.size());
+    assertEquals(thenBranch, violations.get(0).getPosition());
+  }
+
+  @Test
+  void doesNotWarnAboutAnOuterVariableReadInsideABlock() {
+    config.activeUnusedVariables = true;
+    AnalyzerVisitor visitor = new AnalyzerVisitor(config);
+
+    declaration("x", defaultPos).accept(visitor);
+    ifElse(List.of(println("x")), null).accept(visitor);
+
+    assertTrue(visitor.getFinalViolations().isEmpty());
+  }
+
+  private VarDeclarationStatement declaration(String name, Position position) {
+    return new VarDeclarationStatement(
+        new Identifier(name, position), "number", new NumberLiteral(1, position), position);
+  }
+
+  private Statement println(String name) {
+    return new ExpressionStatement(
+        new CallExpression("println", List.of(new Identifier(name, defaultPos)), defaultPos),
+        defaultPos);
+  }
+
+  private IfStatement ifElse(List<Statement> thenBlock, List<Statement> elseBlock) {
+    return new IfStatement(new BooleanLiteral(true, defaultPos), thenBlock, elseBlock, defaultPos);
+  }
+
   // --- REGLA 3: COMPLEX PRINTLN ---
 
   @Test
