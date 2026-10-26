@@ -46,8 +46,12 @@ Cuando Gradle compila un módulo (ej. `interpreter`), genera:
 En nuestro proyecto, definimos el grupo y la versión de SemVer en [`gradle.properties`](../gradle.properties):
 ```properties
 group=org.printscript
-version=1.1.0-SNAPSHOT
+version=2.0.0-SNAPSHOT
 ```
+
+La versión sigue [SemVer](https://semver.org/lang/es/) y es la de los paquetes, no la del lenguaje: la
+2.0.0 sigue implementando PrintScript 1.0 y 1.1. Pasó de 1.x a 2.x porque cambiaron paquetes públicos
+(ver la sección 3 y el ADR-014).
 
 Y en [`buildSrc/src/main/kotlin/printscript.java-conventions.gradle.kts`](../buildSrc/src/main/kotlin/printscript.java-conventions.gradle.kts) se configuran dinámicamente:
 
@@ -83,7 +87,7 @@ En la raíz del proyecto `PrintScript`:
 ```bash
 ./gradlew publishToMavenLocal -x test -x checkstyleMain -x pmdMain -x spotlessCheck
 ```
-> Esto compila los `.jar` y los copia a tu carpeta local `~/.m2/repository/org/printscript/` bajo la versión `1.1.0-SNAPSHOT`.
+> Esto compila los `.jar` y los copia a tu carpeta local `~/.m2/repository/org/printscript/` bajo la versión de `gradle.properties` (hoy `2.0.0-SNAPSHOT`).
 
 ### Paso 2: Configurar dependencias en el TCK
 En el repositorio `printscript-tck`, el archivo `build.gradle` ya incluye `repositories { mavenLocal() }`. En el bloque de dependencias se configuran nuestros módulos:
@@ -100,6 +104,19 @@ dependencies {
     implementation 'org.printscript:analyzer:1.1.0-SNAPSHOT'
 }
 ```
+
+#### Qué versión usar
+
+El TCK está fijado en `1.1.0-SNAPSHOT`. Desde la 2.0.0 cambian dos paquetes, así que pasar a 2.x
+requiere actualizar los imports de los adapters:
+
+| Hasta 1.1.0 | Desde 2.0.0 |
+| --- | --- |
+| `org.printscript.common.configs.AnalyzerConfig` | `org.printscript.analyzer.config.AnalyzerConfig` |
+| `org.printscript.common.linterViolations.Violation` | `org.printscript.analyzer.violation.Violation` |
+
+Además, `AdapterUtils.buildMatchers()` se puede reemplazar por `LexerFactory.defaultMatchers()` (o
+directamente `LexerFactory.create(reader)`), que tiene el vocabulario del lenguaje en un solo lugar.
 
 ### Paso 3: Correr los tests del TCK
 En la raíz de `printscript-tck`:
@@ -137,7 +154,8 @@ publishing {
 }
 ```
 
-Para publicar a GitHub Packages:
+El pipeline de CI/CD (`.github/workflows/ci.yml`) publica solo: cada push a `main` sube la versión
+`-SNAPSHOT` de `gradle.properties`, y cada tag `vX.Y.Z` sube la versión `X.Y.Z`. Para publicar a mano:
 ```bash
 ./gradlew publish
 ```
@@ -172,7 +190,7 @@ El patrón **Adapter** resuelve la incompatibilidad entre las interfaces requeri
 Interfaces del TCK                 Adapters                    Motor PrintScript
 ──────────────────                 ────────                    ─────────────────
 PrintScriptInterpreter   ──►  InterpreterAdapter   ──►  LexerImpl + ParserImpl + InterpreterImpl
-PrintScriptFormatter     ──►  FormatterAdapter     ──►  LexerImpl + ParserImpl + FormatterImpl
+PrintScriptFormatter     ──►  FormatterAdapter     ──►  FormatterImpl (estrategia streaming)
 PrintScriptLinter        ──►  LinterAdapter        ──►  LexerImpl + ParserImpl + StaticAnalyzerImpl
 ```
 
@@ -192,7 +210,7 @@ public class CustomImplementationFactory implements PrintScriptFactory {
 ```
 
 ### Unificación de código duplicado: `AdapterUtils`
-Tanto el Interpreter como el Linter y el Formatter necesitan transformar el `(InputStream src, String version)` en un AST ejecutable (`Program`). Para no repetir la instanciación de matchers, lexer y parser en los 3 adapters, creamos el helper [`AdapterUtils`](file:///home/mrecio/Proyectos/ingsis/printscript-tck/src/main/java/implementation/AdapterUtils.java):
+Tanto el Interpreter como el Linter y el Formatter necesitan transformar el `(InputStream src, String version)` en un AST ejecutable (`Program`). Para no repetir la instanciación de matchers, lexer y parser en los 3 adapters, creamos el helper [`AdapterUtils`](https://github.com/los-implementadores/printscript-tck/blob/feat/adapters/src/main/java/implementation/AdapterUtils.java):
 
 ```java
 public static Program buildProgram(InputStream src, String version) {
@@ -213,9 +231,9 @@ public static Program buildProgram(InputStream src, String version) {
    - Captura y reporta excepciones de sintaxis, semántica o memoria (`OutOfMemoryError`) hacia el `ErrorHandler` del TCK.
 
 2. **`PrintScriptFormatterAdapter`**:
-   - Construye el `Program` con `AdapterUtils.buildProgram`.
    - Deserializa las reglas desde el `InputStream config` hacia nuestro `FormattingRules`.
-   - Ejecuta `FormatterImpl#format(program)` y escribe el resultado directamente en el `Writer` provisto.
+   - Ejecuta `FormatterImpl#format(Reader, Writer)`: la estrategia en streaming de ADR-012, que no arma
+     el AST y aplica solo las reglas configuradas.
 
 3. **`PrintScriptLinterAdapter`**:
    - Construye el `Program` y obtiene el stream de `Statement`.

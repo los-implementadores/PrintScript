@@ -12,14 +12,14 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "→ Running linter (Checkstyle)..."
-./gradlew checkstyleMain --quiet
+./gradlew checkstyleMain checkstyleTest --quiet
 if [ $? -ne 0 ]; then
     echo "❌ Checkstyle failed. Check the report for details."
     exit 1
 fi
 
 echo "→ Running static analysis (PMD)..."
-./gradlew pmdMain --quiet
+./gradlew pmdMain pmdTest --quiet
 if [ $? -ne 0 ]; then
     echo "❌ PMD failed. Check the report for details."
     exit 1

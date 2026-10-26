@@ -32,6 +32,8 @@ publishing {
 checkstyle {
     toolVersion = "10.17.0"
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+    // Un warning frena el build (y el pre-commit). Si se pudiera ignorar, nadie lo miraría.
+    maxWarnings = 0
 }
 
 pmd {
@@ -66,6 +68,27 @@ repositories {
     mavenCentral()
 }
 
+// Fija la versión exacta de cada dependencia, también de las transitivas, en el gradle.lockfile
+// de cada módulo. Si una versión cambia sin actualizar el lockfile, el build falla.
+// Para actualizarlos: ./gradlew resolveAndLockAll --write-locks
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+tasks.register("resolveAndLockAll") {
+    description = "Resuelve todas las dependencias para regenerar los lockfiles (con --write-locks)."
+    group = "build setup"
+    notCompatibleWithConfigurationCache("Resuelve configuraciones al ejecutarse")
+    doFirst {
+        require(gradle.startParameter.isWriteDependencyLocks) {
+            "Hay que correrlo con --write-locks"
+        }
+    }
+    doLast {
+        configurations.filter { it.isCanBeResolved }.forEach { it.resolve() }
+    }
+}
+
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -73,4 +96,9 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+// Cualquier compilación deja configurados los git hooks del repo (installGitHooks en el build raíz).
+tasks.named("compileJava") {
+    dependsOn(":installGitHooks")
 }

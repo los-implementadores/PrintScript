@@ -1,12 +1,17 @@
 package org.printscript.formatter;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.StringReader;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.printscript.common.Position;
-import org.printscript.common.ast.*;
+import org.printscript.common.ast.BooleanLiteral;
+import org.printscript.common.ast.CallExpression;
+import org.printscript.common.ast.ExpressionStatement;
+import org.printscript.common.ast.IfStatement;
+import org.printscript.common.ast.Statement;
+import org.printscript.common.ast.StringLiteral;
 
 /** Tests de #36: formateo de bloques {@code if}/{@code else} con indentación configurable. */
 class FormatterIfTest {
