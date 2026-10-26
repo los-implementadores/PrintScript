@@ -10,8 +10,9 @@ PrintScript 1.0 y 1.1.
 Las notas de cada GitHub Release salen de la sección de su versión en este archivo; un tag sin
 sección no se publica (ver "Versiones y releases" en el README).
 
-> Las versiones 1.0.0 y 1.1.0 se cerraron antes de que el proyecto usara tags. Sus fechas son las
-> del merge que completó cada una en `main`: `6916f79` para la 1.0.0 y `50d833c` para la 1.1.0.
+> La 1.0.0 se cerró antes de que el proyecto usara tags: su fecha es la del merge que la completó
+> en `main` (`6916f79`). La 1.1.0 se completó el 27/09 (`50d833c`) y se publicó el 19/10 con el tag
+> `v1.1.0`, el primero del proyecto.
 
 ## [Unreleased]
 
@@ -29,7 +30,8 @@ sección no se publica (ver "Versiones y releases" en el README).
 - `analyzer` ya no depende de `lexer` ni de `parser`.
 - Checkstyle usa la indentación de google-java-format y un warning hace fallar el build.
 - CI y CD son un solo workflow: lo que se publica sale del mismo build que corrió los tests.
-- Los git hooks se configuran solos (`core.hooksPath`) la primera vez que se compila.
+- Los git hooks se configuran solos (`core.hooksPath`) la primera vez que se compila, salvo que
+  ya haya otro `core.hooksPath` configurado.
 - El ADR del Strategy del lexer, que estaba duplicado como ADR-004, pasa a ser el ADR-013.
 
 ### Agregado
@@ -42,13 +44,17 @@ sección no se publica (ver "Versiones y releases" en el README).
 ### Arreglado
 
 - `getViolations()` repetía los avisos de variables sin usar si se llamaba más de una vez.
+- La regla de nombres rechazaba nombres válidos con dígitos o siglas (`value1`, `var1`, `myURL`).
+- `"namingConventionFormat": null` en la configuración del linter terminaba en un
+  `NullPointerException`.
+- `./gradlew :cli:run` sin argumentos no podía leer el menú interactivo: Gradle no le pasaba stdin.
 - Documentación desactualizada: README, `docs/analyzer.md`, `docs/ast.md`, `docs/tck.md` y ADR-005.
 
 ### Eliminado
 
 - La dependencia a Gson.
 
-## [1.1.0] - 2026-09-27
+## [1.1.0] - 2026-10-19
 
 ### Agregado
 
