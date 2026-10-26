@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.printscript.analyzer.config.AnalyzerConfig;
 import org.printscript.analyzer.config.NamingConvention;
@@ -46,7 +47,7 @@ class LintRuleTest {
             }
           }
         };
-    StaticAnalyzer analyzer = new StaticAnalyzerImpl(List.of(forbidX));
+    StaticAnalyzer analyzer = new StaticAnalyzerImpl(() -> List.of(forbidX));
 
     analyzer.analyze(declare("x"));
     analyzer.analyze(declare("y"));
@@ -88,6 +89,22 @@ class LintRuleTest {
             "Complex expression in 'println'. Consider extracting to an intermediate variable.",
             "Variable 'other' is declared but never used."),
         messages);
+  }
+
+  @Test
+  void analyzersFromTheSameFactoryDoNotShareState() {
+    AnalyzerConfig config = new AnalyzerConfig();
+    config.activeUnusedVariables = true;
+    Supplier<List<LintRule>> rules = () -> LintRules.from(config);
+
+    StaticAnalyzer first = new StaticAnalyzerImpl(rules);
+    first.analyze(declare("onlyInFirst"));
+    StaticAnalyzer second = new StaticAnalyzerImpl(rules);
+    second.analyze(declare("inSecond"));
+    second.analyze(printSum("inSecond"));
+
+    assertTrue(second.getViolations().isEmpty());
+    assertEquals(1, first.getViolations().size());
   }
 
   @Test

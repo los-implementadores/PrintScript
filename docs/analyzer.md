@@ -11,7 +11,7 @@ Vive en el módulo `analyzer`, que depende solo de `common` y de Jackson.
 | Paquete | Archivo | Responsabilidad |
 | --- | --- | --- |
 | `org.printscript.analyzer` | `StaticAnalyzer` | Interfaz pública: `analyze(Statement)` y `getViolations()` |
-| | `StaticAnalyzerImpl` | Fachada. Recibe una `AnalyzerConfig` o directamente una lista de reglas |
+| | `StaticAnalyzerImpl` | Fachada. Recibe una `AnalyzerConfig` o una fábrica de reglas (`Supplier<List<LintRule>>`) |
 | | `AnalyzerVisitor` | Recorre el AST (`ASTVisitor<Void>`) y le avisa a cada regla los nodos que visita |
 | `org.printscript.analyzer.rule` | `LintRule` | Interfaz de una regla |
 | | `LintRules` | Único lugar donde se registran las reglas configurables |
@@ -124,8 +124,10 @@ sobreescribe solo los nodos que le interesan:
 2. Si se activa desde el JSON, agregar su clave en `AnalyzerConfig`.
 3. Registrarla en `LintRules.from`.
 
-El visitor no se toca. Una regla que no viene del JSON se le puede pasar directo a
-`new StaticAnalyzerImpl(List.of(miRegla))`.
+El visitor no se toca. Una regla que no viene del JSON se le puede pasar directo con
+`new StaticAnalyzerImpl(() -> List.of(new MiRegla()))`. Es una fábrica y no una lista porque las
+reglas guardan estado (por ejemplo, qué variables se usaron): cada análisis tiene que arrancar con
+reglas nuevas.
 
 ### Principios aplicados
 

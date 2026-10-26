@@ -31,6 +31,10 @@ public class AnalyzerVisitor implements ASTVisitor<Void> {
   private final List<LintRule> rules;
   private final List<Violation> violations = new ArrayList<>();
 
+  /**
+   * @param rules reglas de este análisis. Las reglas guardan estado, así que cada visitor necesita
+   *     su propia lista (por eso {@link StaticAnalyzerImpl} recibe una fábrica).
+   */
   public AnalyzerVisitor(List<LintRule> rules) {
     this.rules = List.copyOf(rules);
   }

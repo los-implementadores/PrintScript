@@ -28,8 +28,10 @@ ninguna en particular.
 
 Hay una clase por regla (`NamingConventionRule`, `SimpleArgumentRule`, `UnusedVariableRule`) y
 `LintRules.from(config)` es el único lugar donde se registran, igual que `ParserGrammar` para los
-parselets. `StaticAnalyzerImpl` también acepta una lista de reglas, así se puede sumar una regla
-propia sin tocar nada.
+parselets. `StaticAnalyzerImpl` también acepta una fábrica de reglas (`Supplier<List<LintRule>>`),
+así se puede sumar una regla propia sin tocar nada. Es una fábrica y no una lista porque las reglas
+guardan estado: si dos análisis compartieran las mismas instancias, el segundo reportaría
+variables del primero.
 
 `onFinish` se llama cada vez que se pide el reporte y no cambia el estado de la regla, así que
 `getViolations()` se puede llamar más de una vez sin duplicar resultados.

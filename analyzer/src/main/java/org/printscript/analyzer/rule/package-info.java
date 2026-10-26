@@ -11,6 +11,7 @@
  * </ol>
  *
  * <p>Una regla que no viene de la configuración se le puede pasar directo a {@code
- * StaticAnalyzerImpl(List<LintRule>)}.
+ * StaticAnalyzerImpl(Supplier<List<LintRule>>)}. Es una fábrica y no una lista porque las reglas
+ * guardan estado: cada análisis necesita las suyas.
  */
 package org.printscript.analyzer.rule;
