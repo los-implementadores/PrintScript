@@ -18,6 +18,17 @@ val installGitHooks by tasks.registering(Exec::class) {
             .asText
             .map { it.trim() }
     onlyIf("es un clon de git") { gitDir.exists() }
-    onlyIf("los hooks todavía no están configurados") { currentHooksPath.get() != "hooks" }
+    // Si ya hay un core.hooksPath (por ejemplo uno global de un hook manager), no se pisa: los
+    // hooks de esa persona dejarían de correr en este repo sin ningún aviso.
+    onlyIf("no hay ningún core.hooksPath configurado") {
+        val current = currentHooksPath.get()
+        if (current.isNotEmpty() && current != "hooks") {
+            logger.warn(
+                "git ya usa core.hooksPath=$current, así que no se configuran los hooks de hooks/. " +
+                    "Para usarlos en este repo: git config core.hooksPath hooks",
+            )
+        }
+        current.isEmpty()
+    }
     commandLine("git", "config", "core.hooksPath", "hooks")
 }
