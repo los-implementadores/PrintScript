@@ -10,6 +10,26 @@ repositories {
     mavenCentral()
 }
 
+// La raíz resuelve JaCoCo para la cobertura de todo el proyecto: se lockea igual que los módulos
+// (ver printscript.java-conventions), en el gradle.lockfile de la raíz.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+tasks.register("resolveAndLockAll") {
+    description = "Resuelve todas las dependencias para regenerar los lockfiles (con --write-locks)."
+    group = "build setup"
+    notCompatibleWithConfigurationCache("Resuelve configuraciones al ejecutarse")
+    doFirst {
+        require(gradle.startParameter.isWriteDependencyLocks) {
+            "Hay que correrlo con --write-locks"
+        }
+    }
+    doLast {
+        configurations.filter { it.isCanBeResolved }.forEach { it.resolve() }
+    }
+}
+
 // Hace que git use los hooks versionados en hooks/ (core.hooksPath). Corre solo antes de cualquier
 // compilación (ver printscript.java-conventions), así nadie tiene que acordarse de instalarlos.
 // Como git los lee directo de hooks/, un cambio en un hook le llega a todos con el próximo pull.
