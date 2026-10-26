@@ -1,4 +1,4 @@
-package org.printscript.common.linterViolations;
+package org.printscript.analyzer.violation;
 
 import org.printscript.common.Position;
 

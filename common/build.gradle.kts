@@ -2,6 +2,5 @@ plugins {
     id("printscript.java-conventions")
 }
 
-dependencies {
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-}
+// common no tiene dependencias externas: es el contrato que comparten todos los módulos
+// (tokens, posiciones, AST, Environment) y el módulo más estable del proyecto.

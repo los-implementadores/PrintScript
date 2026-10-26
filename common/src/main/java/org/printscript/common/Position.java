@@ -35,8 +35,12 @@ public final class Position {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Position)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof Position)) {
+      return false;
+    }
     Position position = (Position) o;
     return startLine == position.startLine
         && startColumn == position.startColumn

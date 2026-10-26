@@ -3,10 +3,10 @@ package org.printscript.cli.command;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
+import org.printscript.analyzer.config.AnalyzerConfig;
+import org.printscript.analyzer.violation.Violation;
 import org.printscript.cli.io.Console;
 import org.printscript.cli.io.FileAccess;
-import org.printscript.common.configs.AnalyzerConfig;
-import org.printscript.common.linterViolations.Violation;
 import org.printscript.runner.AnalysisService;
 
 public class AnalyzingCommand implements Command {

@@ -108,6 +108,7 @@ class LocalFileAccessTest {
   void rewritingAMissingFileFails() {
     String missing = dir.resolve("nope.ps").toString();
 
-    assertThrows(NoSuchFileException.class, () -> files.rewrite(missing, target -> {}));
+    assertThrows(
+        NoSuchFileException.class, () -> files.rewrite(missing, target -> target.write("")));
   }
 }

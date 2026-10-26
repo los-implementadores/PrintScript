@@ -3,9 +3,9 @@ package org.printscript.runner;
 import java.io.Reader;
 import java.util.List;
 import org.printscript.analyzer.StaticAnalyzer;
+import org.printscript.analyzer.config.AnalyzerConfig;
+import org.printscript.analyzer.violation.Violation;
 import org.printscript.common.LanguageVersion;
-import org.printscript.common.configs.AnalyzerConfig;
-import org.printscript.common.linterViolations.Violation;
 import org.printscript.interpreter.semantic.SemanticAnalyzer;
 
 /**

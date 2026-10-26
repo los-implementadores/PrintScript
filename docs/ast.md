@@ -40,6 +40,7 @@ Implementaciones:
 |---|---|---|
 | `NumberLiteral` | Un número literal | `42`, `3.14` |
 | `StringLiteral` | Un string literal | `"Joe"`, `'hi'` |
+| `BooleanLiteral` | Un booleano literal (1.1) | `true`, `false` |
 | `Identifier` | Referencia a una variable | `name`, `x` |
 | `BinaryExpression` | Operación entre dos expresiones | `a + b`, `x / 2` |
 | `CallExpression` | Llamada a función | `println(x)` |
@@ -68,6 +69,18 @@ Representa un string literal. El valor es el contenido **sin** las comillas
 // let name: string = "Joe";
 //                    ^^^^^— StringLiteral con value = "Joe"
 new StringLiteral("Joe", pos)
+```
+
+---
+
+### `BooleanLiteral.java` (PrintScript 1.1)
+
+Representa `true` o `false`. Guarda el valor como `boolean`.
+
+```java
+// let ok: boolean = true;
+//                   ^^^^— BooleanLiteral con value = true
+new BooleanLiteral(true, pos)
 ```
 
 ---
@@ -114,8 +127,9 @@ new BinaryExpression(
 
 ### `CallExpression.java`
 
-Llamada a función. En PrintScript 1.0 la única función es `println`, pero
-el nodo es genérico.
+Llamada a función. En PrintScript 1.0 la única función es `println`; la 1.1
+suma `readInput` y `readEnv`. Las tres son `CallExpression`: no tienen nodo
+propio (ver ADR-010 y ADR-011).
 
 - `callee` — nombre de la función (`"println"`)
 - `arguments` — lista inmutable de expresiones que se le pasan
@@ -137,7 +151,8 @@ new CallExpression("println", List.of(
 ### `Statement.java` — interfaz para sentencias
 
 Marker interface que extiende `Node`. Un nodo es un `Statement` si es una
-instrucción completa (termina en `;`). No produce un valor por sí mismo.
+instrucción completa (termina en `;`, salvo el `if`, que termina en `}`). No
+produce un valor por sí mismo.
 
 Implementaciones:
 
@@ -146,16 +161,20 @@ Implementaciones:
 | `VarDeclarationStatement` | Declaración de variable | `let x: number = 5;` |
 | `AssignmentStatement` | Reasignación de variable existente | `x = 5;` |
 | `ExpressionStatement` | Una expresión usada como sentencia | `println(x);` |
+| `IfStatement` | Condicional con bloques (1.1) | `if (ok) { println(1); }` |
 
 ---
 
 ### `VarDeclarationStatement.java`
 
-Representa `let nombre: tipo = expresión;`. Tiene tres partes:
+Representa `let nombre: tipo = expresión;` y, en 1.1, `const nombre: tipo = expresión;`.
+Tiene cuatro partes:
 
 - `name` — un `Identifier` con el nombre de la variable
-- `typeName` — el tipo como string: `"number"` o `"string"`
-- `initializer` — la expresión del lado derecho del `=`
+- `typeName` — el tipo como string: `"number"`, `"string"` o, en 1.1, `"boolean"`
+- `initializer` — la expresión del lado derecho del `=`. Es `null` en un `let` sin
+  valor inicial; en un `const` es obligatoria
+- `isConst` — `true` si se declaró con `const`
 
 ```java
 // let name: string = "Joe";
@@ -190,8 +209,8 @@ new AssignmentStatement(
 
 ### `ExpressionStatement.java`
 
-Una expresión sola usada como sentencia. En PrintScript 1.0 se usa
-exclusivamente para `println(...)`.
+Una expresión sola usada como sentencia. En la práctica, una llamada como
+`println(...)`.
 
 - `expression` — la expresión que forma la sentencia (típicamente un `CallExpression`)
 
@@ -199,6 +218,28 @@ exclusivamente para `println(...)`.
 // println(x);
 new ExpressionStatement(
     new CallExpression("println", List.of(new Identifier("x", pos)), pos),
+    pos
+)
+```
+
+---
+
+### `IfStatement.java` (PrintScript 1.1)
+
+Representa `if (condición) { ... } else { ... }`. El `else` es opcional y no
+existe `else if`.
+
+- `condition` — la expresión entre paréntesis (el semántico exige que sea `boolean`)
+- `thenBlock` — lista inmutable de sentencias del bloque del `if`
+- `elseBlock` — lista inmutable de sentencias del `else`, o `null` si no hay
+  (`hasElse()` lo indica)
+
+```java
+// if (ok) { println("si"); } else { println("no"); }
+new IfStatement(
+    new Identifier("ok", pos),
+    List.of(printSi),
+    List.of(printNo),
     pos
 )
 ```
@@ -244,10 +285,12 @@ ASTVisitor<T>
 ├── visitVarDeclaration(VarDeclaration)  → T
 ├── visitAssignment(Assignment)          → T
 ├── visitExpressionStatement(...)        → T
+├── visitIf(IfStatement)                 → T   (1.1)
 ├── visitBinaryExpression(...)           → T
 ├── visitCallExpression(...)             → T
 ├── visitNumberLiteral(...)              → T
 ├── visitStringLiteral(...)              → T
+├── visitBooleanLiteral(...)             → T   (1.1)
 └── visitIdentifier(...)                 → T
 ```
 
@@ -255,9 +298,10 @@ Ejemplos de uso por módulo:
 
 | Módulo | `<T>` | Qué hace |
 |---|---|---|
-| `interpreter` | `Object` | evalúa y retorna el valor |
+| `interpreter` (`InterpreterVisitor`) | `Object` | evalúa y retorna el valor |
+| `interpreter` (`SemanticAnalyzerVisitor`) | `String` | retorna el tipo de cada expresión |
 | `formatter` | `String` | retorna el código formateado |
-| `analyzer` | `List<AnalyzerError>` | retorna los errores encontrados |
+| `analyzer` | `Void` | no retorna nada: avisa a cada regla del linter y acumula las violaciones |
 
 Para recorrer el árbol, el módulo implementa el visitor y arranca desde la raíz:
 
@@ -277,13 +321,15 @@ Lexer               Node  (interfaz base)
   │                  ├── Expression
   │ Iterator<Token>  │    ├── NumberLiteral
   ▼                  │    ├── StringLiteral
+                     │    ├── BooleanLiteral
 Parser               │    ├── Identifier
   │                  │    ├── BinaryExpression
   │ Iterator<Stmt>   │    └── CallExpression
   ▼                  └── Statement
 LazyProgram               ├── VarDeclarationStatement
   │ implements            ├── AssignmentStatement
-  │ Program               └── ExpressionStatement
+  │ Program               ├── ExpressionStatement
+  │                       └── IfStatement
   │                  Program  (interfaz raíz)
   └── .stream()       ├── EagerProgram  (lista armada, tests)
       Iterator<Stmt>  └── LazyProgram   (drena parser on-demand)
@@ -293,13 +339,17 @@ LazyProgram               ├── VarDeclarationStatement
   │   implements
   │   ASTVisitor<Object>
   │
+  ├── SemanticAnalyzer
+  │   implements
+  │   ASTVisitor<String>
+  │
   ├── Formatter
   │   implements
   │   ASTVisitor<String>
   │
   └── Analyzer
       implements
-      ASTVisitor<List<Error>>
+      ASTVisitor<Void>
 ```
 
 El `Parser` produce un `Program`. Los módulos posteriores lo reciben y lo

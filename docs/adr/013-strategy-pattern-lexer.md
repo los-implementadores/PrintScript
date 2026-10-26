@@ -1,7 +1,11 @@
-# ADR-004: Strategy pattern para reconocimiento de tokens en el lexer
+# ADR-013: Strategy pattern para reconocimiento de tokens en el lexer
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-08-18
+
+> **Nota de numeración:** este ADR se publicó como ADR-004, número que ya tenía *Pratt parsing
+> para expresiones*. Se renumeró a 013 (el primer número libre) para que cada número identifique
+> una sola decisión. El contenido no cambió.
 
 ## Contexto
 
