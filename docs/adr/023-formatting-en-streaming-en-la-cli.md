@@ -1,8 +1,8 @@
-# ADR-020: El formatting de la CLI escribe en streaming
+# ADR-023: El formatting de la CLI escribe en streaming
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-19
-- **Relacionado:** ADR-012 (Formateador en streaming), ADR-017 (`Program` de una sola pasada)
+- **Relacionado:** ADR-012 (Formateador en streaming), ADR-020 (`Program` de una sola pasada)
 
 ## Contexto
 

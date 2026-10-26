@@ -211,7 +211,7 @@ El nodo raíz. Representa el programa completo como una secuencia de `Statement`
 Es una **interfaz** con un solo método:
 
 - `stream()` — devuelve un `Iterator<Statement>`. El contrato es que un `Program`
-  se recorre **una sola vez** (ver ADR-017): quien necesite varias pasadas se
+  se recorre **una sola vez** (ver ADR-020): quien necesite varias pasadas se
   guarda las sentencias él mismo.
 
 Hay dos implementaciones:

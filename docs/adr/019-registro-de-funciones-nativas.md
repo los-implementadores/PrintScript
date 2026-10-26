@@ -1,4 +1,4 @@
-# ADR-016: Registro de funciones nativas
+# ADR-019: Registro de funciones nativas
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-19

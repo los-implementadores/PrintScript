@@ -1,6 +1,6 @@
-# ADR-013: Separar la CLI en I/O, comandos y orquestación del lenguaje
+# ADR-016: Separar la CLI en I/O, comandos y orquestación del lenguaje
 
-- **Estado:** Aceptado. Refinado por ADR-015 (`ExecutionIo` pasa al intérprete) y ADR-018 (los servicios reciben sus dependencias; `ProgramLoader` deja de ser estático).
+- **Estado:** Aceptado. Refinado por ADR-018 (`ExecutionIo` pasa al intérprete) y ADR-021 (los servicios reciben sus dependencias; `ProgramLoader` deja de ser estático).
 - **Fecha:** 2026-09-27
 - **Relacionado:** ADR-007 (Parser como `Iterator<Statement>` y `Program` lazy), ADR-012 (Formateador en streaming)
 

@@ -41,7 +41,7 @@ Parser parser = new ParserImpl(lexer);
 Program program = new LazyProgram(parser, startPos);
 ```
 
-A partir de ahí cada módulo lo recorre una sola vez, de a una sentencia (ver ADR-017):
+A partir de ahí cada módulo lo recorre una sola vez, de a una sentencia (ver ADR-020):
 
 ```java
 Iterator<Statement> it = program.stream();

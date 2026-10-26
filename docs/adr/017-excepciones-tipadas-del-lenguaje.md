@@ -1,8 +1,8 @@
-# ADR-014: Excepciones tipadas para los errores del lenguaje
+# ADR-017: Excepciones tipadas para los errores del lenguaje
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-19
-- **Relacionado:** ADR-006 (Fail-fast con `ParseException`), ADR-013 (Separar la CLI en capas)
+- **Relacionado:** ADR-006 (Fail-fast con `ParseException`), ADR-016 (Separar la CLI en capas)
 
 ## Contexto
 

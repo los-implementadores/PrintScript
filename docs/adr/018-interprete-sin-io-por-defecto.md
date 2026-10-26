@@ -1,12 +1,12 @@
-# ADR-015: El intérprete recibe su I/O en un solo constructor, sin defaults a `System.*`
+# ADR-018: El intérprete recibe su I/O en un solo constructor, sin defaults a `System.*`
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-19
-- **Relacionado:** ADR-013 (Separar la CLI en capas)
+- **Relacionado:** ADR-016 (Separar la CLI en capas)
 
 ## Contexto
 
-ADR-013 agregó `OutputProvider` para que `println` no escribiera directo a `System.out`, pero `InterpreterImpl` e `InterpreterVisitor` seguían teniendo cinco constructores encadenados. Los cortos completaban lo que faltaba con `StdinInputProvider`, `SystemEnvProvider` y `StdoutOutputProvider`, así que la dependencia con `System.*` seguía viviendo adentro del intérprete. Además la versión por defecto era inconsistente: `InterpreterVisitor(env)` usaba 1.0 y `InterpreterVisitor(env, input)` usaba 1.1.
+ADR-016 agregó `OutputProvider` para que `println` no escribiera directo a `System.out`, pero `InterpreterImpl` e `InterpreterVisitor` seguían teniendo cinco constructores encadenados. Los cortos completaban lo que faltaba con `StdinInputProvider`, `SystemEnvProvider` y `StdoutOutputProvider`, así que la dependencia con `System.*` seguía viviendo adentro del intérprete. Además la versión por defecto era inconsistente: `InterpreterVisitor(env)` usaba 1.0 y `InterpreterVisitor(env, input)` usaba 1.1.
 
 En la CLI pasaba algo parecido: `ExecutionCommand` hacía `new SystemEnvProvider()` adentro, mientras que `Console` y `FileAccess` se le inyectaban.
 

@@ -1,4 +1,4 @@
-# ADR-017: `Program` se recorre una sola vez
+# ADR-020: `Program` se recorre una sola vez
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-19

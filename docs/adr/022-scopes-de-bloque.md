@@ -1,8 +1,8 @@
-# ADR-019: Los bloques de `if`/`else` tienen scope propio
+# ADR-022: Los bloques de `if`/`else` tienen scope propio
 
 - **Estado:** Aceptado
 - **Fecha:** 2026-10-19
-- **Relacionado:** ADR-018 (el análisis semántico corre antes de ejecutar cada sentencia)
+- **Relacionado:** ADR-021 (el análisis semántico corre antes de ejecutar cada sentencia)
 
 ## Contexto
 
