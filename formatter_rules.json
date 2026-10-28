@@ -3,5 +3,6 @@
   "spaceAfterColon": true,
   "spaceAroundAssign": true,
   "spaceAroundOperators": true,
-  "newlineBeforePrintln": 1
+  "newlineBeforePrintln": 1,
+  "indentSize": 4
 }
