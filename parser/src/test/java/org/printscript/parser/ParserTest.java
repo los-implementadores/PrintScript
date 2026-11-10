@@ -31,7 +31,7 @@ class ParserTest {
 
   private Program parse(String source) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
-    Parser parser = new ParserImpl(lexer);
+    Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE));
     Position start = new Position(1, 1, 1, 1);
     return new LazyProgram(parser, start);
   }
@@ -210,7 +210,7 @@ class ParserTest {
   void parserAsIteratorProducesStatementsLazily() {
     String source = "let a: number = 1;\nlet b: number = 2;";
     Lexer lexer = LexerFactory.create(new StringReader(source));
-    Parser parser = new ParserImpl(lexer);
+    Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE));
     Position start = new Position(1, 1, 1, 1);
     Program program = new LazyProgram(parser, start);
 

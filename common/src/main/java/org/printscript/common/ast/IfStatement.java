@@ -5,7 +5,7 @@ import java.util.List;
 import org.printscript.common.Position;
 
 /**
- * Condicional {@code if (cond) { ... } else { ... }} de PrintScript 1.1.
+ * Condicional {@code if (cond) { ... } else { ... }}.
  *
  * <ul>
  *   <li>La condición es una expresión que debe evaluar a {@code boolean}.

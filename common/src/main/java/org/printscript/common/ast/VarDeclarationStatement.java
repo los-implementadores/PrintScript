@@ -10,13 +10,12 @@ import org.printscript.common.Position;
  *   let age:  number = 30;
  * </pre>
  *
- * {@code initializer} puede ser {@code null} si en el futuro se permiten declaraciones sin
- * asignación, pero en PrintScript 1.0 siempre tiene valor.
+ * {@code initializer} es {@code null} en una declaración sin valor ({@code let x: number;}).
  */
 public final class VarDeclarationStatement implements Statement {
 
   private final Identifier name;
-  private final String typeName; // "number" o "string"
+  private final String typeName; // el nombre del tipo, tal como se escribió
   private final Expression initializer;
   private final boolean isConst;
   private final Position position;
@@ -50,7 +49,7 @@ public final class VarDeclarationStatement implements Statement {
     return name;
   }
 
-  /** Nombre del tipo declarado: {@code "number"} o {@code "string"}. */
+  /** Nombre del tipo declarado (ej. {@code "number"}). */
   public String getTypeName() {
     return typeName;
   }

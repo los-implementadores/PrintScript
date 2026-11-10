@@ -13,7 +13,7 @@ import org.printscript.parser.TokenStream;
 import org.printscript.parser.parselet.StatementParselet;
 
 /**
- * Parsea un condicional {@code if (cond) { ... } else { ... }} (PrintScript 1.1).
+ * Parsea un condicional {@code if (cond) { ... } else { ... }}.
  *
  * <ul>
  *   <li>Condición entre paréntesis.

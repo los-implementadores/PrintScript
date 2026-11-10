@@ -6,7 +6,7 @@ import org.printscript.common.token.Token;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.parselet.PrefixParselet;
 
-/** Parsea un literal booleano {@code true} / {@code false} (PrintScript 1.1). */
+/** Parsea un literal booleano {@code true} / {@code false} */
 public final class BooleanLiteralParselet implements PrefixParselet {
 
   @Override

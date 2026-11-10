@@ -36,24 +36,20 @@ public class ParserImpl implements Parser, ParseContext {
   private final Map<TokenType, PrefixParselet> prefixParselets;
   private final Map<TokenType, InfixParselet> infixParselets;
   private final StatementParselet defaultStatementParselet;
+  private final TypeNameParser typeNames;
 
-  /** Construye un parser con la gramática por defecto de PrintScript (1.0). */
-  public ParserImpl(Iterator<Token> tokens) {
-    this(tokens, ParserGrammar.printScript());
-  }
-
-  /** Construye un parser con la gramática correspondiente a la versión indicada. */
-  public ParserImpl(Iterator<Token> tokens, org.printscript.common.LanguageVersion version) {
-    this(tokens, ParserGrammar.forVersion(version));
-  }
-
-  /** Construye un parser con una gramática (conjunto de parselets) explícita. */
+  /**
+   * Construye un parser que entiende las construcciones de {@code grammar}.
+   *
+   * @param tokens tokens sin espacios (los de {@code LexerFactory.create})
+   */
   public ParserImpl(Iterator<Token> tokens, ParserGrammar grammar) {
     this.tokens = new TokenStream(tokens);
     this.statementParselets = grammar.statementParselets();
     this.prefixParselets = grammar.prefixParselets();
     this.infixParselets = grammar.infixParselets();
     this.defaultStatementParselet = grammar.defaultStatementParselet();
+    this.typeNames = new TypeNameParser(grammar.typeNames());
   }
 
   // ---------------------------------------------------------------- Iterator API
@@ -86,6 +82,11 @@ public class ParserImpl implements Parser, ParseContext {
   @Override
   public TokenStream tokens() {
     return tokens;
+  }
+
+  @Override
+  public String parseTypeName() {
+    return typeNames.parse(tokens);
   }
 
   @Override

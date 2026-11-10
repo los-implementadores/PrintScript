@@ -2,7 +2,6 @@ package org.printscript.interpreter.semantic;
 
 import java.util.Iterator;
 import java.util.List;
-import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.ASTVisitor;
 import org.printscript.common.ast.AssignmentStatement;
@@ -29,15 +28,12 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   private Environment env;
 
   private final BuiltinFunctions builtins;
-  private final LanguageVersion version;
   private final TypeChecker typeChecker = new VisitorTypeChecker();
   private String expectedType;
 
-  public SemanticAnalyzerVisitor(
-      Environment env, BuiltinFunctions builtins, LanguageVersion version) {
+  public SemanticAnalyzerVisitor(Environment env, BuiltinFunctions builtins) {
     this.env = env;
     this.builtins = builtins;
-    this.version = version;
   }
 
   @Override
@@ -161,8 +157,7 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   @Override
   public String visitCallExpression(CallExpression node) {
     BuiltinFunction function =
-        builtins.resolve(
-            node, version, detail -> new SemanticException(detail, node.getPosition()));
+        builtins.resolve(node, detail -> new SemanticException(detail, node.getPosition()));
     return function.checkTypes(typeChecker, node);
   }
 

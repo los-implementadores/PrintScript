@@ -23,6 +23,14 @@ public interface ParseContext {
   Statement parseStatement();
 
   /**
+   * Consume el nombre de tipo de una declaración y lo devuelve. Qué tokens son tipos lo define la
+   * gramática.
+   *
+   * @throws ParseException si el token actual no es un tipo de la gramática
+   */
+  String parseTypeName();
+
+  /**
    * Parsea una expresión completa respetando la precedencia (binding power) mínima indicada. Es el
    * punto de entrada recursivo del algoritmo de Pratt.
    */

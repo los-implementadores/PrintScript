@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.BooleanLiteral;
@@ -38,14 +37,12 @@ class BlockScopeTest {
   private final Environment memory = new Environment();
   private final CollectingOutputProvider output = new CollectingOutputProvider();
   private final SemanticAnalyzerVisitor semantic =
-      new SemanticAnalyzerVisitor(
-          new Environment(), BuiltinFunctions.standard(), LanguageVersion.V1_1);
+      new SemanticAnalyzerVisitor(new Environment(), BuiltinFunctions.standard());
   private final InterpreterVisitor interpreter =
       new InterpreterVisitor(
           memory,
           new ExecutionIo(new ProgrammaticInputProvider(), new MapEnvProvider(Map.of()), output),
-          BuiltinFunctions.standard(),
-          LanguageVersion.V1_1);
+          BuiltinFunctions.standard());
 
   /** Analiza y ejecuta cada sentencia, en ese orden, como hace el runner. */
   private void run(Statement... program) {

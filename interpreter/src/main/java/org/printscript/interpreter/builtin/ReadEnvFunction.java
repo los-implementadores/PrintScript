@@ -5,7 +5,7 @@ import org.printscript.interpreter.ExecutionException;
 import org.printscript.interpreter.ExecutionIo;
 
 /** {@code readEnv(name)}: lee una variable de entorno. */
-final class ReadEnvFunction extends ExternalTextFunction {
+public final class ReadEnvFunction extends ExternalTextFunction {
 
   @Override
   public String name() {

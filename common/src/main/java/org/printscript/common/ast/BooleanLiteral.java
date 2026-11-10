@@ -2,7 +2,7 @@ package org.printscript.common.ast;
 
 import org.printscript.common.Position;
 
-/** Literal booleano — {@code true} o {@code false} (PrintScript 1.1). */
+/** Literal booleano — {@code true} o {@code false}. */
 public final class BooleanLiteral implements Expression {
 
   private final boolean value;

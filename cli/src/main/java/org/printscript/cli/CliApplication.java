@@ -15,9 +15,9 @@ import org.printscript.cli.command.ValidationCommand;
 import org.printscript.cli.interactive.InteractiveMenu;
 import org.printscript.cli.io.Console;
 import org.printscript.cli.io.FileAccess;
-import org.printscript.common.LanguageVersion;
 import org.printscript.interpreter.env.EnvProvider;
 import org.printscript.runner.LanguageServices;
+import org.printscript.runner.LanguageVersion;
 
 /**
  * Arma los comandos y despacha una invocación. No arma el pipeline del lenguaje: lexer, parser y

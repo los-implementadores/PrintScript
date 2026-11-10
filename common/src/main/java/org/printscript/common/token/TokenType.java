@@ -3,18 +3,18 @@ package org.printscript.common.token;
 public enum TokenType {
   // Keywords
   LET,
-  CONST, // "const" declaración inmutable (1.1)
-  IF, // "if" (1.1)
-  ELSE, // "else" (1.1)
+  CONST, // "const" declaración inmutable
+  IF, // "if"
+  ELSE, // "else"
   TYPE_NUMBER, // "number" usado como tipo en una declaración
   TYPE_STRING, // "string" usado como tipo en una declaración
-  TYPE_BOOLEAN, // "boolean" usado como tipo en una declaración (1.1)
+  TYPE_BOOLEAN, // "boolean" usado como tipo en una declaración
 
   // Literales e identificadores
   IDENTIFIER,
   NUMBER_LITERAL,
   STRING_LITERAL,
-  BOOLEAN_LITERAL, // true / false (1.1)
+  BOOLEAN_LITERAL, // true / false
 
   // Símbolos
   COLON, // :
@@ -22,8 +22,8 @@ public enum TokenType {
   SEMICOLON, // ;
   LPAREN, // (
   RPAREN, // )
-  LBRACE, // { (1.1)
-  RBRACE, // } (1.1)
+  LBRACE, // {
+  RBRACE, // }
   PLUS, // +
   MINUS, // -
   STAR, // *

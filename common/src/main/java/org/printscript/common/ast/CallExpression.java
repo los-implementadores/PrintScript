@@ -7,7 +7,7 @@ import org.printscript.common.Position;
 /**
  * Llamada a función.
  *
- * <p>En PrintScript 1.0 la única función built-in es {@code println(expr)}, pero el nodo es
+ * <p>Hoy solo se llaman funciones nativas ({@code println}, {@code readInput}...), pero el nodo es
  * genérico para soportar más adelante funciones de usuario.
  */
 public final class CallExpression implements Expression {

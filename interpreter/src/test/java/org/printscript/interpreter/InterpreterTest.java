@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.BinaryExpression;
@@ -37,8 +36,7 @@ class InterpreterTest {
     output = new CollectingOutputProvider();
     ExecutionIo io =
         new ExecutionIo(new ProgrammaticInputProvider(), new MapEnvProvider(Map.of()), output);
-    interpreter =
-        new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_0);
+    interpreter = new InterpreterVisitor(env, io, BuiltinFunctions.standard());
   }
 
   @Test

@@ -9,14 +9,16 @@ static code analyzer para el lenguaje PrintScript (subset de TypeScript).
 |--------|-----------------|
 | `common` | Tipos compartidos: `Token`, `TokenType`, `Position`, nodos del AST, `Environment`. Sin dependencias externas |
 | `lexer` | Análisis léxico. Convierte código fuente en un stream de tokens (Strategy pattern). `LexerFactory` tiene el vocabulario del lenguaje |
-| `parser` | Análisis sintáctico. Convierte tokens en AST usando Pratt parsing |
+| `parser` | Análisis sintáctico. Convierte tokens en AST usando Pratt parsing, con la gramática que se le pase (`GrammarFeature`) |
 | `interpreter` | Recorre el AST y ejecuta el programa (incluye análisis semántico) |
 | `formatter` | Reformatea código fuente según reglas configurables (JSON) |
 | `analyzer` | Static code analyzer (linter): reglas configurables (JSON) que reportan violaciones con su posición |
-| `runner` | Orquestación del lenguaje: un servicio por operación (validar, analizar, ejecutar, formatear). Puro: sin consola ni archivos |
+| `runner` | Orquestación del lenguaje: un servicio por operación (validar, analizar, ejecutar, formatear). Es el único módulo que sabe de versiones (`LanguageVersion`). Puro: sin consola ni archivos |
 | `cli` | Adaptador de terminal: comandos (`cli.command`), I/O (`cli.io`) y parseo de argumentos/menú. Depende sólo de `runner` |
 
-Cada módulo depende solo de lo que necesita (ver `build.gradle.kts` de cada uno).
+Cada módulo depende solo de lo que necesita (ver `build.gradle.kts` de cada uno). Ninguno, salvo
+el runner, sabe que el lenguaje tiene versiones: el runner le pasa a cada uno la gramática y las
+funciones nativas de la versión pedida (ADR-025).
 
 ## Cómo correr
 

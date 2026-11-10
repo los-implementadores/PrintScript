@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.CallExpression;
@@ -20,6 +19,7 @@ import org.printscript.common.ast.StringLiteral;
 import org.printscript.common.ast.VarDeclarationStatement;
 import org.printscript.common.env.Environment;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.builtin.PrintlnFunction;
 import org.printscript.interpreter.env.EnvProvider;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
@@ -41,7 +41,7 @@ class ReadEnvTest {
 
   private InterpreterVisitor interpreterWith(EnvProvider environment) {
     ExecutionIo io = new ExecutionIo(new ProgrammaticInputProvider(), environment, output);
-    return new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+    return new InterpreterVisitor(env, io, BuiltinFunctions.standard());
   }
 
   @Test
@@ -171,9 +171,9 @@ class ReadEnvTest {
   }
 
   @Test
-  void semanticAnalyzerAcceptsReadEnvInV1_1() {
+  void semanticAnalyzerAcceptsReadEnv() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
 
     CallExpression call =
         new CallExpression("readEnv", List.of(new StringLiteral("API_URL", dummyPos)), dummyPos);
@@ -184,9 +184,9 @@ class ReadEnvTest {
   }
 
   @Test
-  void semanticAnalyzerRejectsReadEnvInV1_0() {
+  void semanticAnalyzerRejectsReadEnvWhenItIsNotAvailable() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_0);
+        new SemanticAnalyzerVisitor(env, new BuiltinFunctions(List.of(new PrintlnFunction())));
 
     CallExpression call =
         new CallExpression("readEnv", List.of(new StringLiteral("API_URL", dummyPos)), dummyPos);
@@ -194,13 +194,13 @@ class ReadEnvTest {
         new VarDeclarationStatement(new Identifier("url", dummyPos), "string", call, dummyPos);
 
     RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
-    assertTrue(ex.getMessage().contains("only supported in PrintScript 1.1"));
+    assertTrue(ex.getMessage().contains("Unknown function 'readEnv'"));
   }
 
   @Test
   void semanticAnalyzerRejectsNonStringArg() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
 
     CallExpression call =
         new CallExpression("readEnv", List.of(new NumberLiteral(42.0, dummyPos)), dummyPos);
@@ -214,7 +214,7 @@ class ReadEnvTest {
   @Test
   void semanticAnalyzerRejectsWrongArgCount() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
 
     CallExpression call = new CallExpression("readEnv", List.of(), dummyPos);
     VarDeclarationStatement decl =

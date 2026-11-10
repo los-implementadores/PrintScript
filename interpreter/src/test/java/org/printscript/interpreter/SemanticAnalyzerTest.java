@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
 import org.printscript.common.Position;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.BinaryExpression;
@@ -30,7 +29,7 @@ class SemanticAnalyzerTest {
   @BeforeEach
   void setUp() {
     env = new Environment();
-    analyzer = new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_0);
+    analyzer = new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
   }
 
   @Test

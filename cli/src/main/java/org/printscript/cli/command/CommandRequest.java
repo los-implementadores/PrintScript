@@ -1,7 +1,7 @@
 package org.printscript.cli.command;
 
 import java.util.Optional;
-import org.printscript.common.LanguageVersion;
+import org.printscript.runner.LanguageVersion;
 
 /**
  * Datos ya resueltos que recibe un {@link Command}, independientes de si vinieron por argumentos o

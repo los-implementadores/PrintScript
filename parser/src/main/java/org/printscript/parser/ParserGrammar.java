@@ -1,102 +1,51 @@
 package org.printscript.parser;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.printscript.common.LanguageVersion;
 import org.printscript.common.token.TokenType;
 import org.printscript.parser.parselet.InfixParselet;
 import org.printscript.parser.parselet.PrefixParselet;
 import org.printscript.parser.parselet.StatementParselet;
-import org.printscript.parser.parselet.infix.BinaryOperatorParselet;
-import org.printscript.parser.parselet.prefix.BooleanLiteralParselet;
-import org.printscript.parser.parselet.prefix.GroupParselet;
-import org.printscript.parser.parselet.prefix.IdentifierParselet;
-import org.printscript.parser.parselet.prefix.NumberLiteralParselet;
-import org.printscript.parser.parselet.prefix.StringLiteralParselet;
-import org.printscript.parser.parselet.statement.AssignmentOrExpressionParselet;
 import org.printscript.parser.parselet.statement.ExpressionStatementParselet;
-import org.printscript.parser.parselet.statement.IfStatementParselet;
-import org.printscript.parser.parselet.statement.VarDeclarationParselet;
 
 /**
- * Conjunto de parselets que definen la gramática. Este es el <em>único</em> punto donde se registra
- * qué construcciones entiende el parser: agregar una sentencia, expresión u operador se hace acá,
- * sin tocar {@link ParserImpl} (Open/Closed).
+ * Lo que entiende un parser: qué parselet maneja cada token y qué tokens son nombres de tipo.
+ * Agregar una sentencia, expresión u operador es registrar un parselet, sin tocar {@link
+ * ParserImpl} (Open/Closed).
  *
- * <p>Las precedencias (binding power) de los operadores viven en {@link #ADDITIVE} y {@link
- * #MULTIPLICATIVE}, reemplazando el antiguo {@code switch} de precedencias por datos.
+ * <p>El parser no sabe de versiones del lenguaje. Una gramática se arma con las {@link
+ * GrammarFeature} que se quieran soportar, y quien orquesta decide cuáles corresponden a cada
+ * versión.
  */
 public final class ParserGrammar {
-
-  private static final int ADDITIVE = 10; // + -
-  private static final int MULTIPLICATIVE = 20; // * /
 
   private final Map<TokenType, StatementParselet> statementParselets;
   private final Map<TokenType, PrefixParselet> prefixParselets;
   private final Map<TokenType, InfixParselet> infixParselets;
+  private final Set<TokenType> typeNames;
   private final StatementParselet defaultStatementParselet;
 
-  public ParserGrammar(
-      Map<TokenType, StatementParselet> statementParselets,
-      Map<TokenType, PrefixParselet> prefixParselets,
-      Map<TokenType, InfixParselet> infixParselets,
-      StatementParselet defaultStatementParselet) {
-    this.statementParselets = Map.copyOf(statementParselets);
-    this.prefixParselets = Map.copyOf(prefixParselets);
-    this.infixParselets = Map.copyOf(infixParselets);
-    this.defaultStatementParselet = defaultStatementParselet;
+  private ParserGrammar(Builder builder) {
+    this.statementParselets = Map.copyOf(builder.statements);
+    this.prefixParselets = Map.copyOf(builder.prefixes);
+    this.infixParselets = Map.copyOf(builder.infixes);
+    this.typeNames = Set.copyOf(builder.typeNames);
+    this.defaultStatementParselet = builder.defaultStatement;
   }
 
-  /**
-   * Gramática por defecto (PrintScript 1.0). Se mantiene por compatibilidad con los constructores
-   * de {@code ParserImpl} que no especifican versión.
-   */
-  public static ParserGrammar printScript() {
-    return forVersion(LanguageVersion.V1_0);
-  }
-
-  /**
-   * Gramática de PrintScript para la versión indicada.
-   *
-   * <p>1.0 registra el conjunto base de construcciones. 1.1 parte de la base y agrega los parselets
-   * propios de esa versión (boolean, const, if/else, readInput, readEnv). Cada feature nueva se
-   * registra acá según su versión, sin tocar {@link ParserImpl} (Open/Closed).
-   */
-  public static ParserGrammar forVersion(LanguageVersion version) {
-    Set<TokenType> typeTokens =
-        version == LanguageVersion.V1_0
-            ? Set.of(TokenType.TYPE_NUMBER, TokenType.TYPE_STRING)
-            : Set.of(TokenType.TYPE_NUMBER, TokenType.TYPE_STRING, TokenType.TYPE_BOOLEAN);
-    TypeNameParser typeNameParser = new TypeNameParser(typeTokens);
-
-    Map<TokenType, StatementParselet> statements = new HashMap<>();
-    statements.put(TokenType.LET, new VarDeclarationParselet(typeNameParser));
-    statements.put(TokenType.IDENTIFIER, new AssignmentOrExpressionParselet());
-
-    Map<TokenType, PrefixParselet> prefixes = new HashMap<>();
-    prefixes.put(TokenType.NUMBER_LITERAL, new NumberLiteralParselet());
-    prefixes.put(TokenType.STRING_LITERAL, new StringLiteralParselet());
-    prefixes.put(TokenType.IDENTIFIER, new IdentifierParselet());
-    prefixes.put(TokenType.LPAREN, new GroupParselet());
-
-    Map<TokenType, InfixParselet> infixes = new HashMap<>();
-    infixes.put(TokenType.PLUS, new BinaryOperatorParselet(ADDITIVE));
-    infixes.put(TokenType.MINUS, new BinaryOperatorParselet(ADDITIVE));
-    infixes.put(TokenType.STAR, new BinaryOperatorParselet(MULTIPLICATIVE));
-    infixes.put(TokenType.SLASH, new BinaryOperatorParselet(MULTIPLICATIVE));
-
-    if (version == LanguageVersion.V1_1) {
-      // boolean (#31): literal true/false. El tipo `boolean` ya se habilita via `typeTokens`.
-      prefixes.put(TokenType.BOOLEAN_LITERAL, new BooleanLiteralParselet());
-      // const (#32): declaración inmutable, reutiliza la lógica de `let`.
-      statements.put(
-          TokenType.CONST, new VarDeclarationParselet(typeNameParser, TokenType.CONST, true));
-      // if/else (#33): condicional con bloques.
-      statements.put(TokenType.IF, new IfStatementParselet());
+  /** Gramática con las construcciones de las features dadas. */
+  public static ParserGrammar of(GrammarFeature... features) {
+    Builder builder = builder();
+    for (GrammarFeature feature : features) {
+      feature.addTo(builder);
     }
+    return builder.build();
+  }
 
-    return new ParserGrammar(statements, prefixes, infixes, new ExpressionStatementParselet());
+  public static Builder builder() {
+    return new Builder();
   }
 
   Map<TokenType, StatementParselet> statementParselets() {
@@ -111,7 +60,57 @@ public final class ParserGrammar {
     return infixParselets;
   }
 
+  Set<TokenType> typeNames() {
+    return typeNames;
+  }
+
   StatementParselet defaultStatementParselet() {
     return defaultStatementParselet;
+  }
+
+  /** Arma una gramática de a una construcción. */
+  public static final class Builder {
+
+    private final Map<TokenType, StatementParselet> statements = new HashMap<>();
+    private final Map<TokenType, PrefixParselet> prefixes = new HashMap<>();
+    private final Map<TokenType, InfixParselet> infixes = new HashMap<>();
+    private final Set<TokenType> typeNames = new HashSet<>();
+    private StatementParselet defaultStatement = new ExpressionStatementParselet();
+
+    private Builder() {}
+
+    /** Sentencia que empieza con {@code token}. */
+    public Builder statement(TokenType token, StatementParselet parselet) {
+      statements.put(token, parselet);
+      return this;
+    }
+
+    /** Expresión que empieza con {@code token}. */
+    public Builder prefix(TokenType token, PrefixParselet parselet) {
+      prefixes.put(token, parselet);
+      return this;
+    }
+
+    /** Operador infijo {@code token}, con su precedencia en el parselet. */
+    public Builder infix(TokenType token, InfixParselet parselet) {
+      infixes.put(token, parselet);
+      return this;
+    }
+
+    /** Token que se acepta como nombre de tipo en una declaración. */
+    public Builder typeName(TokenType token) {
+      typeNames.add(token);
+      return this;
+    }
+
+    /** Parselet para las sentencias que no empiezan con ningún token registrado. */
+    public Builder defaultStatement(StatementParselet parselet) {
+      defaultStatement = parselet;
+      return this;
+    }
+
+    public ParserGrammar build() {
+      return new ParserGrammar(this);
+    }
   }
 }

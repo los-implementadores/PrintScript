@@ -18,6 +18,12 @@ sección no se publica (ver "Versiones y releases" en el README).
 
 ### Cambiado
 
+- **Incompatible:** los módulos no saben de versiones del lenguaje (ADR-025). El parser se arma con
+  una `ParserGrammar` hecha de `GrammarFeature` (`CORE`, `BOOLEANS`, `CONSTANTS`, `CONDITIONALS`) y
+  el intérprete con el `BuiltinFunctions` que se le pase; `LanguageVersion`, que pasa de `common`
+  al runner, dice qué trae cada versión. Se van `ParserGrammar.forVersion`,
+  `BuiltinFunction.since()` y los constructores que recibían la versión. En 1.0, `readInput` falla
+  con "Unknown function".
 - **Incompatible:** `AnalyzerConfig` y `NamingConvention` pasan de `org.printscript.common.configs`
   a `org.printscript.analyzer.config`, y `Violation` y `Severity` pasan de
   `org.printscript.common.linterViolations` a `org.printscript.analyzer.violation`. `common` queda

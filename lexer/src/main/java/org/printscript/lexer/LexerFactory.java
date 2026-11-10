@@ -12,8 +12,8 @@ import org.printscript.common.token.TokenType;
  * vive acá y en un solo lugar. La CLI, los adapters del TCK y los tests de otros módulos piden el
  * lexer a esta fábrica en vez de armar sus propios mapas.
  *
- * <p>El lexer reconoce las palabras de todas las versiones del lenguaje. Qué construcciones se
- * aceptan en cada versión lo decide el parser ({@code ParserGrammar.forVersion}).
+ * <p>El lexer no sabe qué construcciones acepta el lenguaje: reconoce todas las palabras, y qué se
+ * puede escribir con ellas lo decide la gramática con la que se arma el parser.
  */
 public final class LexerFactory {
 

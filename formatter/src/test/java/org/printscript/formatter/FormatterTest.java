@@ -11,6 +11,8 @@ import org.printscript.common.ast.LazyProgram;
 import org.printscript.common.ast.Program;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
+import org.printscript.parser.GrammarFeature;
+import org.printscript.parser.ParserGrammar;
 import org.printscript.parser.ParserImpl;
 
 class FormatterTest {
@@ -19,7 +21,7 @@ class FormatterTest {
 
   private Program parse(String source) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
-    ParserImpl parser = new ParserImpl(lexer);
+    ParserImpl parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE));
     return new LazyProgram(parser, POS);
   }
 

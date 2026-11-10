@@ -5,7 +5,7 @@ import org.printscript.interpreter.ExecutionException;
 import org.printscript.interpreter.ExecutionIo;
 
 /** {@code readInput(prompt)}: muestra el prompt y lee una línea de la entrada del programa. */
-final class ReadInputFunction extends ExternalTextFunction {
+public final class ReadInputFunction extends ExternalTextFunction {
 
   @Override
   public String name() {

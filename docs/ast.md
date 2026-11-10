@@ -40,7 +40,7 @@ Implementaciones:
 |---|---|---|
 | `NumberLiteral` | Un número literal | `42`, `3.14` |
 | `StringLiteral` | Un string literal | `"Joe"`, `'hi'` |
-| `BooleanLiteral` | Un booleano literal (1.1) | `true`, `false` |
+| `BooleanLiteral` | Un booleano literal | `true`, `false` |
 | `Identifier` | Referencia a una variable | `name`, `x` |
 | `BinaryExpression` | Operación entre dos expresiones | `a + b`, `x / 2` |
 | `CallExpression` | Llamada a función | `println(x)` |
@@ -73,7 +73,7 @@ new StringLiteral("Joe", pos)
 
 ---
 
-### `BooleanLiteral.java` (PrintScript 1.1)
+### `BooleanLiteral.java`
 
 Representa `true` o `false`. Guarda el valor como `boolean`.
 
@@ -127,9 +127,9 @@ new BinaryExpression(
 
 ### `CallExpression.java`
 
-Llamada a función. En PrintScript 1.0 la única función es `println`; la 1.1
-suma `readInput` y `readEnv`. Las tres son `CallExpression`: no tienen nodo
-propio (ver ADR-010 y ADR-011).
+Llamada a función: `println`, `readInput` y `readEnv` son todas `CallExpression`,
+sin nodo propio (ver ADR-010 y ADR-011). Qué funciones existen en cada versión lo
+decide el runner.
 
 - `callee` — nombre de la función (`"println"`)
 - `arguments` — lista inmutable de expresiones que se le pasan
@@ -161,17 +161,17 @@ Implementaciones:
 | `VarDeclarationStatement` | Declaración de variable | `let x: number = 5;` |
 | `AssignmentStatement` | Reasignación de variable existente | `x = 5;` |
 | `ExpressionStatement` | Una expresión usada como sentencia | `println(x);` |
-| `IfStatement` | Condicional con bloques (1.1) | `if (ok) { println(1); }` |
+| `IfStatement` | Condicional con bloques | `if (ok) { println(1); }` |
 
 ---
 
 ### `VarDeclarationStatement.java`
 
-Representa `let nombre: tipo = expresión;` y, en 1.1, `const nombre: tipo = expresión;`.
+Representa `let nombre: tipo = expresión;` y `const nombre: tipo = expresión;`.
 Tiene cuatro partes:
 
 - `name` — un `Identifier` con el nombre de la variable
-- `typeName` — el tipo como string: `"number"`, `"string"` o, en 1.1, `"boolean"`
+- `typeName` — el tipo como string: `"number"`, `"string"` o `"boolean"`
 - `initializer` — la expresión del lado derecho del `=`. Es `null` en un `let` sin
   valor inicial; en un `const` es obligatoria
 - `isConst` — `true` si se declaró con `const`
@@ -224,7 +224,7 @@ new ExpressionStatement(
 
 ---
 
-### `IfStatement.java` (PrintScript 1.1)
+### `IfStatement.java`
 
 Representa `if (condición) { ... } else { ... }`. El `else` es opcional y no
 existe `else if`.
@@ -285,12 +285,12 @@ ASTVisitor<T>
 ├── visitVarDeclaration(VarDeclaration)  → T
 ├── visitAssignment(Assignment)          → T
 ├── visitExpressionStatement(...)        → T
-├── visitIf(IfStatement)                 → T   (1.1)
+├── visitIf(IfStatement)                 → T
 ├── visitBinaryExpression(...)           → T
 ├── visitCallExpression(...)             → T
 ├── visitNumberLiteral(...)              → T
 ├── visitStringLiteral(...)              → T
-├── visitBooleanLiteral(...)             → T   (1.1)
+├── visitBooleanLiteral(...)             → T
 └── visitIdentifier(...)                 → T
 ```
 

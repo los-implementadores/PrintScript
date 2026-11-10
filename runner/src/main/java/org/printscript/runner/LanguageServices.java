@@ -11,7 +11,8 @@ import org.printscript.interpreter.semantic.SemanticAnalyzerImpl;
  *
  * <p>{@link #printScript()} es el único lugar del módulo que elige implementaciones concretas
  * (lexer, parser, análisis semántico, intérprete, linter, formateador). Los servicios reciben esas
- * piezas por constructor y sólo conocen sus interfaces, así se pueden probar con dobles.
+ * piezas por constructor y sólo conocen sus interfaces, así se pueden probar con dobles. Lo que
+ * cambia entre versiones del lenguaje lo arma {@link LanguageVersion}.
  */
 public record LanguageServices(
     ValidationService validation,
@@ -23,9 +24,9 @@ public record LanguageServices(
   public static LanguageServices printScript() {
     ProgramLoader loader = new LazyProgramLoader();
     SemanticAnalyzerFactory semanticAnalyzers =
-        version -> new SemanticAnalyzerImpl(new Environment(), version);
+        version -> new SemanticAnalyzerImpl(new Environment(), version.builtins());
     InterpreterFactory interpreters =
-        (version, io) -> new InterpreterImpl(new Environment(), io, version);
+        (version, io) -> new InterpreterImpl(new Environment(), io, version.builtins());
 
     return new LanguageServices(
         new ValidationService(loader, semanticAnalyzers),

@@ -5,7 +5,6 @@ import java.util.List;
 import org.printscript.analyzer.StaticAnalyzer;
 import org.printscript.analyzer.config.AnalyzerConfig;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.LanguageVersion;
 import org.printscript.interpreter.semantic.SemanticAnalyzer;
 
 /**

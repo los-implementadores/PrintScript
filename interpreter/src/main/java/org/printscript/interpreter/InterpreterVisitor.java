@@ -2,7 +2,6 @@ package org.printscript.interpreter;
 
 import java.util.Iterator;
 import java.util.List;
-import org.printscript.common.LanguageVersion;
 import org.printscript.common.ast.ASTVisitor;
 import org.printscript.common.ast.AssignmentStatement;
 import org.printscript.common.ast.BinaryExpression;
@@ -30,16 +29,13 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
 
   private final ExecutionIo io;
   private final BuiltinFunctions builtins;
-  private final LanguageVersion version;
   private final CallContext callContext = new VisitorCallContext();
   private String expectedType;
 
-  public InterpreterVisitor(
-      Environment env, ExecutionIo io, BuiltinFunctions builtins, LanguageVersion version) {
+  public InterpreterVisitor(Environment env, ExecutionIo io, BuiltinFunctions builtins) {
     this.env = env;
     this.io = io;
     this.builtins = builtins;
-    this.version = version;
   }
 
   @Override
@@ -135,8 +131,7 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
   @Override
   public Object visitCallExpression(CallExpression node) {
     BuiltinFunction function =
-        builtins.resolve(
-            node, version, detail -> new ExecutionException(detail, node.getPosition()));
+        builtins.resolve(node, detail -> new ExecutionException(detail, node.getPosition()));
     return function.call(callContext, node);
   }
 
