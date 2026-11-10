@@ -26,7 +26,7 @@ proyecto para compilar, Gradle la descarga sola.
 ```bash
 ./gradlew build          # Compila, verifica formato, Checkstyle y PMD, y corre los tests
 ./gradlew test           # Solo tests
-./gradlew spotlessApply  # Auto-formatear código (google-java-format)
+./gradlew spotlessApply  # Auto-formatear código (reglas propias + google-java-format)
 ./gradlew spotlessCheck  # Verificar formato
 ./gradlew checkstyleMain # Verificar estilo
 ./gradlew pmdMain        # Análisis estático
@@ -61,6 +61,9 @@ compila: Gradle hace `git config core.hooksPath hooks`. No hay que instalarlos a
 
 - **Spotless** + google-java-format — formateo automático.
 - **Checkstyle** — estilo de código (Google Java Style). Un warning hace fallar el build.
+- **Reglas de estilo propias** — 5 reglas definidas una sola vez en
+  [`buildSrc/src/main/kotlin/StyleRules.kt`](buildSrc/src/main/kotlin/StyleRules.kt): Spotless las
+  arregla y Checkstyle las verifica con el mismo patrón, así no se contradicen (ADR-028).
 - **PMD** — análisis estático de malas prácticas y complejidad.
 - **JaCoCo** — cobertura de todo el proyecto. `./gradlew build` falla si baja de 90 % de líneas o
   75 % de ramas; el reporte queda en `build/reports/jacoco/coverageReport`.

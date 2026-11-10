@@ -36,6 +36,8 @@ sección no se publica (ver "Versiones y releases" en el README).
 
 ### Agregado
 
+- 5 reglas de estilo propias para el código Java, compartidas por Spotless (que las arregla) y
+  Checkstyle (que las verifica), definidas una sola vez en `buildSrc` (ADR-028).
 - `LexerFactory` en el módulo `lexer`, con el vocabulario de PrintScript en un solo lugar.
 - Lockfiles de dependencias (`gradle.lockfile`), checksum del Gradle wrapper y descarga automática
   de la JDK 17 si no está instalada.
