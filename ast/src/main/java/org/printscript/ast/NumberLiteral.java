@@ -1,5 +1,6 @@
 package org.printscript.ast;
 
+import java.util.List;
 import org.printscript.source.Position;
 
 /** Literal numérico — p.ej. {@code 42} o {@code 3.14}. */
@@ -20,6 +21,11 @@ public final class NumberLiteral implements Expression {
   @Override
   public Position getPosition() {
     return position;
+  }
+
+  @Override
+  public List<Node> children() {
+    return List.of();
   }
 
   @Override

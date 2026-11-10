@@ -9,6 +9,7 @@ include(
     "source",
     "token",
     "ast",
+    "rules",
     "lexer",
     "parser",
     "interpreter",

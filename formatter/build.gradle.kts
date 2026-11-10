@@ -2,9 +2,10 @@ plugins {
     id("printscript.java-conventions")
 }
 
+// El formatter trabaja sobre tokens (con los espacios originales), no sobre el AST: no depende ni
+// del parser ni de los nodos. Los tests arman los tokens con el lexer real.
 dependencies {
-    implementation(project(":ast"))
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation(project(":token"))
+    implementation(project(":rules"))
     testImplementation(project(":lexer"))
-    testImplementation(project(":parser"))
 }

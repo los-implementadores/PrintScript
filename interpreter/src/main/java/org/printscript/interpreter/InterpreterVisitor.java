@@ -1,10 +1,9 @@
 package org.printscript.interpreter;
 
-import java.util.Iterator;
-import java.util.List;
 import org.printscript.ast.ASTVisitor;
 import org.printscript.ast.AssignmentStatement;
 import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.Block;
 import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.Expression;
@@ -12,7 +11,6 @@ import org.printscript.ast.ExpressionStatement;
 import org.printscript.ast.Identifier;
 import org.printscript.ast.IfStatement;
 import org.printscript.ast.NumberLiteral;
-import org.printscript.ast.Program;
 import org.printscript.ast.Statement;
 import org.printscript.ast.StringLiteral;
 import org.printscript.ast.VarDeclarationStatement;
@@ -36,15 +34,6 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
     this.env = env;
     this.io = io;
     this.builtins = builtins;
-  }
-
-  @Override
-  public Object visitProgram(Program node) {
-    Iterator<Statement> it = node.stream();
-    while (it.hasNext()) {
-      it.next().accept(this);
-    }
-    return null;
   }
 
   @Override
@@ -79,24 +68,26 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
       throw new ExecutionException("if condition must be boolean.", node.getPosition());
     }
     if (b) {
-      executeBlock(node.getThenBlock());
+      node.getThenBlock().accept(this);
     } else if (node.hasElse()) {
-      executeBlock(node.getElseBlock());
+      node.getElseBlock().accept(this);
     }
     return null;
   }
 
   /** Ejecuta un bloque en su propio scope: lo que declara deja de existir al salir. */
-  private void executeBlock(List<Statement> block) {
+  @Override
+  public Object visitBlock(Block node) {
     Environment outer = env;
     env = outer.childScope();
     try {
-      for (Statement stmt : block) {
+      for (Statement stmt : node.getStatements()) {
         stmt.accept(this);
       }
     } finally {
       env = outer;
     }
+    return null;
   }
 
   @Override

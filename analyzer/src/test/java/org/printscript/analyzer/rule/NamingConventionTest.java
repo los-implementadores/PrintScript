@@ -1,10 +1,10 @@
-package org.printscript.analyzer.config;
+package org.printscript.analyzer.rule;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.StringReader;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -31,13 +31,11 @@ class NamingConventionTest {
   }
 
   @Test
-  void nullFormatInJsonKeepsTheDefault() {
-    AnalyzerConfig config =
-        AnalyzerConfig.fromJson(
-            new StringReader(
-                "{\"activeNamingConvention\": true, \"namingConventionFormat\": null}"));
-
-    assertTrue(config.activeNamingConvention);
-    assertEquals(NamingConvention.CAMEL_CASE, config.namingConventionFormat);
+  void readsTheVariantsUsedInConfigs() {
+    assertEquals(NamingConvention.CAMEL_CASE, NamingConvention.fromString("camel case"));
+    assertEquals(NamingConvention.CAMEL_CASE, NamingConvention.fromString("camelCase"));
+    assertEquals(NamingConvention.SNAKE_CASE, NamingConvention.fromString("snake case"));
+    assertEquals(NamingConvention.SNAKE_CASE, NamingConvention.fromString("snake_case"));
+    assertThrows(IllegalArgumentException.class, () -> NamingConvention.fromString("kebab case"));
   }
 }

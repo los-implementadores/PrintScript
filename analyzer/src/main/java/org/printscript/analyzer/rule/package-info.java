@@ -6,11 +6,11 @@
  *
  * <ol>
  *   <li>Escribir la clase de la regla en este paquete.
- *   <li>Agregar su clave en {@link org.printscript.analyzer.config.AnalyzerConfig}.
- *   <li>Registrarla en {@link org.printscript.analyzer.rule.LintRules#from}.
+ *   <li>Registrarla con su clave en {@link org.printscript.analyzer.rule.LintRules}.
  * </ol>
  *
- * <p>Una regla que no viene de la configuración se le puede pasar directo a {@code
+ * <p>Con eso ya se puede activar desde el archivo de configuración: ni el recorrido ni la lectura
+ * del JSON cambian. Una regla que no viene de la configuración se le puede pasar directo a {@code
  * StaticAnalyzerImpl(Supplier<List<LintRule>>)}. Es una fábrica y no una lista porque las reglas
  * guardan estado: cada análisis necesita las suyas.
  */

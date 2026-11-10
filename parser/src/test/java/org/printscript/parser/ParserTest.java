@@ -25,15 +25,13 @@ import org.printscript.ast.StringLiteral;
 import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
-import org.printscript.source.Position;
 
 class ParserTest {
 
   private Program parse(String source) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE));
-    Position start = new Position(1, 1, 1, 1);
-    return new LazyProgram(parser, start);
+    return new LazyProgram(parser);
   }
 
   /** Parsea y materializa la lista de sentencias. */
@@ -211,8 +209,7 @@ class ParserTest {
     String source = "let a: number = 1;\nlet b: number = 2;";
     Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE));
-    Position start = new Position(1, 1, 1, 1);
-    Program program = new LazyProgram(parser, start);
+    Program program = new LazyProgram(parser);
 
     // consume de a uno via stream(), sin materializar el programa
     java.util.Iterator<Statement> it = program.stream();

@@ -13,7 +13,7 @@ public enum TokenType {
   // Literales e identificadores
   IDENTIFIER,
   NUMBER_LITERAL,
-  STRING_LITERAL,
+  STRING_LITERAL, // el lexema incluye las comillas, tal como está en el código fuente
   BOOLEAN_LITERAL, // true / false
 
   // Símbolos
@@ -28,6 +28,10 @@ public enum TokenType {
   MINUS, // -
   STAR, // *
   SLASH, // /
+
+  // Espacios, tabs y saltos de línea entre tokens. El lexer solo los produce si se le pide (lo usa
+  // el formatter); el parser nunca los ve.
+  WHITESPACE,
 
   EOF
 }

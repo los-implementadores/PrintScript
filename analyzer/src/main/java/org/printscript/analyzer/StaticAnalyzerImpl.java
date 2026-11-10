@@ -1,19 +1,32 @@
 package org.printscript.analyzer;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import org.printscript.analyzer.config.AnalyzerConfig;
 import org.printscript.analyzer.rule.LintRule;
+import org.printscript.analyzer.rule.LintRules;
 import org.printscript.analyzer.violation.Violation;
+import org.printscript.ast.Node;
 import org.printscript.ast.Statement;
+import org.printscript.rules.RuleConfig;
 
+/**
+ * Recorre cada sentencia y le avisa a cada {@link LintRule} los nodos que visita. No conoce ninguna
+ * regla ni ningún tipo de nodo en particular: recorre el árbol con {@link Node#children()}, así que
+ * ni una regla nueva ni un nodo nuevo cambian esta clase.
+ */
 public class StaticAnalyzerImpl implements StaticAnalyzer {
 
-  private final AnalyzerVisitor visitor;
+  private final List<LintRule> rules;
+  private final List<Violation> violations = new ArrayList<>();
 
-  /** Usa las reglas que la configuración deja activas. */
-  public StaticAnalyzerImpl(AnalyzerConfig config) {
-    this.visitor = new AnalyzerVisitor(config);
+  /**
+   * Usa las reglas que la configuración deja activas.
+   *
+   * @throws IllegalArgumentException si una clave tiene un valor que su regla no acepta
+   */
+  public StaticAnalyzerImpl(RuleConfig config) {
+    this(() -> LintRules.create(config));
   }
 
   /**
@@ -24,16 +37,36 @@ public class StaticAnalyzerImpl implements StaticAnalyzer {
    * aunque compartan la fábrica.
    */
   public StaticAnalyzerImpl(Supplier<List<LintRule>> rules) {
-    this.visitor = new AnalyzerVisitor(rules.get());
+    this.rules = List.copyOf(rules.get());
   }
 
   @Override
   public void analyze(Statement statement) {
-    statement.accept(visitor);
+    walk(statement);
   }
 
+  /**
+   * Devuelve las violaciones encontradas hasta ahora, incluidas las de las reglas que reportan al
+   * final. Se puede llamar más de una vez sin duplicar resultados.
+   */
   @Override
   public List<Violation> getViolations() {
-    return visitor.getFinalViolations();
+    List<Violation> result = new ArrayList<>(violations);
+    for (LintRule rule : rules) {
+      rule.onFinish(result::add);
+    }
+    return result;
+  }
+
+  private void walk(Node node) {
+    for (LintRule rule : rules) {
+      rule.onEnter(node, violations::add);
+    }
+    for (Node child : node.children()) {
+      walk(child);
+    }
+    for (LintRule rule : rules) {
+      rule.onExit(node, violations::add);
+    }
   }
 }

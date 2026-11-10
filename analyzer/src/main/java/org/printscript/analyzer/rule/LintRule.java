@@ -2,43 +2,27 @@ package org.printscript.analyzer.rule;
 
 import java.util.function.Consumer;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.ast.AssignmentStatement;
-import org.printscript.ast.CallExpression;
-import org.printscript.ast.Identifier;
-import org.printscript.ast.VarDeclarationStatement;
+import org.printscript.ast.Node;
 
 /**
  * Una regla del linter.
  *
- * <p>El {@code AnalyzerVisitor} recorre el AST una sola vez y le avisa a cada regla los nodos que
- * le interesan. La regla reporta lo que encuentre llamando a {@code report}. Todos los métodos
- * tienen una implementación vacía, así cada regla sobreescribe solo los nodos que mira.
+ * <p>El linter recorre el árbol una sola vez y le avisa a cada regla cada nodo al entrar y al
+ * salir. La regla mira los nodos que le interesan ({@code if (node instanceof CallExpression
+ * call)}) e ignora el resto, así un tipo de nodo nuevo en el lenguaje no la obliga a cambiar.
+ * Reporta lo que encuentre llamando a {@code report}. Todos los métodos tienen una implementación
+ * vacía.
  *
- * <p>Agregar una regla es escribir una clase nueva que implemente esta interfaz y registrarla en
- * {@link LintRules}; el visitor no se toca.
+ * <p>Agregar una regla es escribir una clase que implemente esta interfaz y registrarla con su
+ * clave en {@link LintRules}; el recorrido no se toca.
  */
 public interface LintRule {
 
-  /** Se llama por cada declaración ({@code let} o {@code const}), antes de recorrer su valor. */
-  default void onDeclaration(VarDeclarationStatement node, Consumer<Violation> report) {}
+  /** Se llama al llegar a un nodo, antes de recorrer sus hijos. */
+  default void onEnter(Node node, Consumer<Violation> report) {}
 
-  /** Se llama por cada asignación, después de recorrer el valor asignado. */
-  default void onAssignment(AssignmentStatement node, Consumer<Violation> report) {}
-
-  /** Se llama por cada llamada a función, antes de recorrer sus argumentos. */
-  default void onCall(CallExpression node, Consumer<Violation> report) {}
-
-  /** Se llama cada vez que se lee una variable. */
-  default void onIdentifier(Identifier node, Consumer<Violation> report) {}
-
-  /**
-   * Se llama al entrar a un bloque ({@code if} o {@code else}), antes de recorrer sus sentencias.
-   * Lo que se declara adentro deja de existir en {@link #onBlockEnd}.
-   */
-  default void onBlockStart() {}
-
-  /** Se llama al salir de un bloque, después de recorrer sus sentencias. */
-  default void onBlockEnd() {}
+  /** Se llama al terminar con un nodo, después de recorrer sus hijos. */
+  default void onExit(Node node, Consumer<Violation> report) {}
 
   /**
    * Se llama al pedir el reporte, para las reglas que necesitan haber visto todo el programa (por

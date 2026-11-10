@@ -31,13 +31,13 @@ responsabilidad:
 | `LanguageVersion` | `runner` (`org.printscript.runner`) | Solo el orquestador sabe de versiones (ADR-025) |
 
 `token` y `ast` exponen `source` como `api`, porque `Position` es parte de la firma de un token y
-de cada nodo. Con esto cada módulo depende solo de lo que usa: el lexer, de `token`; el parser, de
-`token` y `ast`; el intérprete y el linter, de `ast`.
+de cada nodo. Con esto cada módulo depende solo de lo que usa: el lexer, de `token`; el formatter,
+de `token` y `rules`; el linter, de `ast` y `rules`.
 
 ## Consecuencias
 
 - **Cambio incompatible para quien usa los paquetes publicados**: cambian los paquetes de los
-  tipos de `common`, y el artefacto `org.printscript:common` deja de existir (hay `source`, `token`
-  y `ast`). Como la 2.0.0 todavía no se publicó, entra en esa versión.
+  tipos de `common`, y el artefacto `org.printscript:common` deja de existir (hay `source`, `token`,
+  `ast` y `rules`). Como la 2.0.0 todavía no se publicó, entra en esa versión.
 - Un cambio en el AST ya no recompila el lexer, y uno en los tokens no toca al linter.
 - Hay más módulos, pero cada uno se explica en una línea.

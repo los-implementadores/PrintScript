@@ -38,6 +38,11 @@ public final class CallExpression implements Expression {
   }
 
   @Override
+  public List<Node> children() {
+    return List.copyOf(arguments);
+  }
+
+  @Override
   public <T> T accept(ASTVisitor<T> visitor) {
     return visitor.visitCallExpression(this);
   }

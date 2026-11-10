@@ -1,10 +1,9 @@
 package org.printscript.interpreter.semantic;
 
-import java.util.Iterator;
-import java.util.List;
 import org.printscript.ast.ASTVisitor;
 import org.printscript.ast.AssignmentStatement;
 import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.Block;
 import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.Expression;
@@ -12,7 +11,6 @@ import org.printscript.ast.ExpressionStatement;
 import org.printscript.ast.Identifier;
 import org.printscript.ast.IfStatement;
 import org.printscript.ast.NumberLiteral;
-import org.printscript.ast.Program;
 import org.printscript.ast.Statement;
 import org.printscript.ast.StringLiteral;
 import org.printscript.ast.VarDeclarationStatement;
@@ -34,15 +32,6 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   public SemanticAnalyzerVisitor(Environment env, BuiltinFunctions builtins) {
     this.env = env;
     this.builtins = builtins;
-  }
-
-  @Override
-  public String visitProgram(Program node) {
-    Iterator<Statement> it = node.stream();
-    while (it.hasNext()) {
-      it.next().accept(this);
-    }
-    return null;
   }
 
   @Override
@@ -107,23 +96,26 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     }
     // Cada rama en su propio scope: lo que se declara en una no existe en la otra ni después del
     // if.
-    analyzeBlock(node.getThenBlock());
+    node.getThenBlock().accept(this);
     if (node.hasElse()) {
-      analyzeBlock(node.getElseBlock());
+      node.getElseBlock().accept(this);
     }
     return null;
   }
 
-  private void analyzeBlock(List<Statement> block) {
+  /** Analiza un bloque en su propio scope, igual que lo ejecuta el intérprete. */
+  @Override
+  public String visitBlock(Block node) {
     Environment outer = env;
     env = outer.childScope();
     try {
-      for (Statement stmt : block) {
+      for (Statement stmt : node.getStatements()) {
         stmt.accept(this);
       }
     } finally {
       env = outer;
     }
+    return null;
   }
 
   @Override

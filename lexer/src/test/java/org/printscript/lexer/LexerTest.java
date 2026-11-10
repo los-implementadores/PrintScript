@@ -108,14 +108,14 @@ class LexerTest {
   void tokenizesDoubleQuotedString() {
     List<Token> tokens = tokenize("\"hello\";");
     assertEquals(TokenType.STRING_LITERAL, tokens.get(0).getType());
-    assertEquals("hello", tokens.get(0).getLexeme());
+    assertEquals("\"hello\"", tokens.get(0).getLexeme());
   }
 
   @Test
   void tokenizesSingleQuotedString() {
     List<Token> tokens = tokenize("'world';");
     assertEquals(TokenType.STRING_LITERAL, tokens.get(0).getType());
-    assertEquals("world", tokens.get(0).getLexeme());
+    assertEquals("'world'", tokens.get(0).getLexeme());
   }
 
   @Test

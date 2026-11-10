@@ -15,7 +15,6 @@ import org.printscript.ast.Program;
 import org.printscript.ast.Statement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
-import org.printscript.source.Position;
 
 /** Tests de #33: condicionales if/else con bloques. */
 class IfStatementParsingTest {
@@ -23,7 +22,7 @@ class IfStatementParsingTest {
   private List<Statement> parse(String source, GrammarFeature... features) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer, ParserGrammar.of(features));
-    Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
+    Program program = new LazyProgram(parser);
     List<Statement> statements = new ArrayList<>();
     program.stream().forEachRemaining(statements::add);
     return statements;
@@ -33,7 +32,7 @@ class IfStatementParsingTest {
   void parsesSimpleIf() {
     List<Statement> stmts = parse("if (true) { let x: number = 1; }", GrammarFeature.values());
     IfStatement ifStmt = (IfStatement) stmts.get(0);
-    assertEquals(1, ifStmt.getThenBlock().size());
+    assertEquals(1, ifStmt.getThenBlock().getStatements().size());
     assertFalse(ifStmt.hasElse());
   }
 
@@ -44,9 +43,9 @@ class IfStatementParsingTest {
             "if (false) { let x: number = 1; } else { let y: number = 2; }",
             GrammarFeature.values());
     IfStatement ifStmt = (IfStatement) stmts.get(0);
-    assertEquals(1, ifStmt.getThenBlock().size());
+    assertEquals(1, ifStmt.getThenBlock().getStatements().size());
     assertTrue(ifStmt.hasElse());
-    assertEquals(1, ifStmt.getElseBlock().size());
+    assertEquals(1, ifStmt.getElseBlock().getStatements().size());
   }
 
   @Test

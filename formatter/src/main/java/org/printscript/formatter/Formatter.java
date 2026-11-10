@@ -1,63 +1,26 @@
 package org.printscript.formatter;
 
-import java.io.Reader;
 import java.io.Writer;
 import java.util.Iterator;
-import org.printscript.ast.Program;
+import org.printscript.token.Token;
 
 /**
  * Formateador de código PrintScript.
  *
- * <p>Soporta dos estrategias complementarias:
+ * <p>Trabaja sobre los tokens del código fuente con sus espacios (los de {@code
+ * LexerFactory.createWithWhitespace}): reescribe cada token tal como está y deja que las reglas
+ * decidan qué espacio va entre cada par. El espacio que ninguna regla toca queda como estaba.
  *
- * <ul>
- *   <li><b>AST pretty-printer:</b> recibe un {@link Program} y regenera el código completo de forma
- *       canónica (útil para normalización total).
- *   <li><b>Streaming / Rule-based:</b> procesa el código fuente bajo demanda desde un {@link
- *       Reader} con memoria constante O(1), aplicando reglas específicas y preservando el resto del
- *       código.
- * </ul>
+ * <p>No usa el AST: un tipo de nodo nuevo en el lenguaje no cambia el formatter (ver ADR-027).
  */
 public interface Formatter {
 
   /**
-   * Formatea un programa a partir de su AST.
+   * Escribe el código formateado a medida que lee los tokens: en memoria solo está el token actual.
    *
-   * @param program el AST del programa a formatear
-   * @return el código fuente formateado como String
+   * @param tokens los tokens del código fuente, espacios incluidos
+   * @param target donde se escribe el código formateado
+   * @throws java.io.UncheckedIOException si falla la escritura
    */
-  String format(Program program);
-
-  /**
-   * Formatea un programa a partir de su AST y lo escribe de a una sentencia, a medida que el
-   * programa se recorre. No arma el resultado entero en memoria.
-   *
-   * @param program el AST del programa a formatear
-   * @param writer destino donde escribir el código formateado
-   */
-  void format(Program program, Writer writer);
-
-  /**
-   * Formatea código fuente en streaming desde un {@link Reader} hacia un {@link Writer}.
-   *
-   * @param reader fuente de caracteres de entrada
-   * @param writer destino donde escribir el código formateado
-   */
-  void format(Reader reader, Writer writer);
-
-  /**
-   * Formatea una cadena de código fuente aplicando las reglas configuradas.
-   *
-   * @param source código fuente original
-   * @return código fuente formateado
-   */
-  String format(String source);
-
-  /**
-   * Devuelve un iterador que produce líneas formateadas a medida que se leen.
-   *
-   * @param reader fuente de caracteres
-   * @return iterador de líneas formateadas con memoria O(1)
-   */
-  Iterator<String> formatIterator(Reader reader);
+  void format(Iterator<Token> tokens, Writer target);
 }

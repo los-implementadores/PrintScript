@@ -1,5 +1,6 @@
 package org.printscript.ast;
 
+import java.util.List;
 import org.printscript.source.Position;
 
 /**
@@ -23,6 +24,11 @@ public final class Identifier implements Expression {
   @Override
   public Position getPosition() {
     return position;
+  }
+
+  @Override
+  public List<Node> children() {
+    return List.of();
   }
 
   @Override

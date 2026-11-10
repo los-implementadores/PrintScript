@@ -29,7 +29,7 @@ class ExecutionServiceTest {
   private final List<String> calls = new ArrayList<>();
 
   private final ProgramLoader loader =
-      (source, version) -> new EagerProgram(List.of(first, second), POS);
+      (source, version) -> new EagerProgram(List.of(first, second));
   private final InterpreterFactory interpreters =
       (version, io) -> statement -> calls.add("execute " + names.get(statement));
 

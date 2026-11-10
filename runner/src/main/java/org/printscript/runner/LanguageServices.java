@@ -27,11 +27,13 @@ public record LanguageServices(
         version -> new SemanticAnalyzerImpl(new Environment(), version.builtins());
     InterpreterFactory interpreters =
         (version, io) -> new InterpreterImpl(new Environment(), io, version.builtins());
+    LinterFactory linters = StaticAnalyzerImpl::new;
+    FormatterFactory formatters = FormatterImpl::new;
 
     return new LanguageServices(
         new ValidationService(loader, semanticAnalyzers),
-        new AnalysisService(loader, semanticAnalyzers, StaticAnalyzerImpl::new),
+        new AnalysisService(loader, semanticAnalyzers, linters),
         new ExecutionService(loader, semanticAnalyzers, interpreters),
-        new FormattingService(loader, FormatterImpl::new));
+        new FormattingService(new ParsedTokenLoader(), formatters));
   }
 }

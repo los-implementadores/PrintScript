@@ -15,7 +15,6 @@ import org.printscript.ast.Statement;
 import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
-import org.printscript.source.Position;
 
 /** Tests de #32: declaración de constantes con {@code const}. */
 class ConstParsingTest {
@@ -23,7 +22,7 @@ class ConstParsingTest {
   private List<Statement> parse(String source, GrammarFeature... features) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
     Parser parser = new ParserImpl(lexer, ParserGrammar.of(features));
-    Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
+    Program program = new LazyProgram(parser);
     List<Statement> statements = new ArrayList<>();
     program.stream().forEachRemaining(statements::add);
     return statements;

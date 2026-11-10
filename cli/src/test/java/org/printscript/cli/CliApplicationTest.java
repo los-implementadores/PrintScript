@@ -74,7 +74,7 @@ class CliApplicationTest {
     int code = app.run(new String[] {"formatting", "script.ps"});
 
     assertEquals(CliApplication.EXIT_OK, code);
-    assertEquals("let x: number = 1;\n\nprintln(x);\n", files.get("script.ps"));
+    assertEquals("let x: number = 1;\n\nprintln(x);", files.get("script.ps"));
   }
 
   @Test

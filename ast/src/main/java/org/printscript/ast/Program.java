@@ -3,13 +3,13 @@ package org.printscript.ast;
 import java.util.Iterator;
 
 /**
- * Nodo raíz del AST: representa el programa completo como una secuencia de sentencias.
+ * Un programa completo: la secuencia de sentencias del código fuente.
  *
- * <p><strong>Contrato:</strong> un {@code Program} se recorre <em>una sola vez</em> con {@link
- * #stream()}. Es el contrato que puede cumplir un programa que se parsea a medida que se lee, sin
- * cargarlo en memoria. Quien necesite varias pasadas tiene que guardarse las sentencias él mismo;
- * que una implementación permita más de un recorrido es un detalle suyo, no algo en lo que se pueda
- * apoyar el consumidor.
+ * <p>No es un nodo del árbol sino la fuente de sus sentencias. <strong>Contrato:</strong> se
+ * recorre <em>una sola vez</em> con {@link #stream()}. Es el contrato que puede cumplir un programa
+ * que se parsea a medida que se lee, sin cargarlo en memoria. Quien necesite varias pasadas tiene
+ * que guardarse las sentencias él mismo; que una implementación permita más de un recorrido es un
+ * detalle suyo, no algo en lo que se pueda apoyar el consumidor.
  *
  * <p>Implementaciones:
  *
@@ -19,7 +19,7 @@ import java.util.Iterator;
  *   <li>{@link EagerProgram} — envuelve una lista ya armada. Útil en tests.
  * </ul>
  */
-public interface Program extends Node {
+public interface Program {
 
   /**
    * Devuelve un iterator sobre las sentencias del programa, en el orden del código fuente.

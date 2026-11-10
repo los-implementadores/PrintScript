@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.printscript.ast.AssignmentStatement;
 import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.Block;
 import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.Identifier;
 import org.printscript.ast.IfStatement;
@@ -148,7 +149,11 @@ class SemanticAnalyzerTest {
   void acceptsIfWithBooleanCondition() {
     // if (true) { }
     IfStatement ifStmt =
-        new IfStatement(new BooleanLiteral(true, dummyPos), java.util.List.of(), null, dummyPos);
+        new IfStatement(
+            new BooleanLiteral(true, dummyPos),
+            new Block(java.util.List.of(), dummyPos),
+            null,
+            dummyPos);
     assertDoesNotThrow(() -> ifStmt.accept(analyzer));
   }
 
@@ -156,7 +161,11 @@ class SemanticAnalyzerTest {
   void throwsOnNonBooleanIfCondition() {
     // if (5) { }
     IfStatement ifStmt =
-        new IfStatement(new NumberLiteral(5.0, dummyPos), java.util.List.of(), null, dummyPos);
+        new IfStatement(
+            new NumberLiteral(5.0, dummyPos),
+            new Block(java.util.List.of(), dummyPos),
+            null,
+            dummyPos);
     RuntimeException exception =
         assertThrows(SemanticException.class, () -> ifStmt.accept(analyzer));
     assertTrue(exception.getMessage().contains("if condition must be boolean"));

@@ -1,5 +1,6 @@
 package org.printscript.ast;
 
+import java.util.List;
 import org.printscript.source.Position;
 
 /**
@@ -62,6 +63,11 @@ public final class VarDeclarationStatement implements Statement {
   @Override
   public Position getPosition() {
     return position;
+  }
+
+  @Override
+  public List<Node> children() {
+    return initializer == null ? List.of() : List.of(initializer);
   }
 
   @Override

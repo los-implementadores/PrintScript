@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.Block;
 import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.ExpressionStatement;
@@ -67,7 +68,11 @@ class BlockScopeTest {
   }
 
   private static Statement ifElse(boolean condition, List<Statement> then, List<Statement> other) {
-    return new IfStatement(new BooleanLiteral(condition, POS), then, other, POS);
+    return new IfStatement(
+        new BooleanLiteral(condition, POS),
+        new Block(then, POS),
+        other == null ? null : new Block(other, POS),
+        POS);
   }
 
   @Test

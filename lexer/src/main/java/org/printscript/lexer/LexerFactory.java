@@ -1,6 +1,7 @@
 package org.printscript.lexer;
 
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.printscript.token.TokenType;
@@ -46,13 +47,28 @@ public final class LexerFactory {
   private LexerFactory() {}
 
   /**
-   * Crea un lexer de PrintScript.
+   * Crea un lexer de PrintScript. Descarta los espacios entre tokens: es el que usa el parser.
    *
    * @param source código fuente a tokenizar
    * @return un lexer con el vocabulario completo del lenguaje
    */
   public static Lexer create(Reader source) {
     return new LexerImpl(source, defaultMatchers());
+  }
+
+  /**
+   * Crea un lexer de PrintScript que también devuelve los espacios entre tokens (como tokens {@code
+   * WHITESPACE}). Concatenando los lexemas de todos sus tokens se obtiene el código fuente
+   * original: es lo que necesita el formatter.
+   *
+   * @param source código fuente a tokenizar
+   * @return un lexer con el vocabulario completo del lenguaje y los espacios
+   */
+  public static Lexer createWithWhitespace(Reader source) {
+    List<TokenMatcher> matchers = new ArrayList<>();
+    matchers.add(new WhitespaceTokenMatcher());
+    matchers.addAll(defaultMatchers());
+    return new LexerImpl(source, matchers);
   }
 
   /**

@@ -2,7 +2,6 @@ package org.printscript.ast;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import org.printscript.source.Position;
 
 /**
  * Implementación de {@link Program} que drena el parser a medida que se piden las sentencias.
@@ -15,7 +14,7 @@ import org.printscript.source.Position;
  * {@link #stream()} falla en vez de devolver silenciosamente sólo lo que quedaba.
  *
  * <pre>
- *   Program program = new LazyProgram(parser, pos);
+ *   Program program = new LazyProgram(parser);
  *   Iterator&lt;Statement&gt; it = program.stream();
  *   while (it.hasNext()) {
  *       it.next().accept(interpreterVisitor);
@@ -25,16 +24,13 @@ import org.printscript.source.Position;
 public final class LazyProgram implements Program {
 
   private final Iterator<Statement> source;
-  private final Position position;
   private boolean consumed;
 
   /**
    * @param source iterator que produce las sentencias (tipicamente un ParserImpl)
-   * @param position posición que abarca el programa completo en el código fuente
    */
-  public LazyProgram(Iterator<Statement> source, Position position) {
+  public LazyProgram(Iterator<Statement> source) {
     this.source = source;
-    this.position = position;
   }
 
   /**
@@ -50,16 +46,6 @@ public final class LazyProgram implements Program {
     }
     consumed = true;
     return new DrainIterator();
-  }
-
-  @Override
-  public Position getPosition() {
-    return position;
-  }
-
-  @Override
-  public <T> T accept(ASTVisitor<T> visitor) {
-    return visitor.visitProgram(this);
   }
 
   /** Delega en {@code source} respetando el contrato de {@link Iterator#next()}. */

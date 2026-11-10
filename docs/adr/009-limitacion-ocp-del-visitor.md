@@ -62,3 +62,7 @@ runtime). El "dolor" es acotado y verificado por el tipado.
   una modificación conocida, guiada por errores de compilación, no un defecto oculto.
 - Queda documentado que esta violación de OCP es **deliberada y localizada**, no un
   descuido: es el precio elegido del expression problem.
+
+> **Actualización:** [ADR-027](027-formatter-y-linter-sin-visitor.md) acota esta decisión al
+> semántico y al intérprete. El formatter y el linter, donde lo que más cambia son los nodos, dejan
+> de usar el visitor.

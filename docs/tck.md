@@ -107,16 +107,26 @@ dependencies {
 
 #### Qué versión usar
 
-El TCK está fijado en `1.1.0-SNAPSHOT`. Desde la 2.0.0 cambian dos paquetes, así que pasar a 2.x
-requiere actualizar los imports de los adapters:
+El TCK está fijado en `1.1.0-SNAPSHOT`. La 2.0.0 cambia la forma de usar los módulos, así que pasar
+a 2.x requiere reescribir los adapters (ver la sección 5):
 
-| Hasta 1.1.0 | Desde 2.0.0 |
-| --- | --- |
-| `org.printscript.common.configs.AnalyzerConfig` | `org.printscript.analyzer.config.AnalyzerConfig` |
-| `org.printscript.common.linterViolations.Violation` | `org.printscript.analyzer.violation.Violation` |
+- `common` ya no existe: sus tipos están en `source`, `token`, `ast`, `interpreter` y `runner`
+  (ADR-024).
+- Los módulos no saben de versiones (ADR-025): `ParserImpl(lexer, version)`, `LanguageVersion` en
+  `common` y el constructor deprecado de `InterpreterImpl` dejan de existir.
+- `AnalyzerConfig` y `FormattingRules` se reemplazan por `RuleConfig` (ADR-026), y el formatter
+  trabaja sobre tokens (ADR-027).
 
-Además, `AdapterUtils.buildMatchers()` se puede reemplazar por `LexerFactory.defaultMatchers()` (o
-directamente `LexerFactory.create(reader)`), que tiene el vocabulario del lenguaje en un solo lugar.
+Con 2.x, los adapters solo necesitan el runner, que es el que arma cada pieza con la versión
+pedida y expone en su firma todo lo que los adapters usan:
+
+```groovy
+dependencies {
+    testImplementation 'junit:junit:4.13.1'
+
+    implementation 'org.printscript:runner:2.0.0-SNAPSHOT'
+}
+```
 
 ### Paso 3: Correr los tests del TCK
 En la raíz de `printscript-tck`:
@@ -186,13 +196,36 @@ En los workflows de GitHub Actions (`.github/workflows/gradle.yml`), GitHub prov
 
 El patrón **Adapter** resuelve la incompatibilidad entre las interfaces requeridas por el TCK y el diseño interno de nuestro compilador.
 
+Desde la 2.0.0 los tres adapters usan los servicios del runner (`LanguageServices`), igual que la
+CLI. Así el TCK no arma el pipeline ni elige gramáticas por versión: eso lo hace el runner.
+
 ```
-Interfaces del TCK                 Adapters                    Motor PrintScript
-──────────────────                 ────────                    ─────────────────
-PrintScriptInterpreter   ──►  InterpreterAdapter   ──►  LexerImpl + ParserImpl + InterpreterImpl
-PrintScriptFormatter     ──►  FormatterAdapter     ──►  FormatterImpl (estrategia streaming)
-PrintScriptLinter        ──►  LinterAdapter        ──►  LexerImpl + ParserImpl + StaticAnalyzerImpl
+Interfaces del TCK                 Adapters                    Motor PrintScript (2.x)
+──────────────────                 ────────                    ───────────────────────
+PrintScriptInterpreter   ──►  InterpreterAdapter   ──►  services.execution()
+PrintScriptFormatter     ──►  FormatterAdapter     ──►  services.formatting()
+PrintScriptLinter        ──►  LinterAdapter        ──►  services.analysis()
 ```
+
+```java
+LanguageServices services = LanguageServices.printScript();
+LanguageVersion languageVersion = LanguageVersion.fromLabel(version);
+Reader reader = new InputStreamReader(src, StandardCharsets.UTF_8);
+
+// Interpreter: la salida va a un OutputProvider que le pasa cada línea al PrintEmitter del TCK.
+services.execution().execute(reader, languageVersion, new ExecutionIo(input, env, output));
+
+// Formatter: las reglas del JSON del TCK, tal cual.
+RuleConfig rules = RuleConfig.fromJson(new InputStreamReader(config, StandardCharsets.UTF_8));
+services.formatting().format(reader, languageVersion, rules, writer);
+
+// Linter: devuelve las violaciones para reportarlas al ErrorHandler.
+List<Violation> violations = services.analysis().analyze(reader, languageVersion, rules);
+```
+
+> `analysis()` hace también el chequeo semántico: un programa con errores de tipos lanza
+> `SemanticException` en vez de devolver violaciones. Hay que verificar que sea lo que esperan los
+> tests de linter del TCK. Lo que sigue describe los adapters de la 1.1.0.
 
 ### Punto de entrada: `CustomImplementationFactory`
 El TCK instancia los adapters a través de esta fábrica:

@@ -40,7 +40,7 @@ class ASTTest {
   }
 
   private Program program(Statement... stmts) {
-    return new EagerProgram(List.of(stmts), POS);
+    return new EagerProgram(List.of(stmts));
   }
 
   private List<Statement> statements(Program program) {
@@ -153,7 +153,7 @@ class ASTTest {
   void lazyProgramAdmiteUnSoloRecorrido() {
     Statement stmt1 = new VarDeclarationStatement(id("a"), "number", num(1), POS);
     Statement stmt2 = new VarDeclarationStatement(id("b"), "number", num(2), POS);
-    LazyProgram lazy = new LazyProgram(List.of(stmt1, stmt2).iterator(), POS);
+    LazyProgram lazy = new LazyProgram(List.of(stmt1, stmt2).iterator());
 
     Iterator<Statement> it = lazy.stream();
     it.next();
@@ -167,7 +167,7 @@ class ASTTest {
     Statement stmt1 = new VarDeclarationStatement(id("a"), "number", num(1), POS);
     Statement stmt2 = new VarDeclarationStatement(id("b"), "number", num(2), POS);
     Iterator<Statement> source = List.of(stmt1, stmt2).iterator();
-    LazyProgram lazy = new LazyProgram(source, POS);
+    LazyProgram lazy = new LazyProgram(source);
 
     Iterator<Statement> it = lazy.stream();
     assertTrue(it.hasNext());
@@ -185,17 +185,9 @@ class ASTTest {
   void visitorRecorreElArbolCorrectamente() {
     BinaryExpression sum = new BinaryExpression(num(2), "+", num(3), POS);
     VarDeclarationStatement decl = new VarDeclarationStatement(id("x"), "number", sum, POS);
-    Program prog = program(decl);
 
     ASTVisitor<String> printer =
         new ASTVisitor<>() {
-          @Override
-          public String visitProgram(Program n) {
-            StringBuilder sb = new StringBuilder();
-            n.stream().forEachRemaining(s -> sb.append(s.accept(this)));
-            return sb.toString();
-          }
-
           @Override
           public String visitVarDeclaration(VarDeclarationStatement n) {
             return "let "
@@ -257,9 +249,56 @@ class ASTTest {
           public String visitIf(IfStatement n) {
             return "if";
           }
+
+          @Override
+          public String visitBlock(Block n) {
+            return "{}";
+          }
         };
 
-    assertEquals("let x: number = 2 + 3;", prog.accept(printer));
+    assertEquals("let x: number = 2 + 3;", decl.accept(printer));
+  }
+
+  // -------------------------------------------------------------------------
+  // children(): recorrido genérico del árbol
+  // -------------------------------------------------------------------------
+
+  @Test
+  void childrenAreTheEvaluatedSubnodesInSourceOrder() {
+    BinaryExpression sum = new BinaryExpression(id("a"), "+", num(1), POS);
+    CallExpression call = new CallExpression("println", List.of(sum, str("x")), POS);
+
+    assertEquals(List.of(sum.getLeft(), sum.getRight()), sum.children());
+    assertEquals(List.of(sum, call.getArguments().get(1)), call.children());
+    assertEquals(List.of(), num(1).children());
+  }
+
+  @Test
+  void aDeclarationOrAssignmentDoesNotExposeTheNameItWrites() {
+    NumberLiteral value = num(1);
+    VarDeclarationStatement declaration =
+        new VarDeclarationStatement(id("x"), "number", value, POS);
+    VarDeclarationStatement withoutValue =
+        new VarDeclarationStatement(id("y"), "number", null, POS);
+    AssignmentStatement assignment = new AssignmentStatement(id("x"), value, POS);
+
+    assertEquals(List.of(value), declaration.children());
+    assertEquals(List.of(), withoutValue.children());
+    assertEquals(List.of(value), assignment.children());
+  }
+
+  @Test
+  void anIfHasItsConditionAndItsBlocks() {
+    Statement inside = new ExpressionStatement(num(1), POS);
+    Block then = new Block(List.of(inside), POS);
+    Block otherwise = new Block(List.of(), POS);
+    BooleanLiteral condition = new BooleanLiteral(true, POS);
+
+    assertEquals(List.of(condition, then), new IfStatement(condition, then, null, POS).children());
+    assertEquals(
+        List.of(condition, then, otherwise),
+        new IfStatement(condition, then, otherwise, POS).children());
+    assertEquals(List.of(inside), then.children());
   }
 
   // -------------------------------------------------------------------------

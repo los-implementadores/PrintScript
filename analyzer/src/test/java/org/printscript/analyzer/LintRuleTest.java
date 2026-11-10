@@ -4,11 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
-import org.printscript.analyzer.config.AnalyzerConfig;
-import org.printscript.analyzer.config.NamingConvention;
 import org.printscript.analyzer.rule.LintRule;
 import org.printscript.analyzer.rule.LintRules;
 import org.printscript.analyzer.violation.Severity;
@@ -17,8 +16,10 @@ import org.printscript.ast.BinaryExpression;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.ExpressionStatement;
 import org.printscript.ast.Identifier;
+import org.printscript.ast.Node;
 import org.printscript.ast.NumberLiteral;
 import org.printscript.ast.VarDeclarationStatement;
+import org.printscript.rules.RuleConfig;
 import org.printscript.source.Position;
 
 class LintRuleTest {
@@ -41,8 +42,9 @@ class LintRuleTest {
     LintRule forbidX =
         new LintRule() {
           @Override
-          public void onDeclaration(VarDeclarationStatement node, Consumer<Violation> report) {
-            if ("x".equals(node.getName().getName())) {
+          public void onEnter(Node node, Consumer<Violation> report) {
+            if (node instanceof VarDeclarationStatement declaration
+                && "x".equals(declaration.getName().getName())) {
               report.accept(new Violation("Do not call it x.", Severity.ERROR, node.getPosition()));
             }
           }
@@ -59,9 +61,8 @@ class LintRuleTest {
 
   @Test
   void violationsCanBeRequestedTwiceWithoutDuplicates() {
-    AnalyzerConfig config = new AnalyzerConfig();
-    config.activeUnusedVariables = true;
-    StaticAnalyzer analyzer = new StaticAnalyzerImpl(config);
+    StaticAnalyzer analyzer =
+        new StaticAnalyzerImpl(RuleConfig.of(Map.of("activeUnusedVariables", true)));
 
     analyzer.analyze(declare("unused"));
 
@@ -71,11 +72,12 @@ class LintRuleTest {
 
   @Test
   void reportsInTraversalOrderWithEndOfProgramRulesLast() {
-    AnalyzerConfig config = new AnalyzerConfig();
-    config.activeNamingConvention = true;
-    config.namingConventionFormat = NamingConvention.SNAKE_CASE;
-    config.activeComplexPrintln = true;
-    config.activeUnusedVariables = true;
+    RuleConfig config =
+        RuleConfig.of(
+            Map.of(
+                "identifier_format", "snake case",
+                "activeComplexPrintln", true,
+                "activeUnusedVariables", true));
     StaticAnalyzer analyzer = new StaticAnalyzerImpl(config);
 
     analyzer.analyze(declare("myVar"));
@@ -93,9 +95,8 @@ class LintRuleTest {
 
   @Test
   void analyzersFromTheSameFactoryDoNotShareState() {
-    AnalyzerConfig config = new AnalyzerConfig();
-    config.activeUnusedVariables = true;
-    Supplier<List<LintRule>> rules = () -> LintRules.from(config);
+    RuleConfig config = RuleConfig.of(Map.of("activeUnusedVariables", true));
+    Supplier<List<LintRule>> rules = () -> LintRules.create(config);
 
     StaticAnalyzer first = new StaticAnalyzerImpl(rules);
     first.analyze(declare("onlyInFirst"));
@@ -109,6 +110,6 @@ class LintRuleTest {
 
   @Test
   void emptyConfigActivatesNoRules() {
-    assertTrue(LintRules.from(new AnalyzerConfig()).isEmpty());
+    assertTrue(LintRules.create(RuleConfig.empty()).isEmpty());
   }
 }

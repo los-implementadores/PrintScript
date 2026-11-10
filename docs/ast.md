@@ -5,8 +5,12 @@ ser parseado. Es una estructura de árbol donde cada nodo representa una
 construcción del lenguaje.
 
 Todos los nodos viven en el módulo `ast`, paquete `org.printscript.ast`, para que
-el `interpreter`, el `formatter` y el `analyzer` los puedan usar sin depender del
-`parser`. El módulo solo depende de `source` (por `Position`).
+el `interpreter` y el `analyzer` los puedan usar sin depender del `parser`. El
+módulo solo depende de `source` (por `Position`). El `formatter` no usa el AST:
+trabaja sobre los tokens (ver [formatter.md](formatter.md)).
+
+Ningún nodo sabe de versiones del lenguaje: qué construcciones se aceptan en cada
+versión lo decide el runner (ADR-025).
 
 ---
 
@@ -14,16 +18,21 @@ el `interpreter`, el `formatter` y el `analyzer` los puedan usar sin depender de
 
 ### `Node.java` — interfaz base
 
-Todo nodo del AST implementa esta interfaz. Define dos cosas:
+Todo nodo del AST implementa esta interfaz. Define tres cosas:
 
 - `getPosition()` — la posición en el código fuente (fila/columna) de donde vino
   ese nodo. Se usa para mostrar errores con ubicación exacta.
-- `accept(ASTVisitor<T>)` — punto de entrada del patrón Visitor. Cada módulo
-  que quiera recorrer el árbol implementa un visitor y llama a `accept` en la raíz.
+- `children()` — las expresiones, sentencias y bloques que contiene, en el orden
+  del código fuente. Permite recorrer el árbol sin conocer cada tipo de nodo (lo
+  usa el linter). No incluye el nombre de una declaración ni el destino de una
+  asignación: así, todo `Identifier` que aparece entre los hijos es una lectura.
+- `accept(ASTVisitor<T>)` — punto de entrada del patrón Visitor, para las fases
+  que le dan un significado propio a cada tipo de nodo (semántico e intérprete).
 
 ```
 Node
 ├── getPosition() → Position
+├── children()    → List<Node>
 └── accept(ASTVisitor<T>) → T
 ```
 
@@ -230,26 +239,37 @@ Representa `if (condición) { ... } else { ... }`. El `else` es opcional y no
 existe `else if`.
 
 - `condition` — la expresión entre paréntesis (el semántico exige que sea `boolean`)
-- `thenBlock` — lista inmutable de sentencias del bloque del `if`
-- `elseBlock` — lista inmutable de sentencias del `else`, o `null` si no hay
-  (`hasElse()` lo indica)
+- `thenBlock` — el `Block` del `if`
+- `elseBlock` — el `Block` del `else`, o `null` si no hay (`hasElse()` lo indica)
 
 ```java
 // if (ok) { println("si"); } else { println("no"); }
 new IfStatement(
     new Identifier("ok", pos),
-    List.of(printSi),
-    List.of(printNo),
+    new Block(List.of(printSi), pos),
+    new Block(List.of(printNo), pos),
     pos
 )
 ```
 
 ---
 
-### `Program.java` — raíz del árbol (interfaz)
+### `Block.java`
 
-El nodo raíz. Representa el programa completo como una secuencia de `Statement`.
-Es una **interfaz** con un solo método:
+Un bloque de sentencias entre llaves, `{ ... }`. Abre un scope: lo que se declara
+adentro deja de existir al salir (ADR-022). Es un nodo propio para que cualquier
+construcción nueva con cuerpo (un `while`, por ejemplo) lo reuse, y con eso el
+semántico, el intérprete y el linter ya manejen su scope sin cambios.
+
+- `statements` — lista inmutable de sentencias del bloque
+
+---
+
+### `Program.java` — el programa completo (interfaz)
+
+Representa el programa completo como una secuencia de `Statement`. No es un nodo
+del árbol sino la fuente de sus sentencias (no tiene posición ni hijos). Es una
+**interfaz** con un solo método:
 
 - `stream()` — devuelve un `Iterator<Statement>`. El contrato es que un `Program`
   se recorre **una sola vez** (ver ADR-020): quien necesite varias pasadas se
@@ -264,11 +284,11 @@ Hay dos implementaciones:
 
 ```java
 // Lazy — envuelve el parser, drena cuando hace falta:
-Program program = new LazyProgram(parser, pos);
+Program program = new LazyProgram(parser);
 program.stream();   // Iterator<Statement> que avanza el parser de a uno
 
 // Eager — programa armado a mano:
-Program program = new EagerProgram(List.of(decA, decB, printStmt), pos);
+Program program = new EagerProgram(List.of(decA, decB, printStmt));
 program.stream();   // itera sobre la lista
 ```
 
@@ -276,16 +296,16 @@ program.stream();   // itera sobre la lista
 
 ### `ASTVisitor.java` — interfaz del patrón Visitor
 
-Cada módulo que necesita recorrer el árbol implementa esta interfaz.
-El tipo genérico `<T>` es el tipo de retorno de cada visita.
+Lo implementan las fases que le dan un significado propio a **cada** tipo de
+nodo. El tipo genérico `<T>` es el tipo de retorno de cada visita.
 
 ```
 ASTVisitor<T>
-├── visitProgram(Program)                → T
 ├── visitVarDeclaration(VarDeclaration)  → T
 ├── visitAssignment(Assignment)          → T
 ├── visitExpressionStatement(...)        → T
 ├── visitIf(IfStatement)                 → T
+├── visitBlock(Block)                    → T
 ├── visitBinaryExpression(...)           → T
 ├── visitCallExpression(...)             → T
 ├── visitNumberLiteral(...)              → T
@@ -294,20 +314,21 @@ ASTVisitor<T>
 └── visitIdentifier(...)                 → T
 ```
 
-Ejemplos de uso por módulo:
-
-| Módulo | `<T>` | Qué hace |
+| Módulo | Cómo recorre | Por qué |
 |---|---|---|
-| `interpreter` (`InterpreterVisitor`) | `Object` | evalúa y retorna el valor |
-| `interpreter` (`SemanticAnalyzerVisitor`) | `String` | retorna el tipo de cada expresión |
-| `formatter` | `String` | retorna el código formateado |
-| `analyzer` | `Void` | no retorna nada: avisa a cada regla del linter y acumula las violaciones |
+| `interpreter` (`InterpreterVisitor`) | `ASTVisitor<Object>` | evalúa cada nodo y retorna su valor |
+| `interpreter` (`SemanticAnalyzerVisitor`) | `ASTVisitor<String>` | retorna el tipo de cada expresión |
+| `analyzer` | `children()` | cada regla mira solo algunos nodos; un nodo nuevo no la obliga a cambiar |
+| `formatter` | no usa el AST | trabaja sobre los tokens: un nodo nuevo no lo afecta |
 
-Para recorrer el árbol, el módulo implementa el visitor y arranca desde la raíz:
+El visitor obliga a agregar un `visitX` en cada implementación cuando aparece un
+nodo nuevo (el *expression problem*, ADR-009). Para el semántico y el intérprete
+es lo correcto: un nodo nuevo necesita su chequeo y su ejecución. Para el linter y
+el formatter no lo es, y por eso no lo usan (ADR-027).
 
 ```java
-ASTVisitor<Object> interpreter = new InterpreterVisitor(env);
-program.accept(interpreter); // arranca el recorrido
+// Cada sentencia se visita de a una, a medida que el parser la produce:
+statement.accept(interpreterVisitor);
 ```
 
 ---
@@ -330,6 +351,7 @@ LazyProgram               ├── VarDeclarationStatement
   │ implements            ├── AssignmentStatement
   │ Program               ├── ExpressionStatement
   │                       └── IfStatement
+  │                  Block    (cuerpo de un if)
   │                  Program  (interfaz raíz)
   └── .stream()       ├── EagerProgram  (lista armada, tests)
       Iterator<Stmt>  └── LazyProgram   (drena parser on-demand)
@@ -343,14 +365,11 @@ LazyProgram               ├── VarDeclarationStatement
   │   implements
   │   ASTVisitor<String>
   │
-  ├── Formatter
-  │   implements
-  │   ASTVisitor<String>
-  │
   └── Analyzer
-      implements
-      ASTVisitor<Void>
+      recorre con
+      children()
 ```
 
-El `Parser` produce un `Program`. Los módulos posteriores lo reciben y lo
-recorren cada uno con su propio `ASTVisitor`, sin tocarse entre sí.
+El `Parser` produce un `Program`. El semántico y el intérprete lo recorren cada
+uno con su propio `ASTVisitor`; el linter, con `children()`. Ninguno toca a los
+otros.

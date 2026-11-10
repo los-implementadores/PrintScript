@@ -1,6 +1,6 @@
 package org.printscript.ast;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import org.printscript.source.Position;
 
@@ -9,7 +9,7 @@ import org.printscript.source.Position;
  *
  * <ul>
  *   <li>La condición es una expresión que debe evaluar a {@code boolean}.
- *   <li>Los bloques son listas de sentencias (siempre entre llaves en el código fuente).
+ *   <li>Cada rama es un {@link Block} (siempre entre llaves en el código fuente).
  *   <li>{@code elseBlock} es {@code null} cuando no hay rama {@code else}. No se soporta {@code
  *       else if}.
  * </ul>
@@ -17,18 +17,14 @@ import org.printscript.source.Position;
 public final class IfStatement implements Statement {
 
   private final Expression condition;
-  private final List<Statement> thenBlock;
-  private final List<Statement> elseBlock;
+  private final Block thenBlock;
+  private final Block elseBlock;
   private final Position position;
 
-  public IfStatement(
-      Expression condition,
-      List<Statement> thenBlock,
-      List<Statement> elseBlock,
-      Position position) {
+  public IfStatement(Expression condition, Block thenBlock, Block elseBlock, Position position) {
     this.condition = condition;
-    this.thenBlock = Collections.unmodifiableList(thenBlock);
-    this.elseBlock = elseBlock == null ? null : Collections.unmodifiableList(elseBlock);
+    this.thenBlock = thenBlock;
+    this.elseBlock = elseBlock;
     this.position = position;
   }
 
@@ -36,12 +32,12 @@ public final class IfStatement implements Statement {
     return condition;
   }
 
-  public List<Statement> getThenBlock() {
+  public Block getThenBlock() {
     return thenBlock;
   }
 
   /** Bloque {@code else}, o {@code null} si no hay rama else. */
-  public List<Statement> getElseBlock() {
+  public Block getElseBlock() {
     return elseBlock;
   }
 
@@ -52,6 +48,15 @@ public final class IfStatement implements Statement {
   @Override
   public Position getPosition() {
     return position;
+  }
+
+  @Override
+  public List<Node> children() {
+    List<Node> children = new ArrayList<>(List.of(condition, thenBlock));
+    if (hasElse()) {
+      children.add(elseBlock);
+    }
+    return children;
   }
 
   @Override

@@ -10,11 +10,12 @@ static code analyzer para el lenguaje PrintScript (subset de TypeScript).
 | `source` | `Position` y la excepción base de los errores del programa. Sin dependencias |
 | `token` | `Token` y `TokenType`: el vocabulario que comparten lexer, parser y formatter |
 | `ast` | Los nodos del AST, `Program` y `ASTVisitor` |
+| `rules` | Cómo se pasa de un archivo de configuración (JSON) a reglas: `RuleConfig` y `RuleRegistry`. Lo usan el formatter y el linter |
 | `lexer` | Análisis léxico. Convierte código fuente en un stream de tokens (Strategy pattern). `LexerFactory` tiene el vocabulario del lenguaje |
 | `parser` | Análisis sintáctico. Convierte tokens en AST usando Pratt parsing, con la gramática que se le pase (`GrammarFeature`) |
 | `interpreter` | Recorre el AST y ejecuta el programa (incluye análisis semántico y la tabla de símbolos) |
-| `formatter` | Reformatea código fuente según reglas configurables (JSON) |
-| `analyzer` | Static code analyzer (linter): reglas configurables (JSON) que reportan violaciones con su posición |
+| `formatter` | Reformatea el código sobre sus tokens; las reglas se registran en `FormattingRules` y se activan desde el JSON |
+| `analyzer` | Static code analyzer (linter); las reglas se registran en `LintRules` y se activan desde el JSON |
 | `runner` | Orquestación del lenguaje: un servicio por operación (validar, analizar, ejecutar, formatear). Es el único módulo que sabe de versiones (`LanguageVersion`). Puro: sin consola ni archivos |
 | `cli` | Adaptador de terminal: comandos (`cli.command`), I/O (`cli.io`) y parseo de argumentos/menú. Depende sólo de `runner` |
 
@@ -53,7 +54,7 @@ compila: Gradle hace `git config core.hooksPath hooks`. No hay que instalarlos a
 
 ## Documentación
 
-- [`docs/ast.md`](docs/ast.md) — Estructura del AST y patrón Visitor
+- [`docs/ast.md`](docs/ast.md) — Estructura del AST, `children()` y patrón Visitor
 - [`docs/parser.md`](docs/parser.md) — Cómo funciona el parser (Pratt parsing)
 - [`docs/formatter.md`](docs/formatter.md) — Formatter y reglas configurables
 - [`docs/analyzer.md`](docs/analyzer.md) — Linter, sus reglas y cómo agregar una
@@ -114,8 +115,8 @@ hacer "Re-run" hay que borrar en GitHub Packages las versiones `X.Y.Z` que llega
 - [x] Lexer (Strategy pattern con TokenMatcher)
 - [x] Parser + AST (Pratt parsing, LazyProgram)
 - [x] Interpreter + Análisis semántico
-- [x] Formatter (reglas configurables desde JSON, estrategia AST y streaming)
-- [x] Static analyzer (reglas configurables desde JSON)
+- [x] Formatter (sobre tokens, reglas registradas y configurables desde JSON)
+- [x] Static analyzer (reglas registradas y configurables desde JSON)
 - [x] CLI (validation, analyzing, execution, formatting y menú interactivo)
 - [x] PrintScript 1.1 (`const`, `boolean`, `if`/`else`, `readInput`, `readEnv`)
 - [x] Integración con el TCK (paquetes en GitHub Packages)

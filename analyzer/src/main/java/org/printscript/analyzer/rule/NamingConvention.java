@@ -1,11 +1,10 @@
-package org.printscript.analyzer.config;
+package org.printscript.analyzer.rule;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.regex.Pattern;
 
 /**
- * Convenciones de nombres que acepta el linter. Desde JSON se leen con {@link #fromString}, que
- * acepta variantes como "camel case", "camelCase" o "snake_case".
+ * Convenciones de nombres que acepta el linter. Desde la configuración se leen con {@link
+ * #fromString}, que acepta variantes como "camel case", "camelCase" o "snake_case".
  */
 public enum NamingConvention {
   // Empieza en minúscula; cada palabra siguiente empieza en mayúscula. Acepta dígitos (value1) y
@@ -33,11 +32,10 @@ public enum NamingConvention {
     return pattern.matcher(name).matches();
   }
 
-  @JsonCreator
+  /**
+   * @throws IllegalArgumentException si no es ninguna de las convenciones conocidas
+   */
   public static NamingConvention fromString(String value) {
-    if (value == null) {
-      return null;
-    }
     String normalized = value.trim().toLowerCase().replace(" ", "_").replace("-", "_");
     if ("camelcase".equals(normalized) || "camel_case".equals(normalized)) {
       return CAMEL_CASE;

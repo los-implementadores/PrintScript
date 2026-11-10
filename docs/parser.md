@@ -38,7 +38,7 @@ reciban siempre la misma interfaz `Program`, sin saber que por abajo es lazy:
 ```java
 Lexer lexer = LexerFactory.create(new StringReader(source));
 Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE, GrammarFeature.BOOLEANS));
-Program program = new LazyProgram(parser, startPos);
+Program program = new LazyProgram(parser);
 ```
 
 ---

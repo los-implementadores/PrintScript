@@ -1,5 +1,6 @@
 package org.printscript.ast;
 
+import java.util.List;
 import org.printscript.source.Position;
 
 /**
@@ -26,6 +27,11 @@ public final class ExpressionStatement implements Statement {
   @Override
   public Position getPosition() {
     return position;
+  }
+
+  @Override
+  public List<Node> children() {
+    return List.of(expression);
   }
 
   @Override
