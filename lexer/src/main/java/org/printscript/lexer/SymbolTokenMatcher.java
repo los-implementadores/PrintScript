@@ -2,8 +2,8 @@ package org.printscript.lexer;
 
 import java.util.Collections;
 import java.util.Map;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Matcher para símbolos y operadores de un solo caracter.

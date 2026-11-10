@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 class LexerTest {
 

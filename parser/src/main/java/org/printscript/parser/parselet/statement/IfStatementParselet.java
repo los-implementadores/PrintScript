@@ -2,15 +2,15 @@ package org.printscript.parser.parselet.statement;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.printscript.common.Position;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.Expression;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.Statement;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.ParseException;
 import org.printscript.parser.TokenStream;
 import org.printscript.parser.parselet.StatementParselet;
+import org.printscript.source.Position;
+import org.printscript.token.TokenType;
 
 /**
  * Parsea un condicional {@code if (cond) { ... } else { ... }}.

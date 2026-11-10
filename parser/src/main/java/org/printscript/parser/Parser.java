@@ -1,7 +1,7 @@
 package org.printscript.parser;
 
 import java.util.Iterator;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Statement;
 
 /**
  * Analizador sintáctico de PrintScript.

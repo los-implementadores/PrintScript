@@ -1,10 +1,10 @@
 package org.printscript.parser.parselet.prefix;
 
-import org.printscript.common.ast.Expression;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.Expression;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.parselet.PrefixParselet;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Parsea una expresión agrupada entre paréntesis: {@code ( expr )}. Los paréntesis solo agrupan; no

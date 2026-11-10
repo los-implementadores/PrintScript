@@ -6,19 +6,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.BinaryExpression;
-import org.printscript.common.ast.BooleanLiteral;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.BooleanLiteral;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.scope.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 import org.printscript.interpreter.semantic.SemanticException;
+import org.printscript.source.Position;
 
 class SemanticAnalyzerTest {
 

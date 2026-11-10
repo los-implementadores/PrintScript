@@ -7,23 +7,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.Expression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.Statement;
+import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.interpreter.ExecutionIo;
 import org.printscript.interpreter.InterpreterVisitor;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;
+import org.printscript.interpreter.scope.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 import org.printscript.interpreter.semantic.SemanticException;
+import org.printscript.source.Position;
 
 class BuiltinFunctionsTest {
 

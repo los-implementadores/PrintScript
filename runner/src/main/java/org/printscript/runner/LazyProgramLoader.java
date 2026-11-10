@@ -1,11 +1,11 @@
 package org.printscript.runner;
 
 import java.io.Reader;
-import org.printscript.common.Position;
-import org.printscript.common.ast.LazyProgram;
-import org.printscript.common.ast.Program;
+import org.printscript.ast.LazyProgram;
+import org.printscript.ast.Program;
 import org.printscript.lexer.LexerFactory;
 import org.printscript.parser.ParserImpl;
+import org.printscript.source.Position;
 
 /**
  * Arma lexer y parser con la gramática de la versión y devuelve un programa que se parsea a medida

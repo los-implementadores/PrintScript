@@ -5,13 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.StringReader;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.BooleanLiteral;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.StringLiteral;
+import org.printscript.ast.BooleanLiteral;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.Statement;
+import org.printscript.ast.StringLiteral;
+import org.printscript.source.Position;
 
 /** Tests de #36: formateo de bloques {@code if}/{@code else} con indentación configurable. */
 class FormatterIfTest {

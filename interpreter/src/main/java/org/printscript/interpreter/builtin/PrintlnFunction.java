@@ -1,6 +1,6 @@
 package org.printscript.interpreter.builtin;
 
-import org.printscript.common.ast.CallExpression;
+import org.printscript.ast.CallExpression;
 import org.printscript.interpreter.util.ValueFormatter;
 
 /** {@code println(expr)}: escribe el valor de la expresión en la salida del programa. */

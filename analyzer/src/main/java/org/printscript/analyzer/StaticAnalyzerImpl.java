@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 import org.printscript.analyzer.config.AnalyzerConfig;
 import org.printscript.analyzer.rule.LintRule;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Statement;
 
 public class StaticAnalyzerImpl implements StaticAnalyzer {
 

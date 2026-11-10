@@ -62,7 +62,7 @@ val installGitHooks by tasks.registering(Exec::class) {
     commandLine("git", "config", "core.hooksPath", "hooks")
 }
 
-// Cobertura de todo el proyecto: cuenta los tests de cualquier módulo (las clases de common, por
+// Cobertura de todo el proyecto: cuenta los tests de cualquier módulo (las clases de ast, por
 // ejemplo, las ejercitan sobre todo los tests del parser y del intérprete).
 val modules = subprojects.map { it.name }
 val testTasks = modules.map { ":$it:test" }

@@ -1,9 +1,9 @@
 package org.printscript.runner;
 
 import org.printscript.analyzer.StaticAnalyzerImpl;
-import org.printscript.common.env.Environment;
 import org.printscript.formatter.FormatterImpl;
 import org.printscript.interpreter.InterpreterImpl;
+import org.printscript.interpreter.scope.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerImpl;
 
 /**

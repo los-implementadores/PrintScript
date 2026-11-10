@@ -1,16 +1,16 @@
 package org.printscript.parser.parselet.statement;
 
-import org.printscript.common.Position;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.Expression;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.Statement;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.ParseException;
 import org.printscript.parser.TokenStream;
 import org.printscript.parser.parselet.StatementParselet;
+import org.printscript.source.Position;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Parsea una declaración de variable: {@code let <ident> : <type> = <expr> ;}.

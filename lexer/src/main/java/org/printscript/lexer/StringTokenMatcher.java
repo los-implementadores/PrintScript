@@ -1,8 +1,8 @@
 package org.printscript.lexer;
 
-import org.printscript.common.Position;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.source.Position;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Matcher para literales de tipo string, delimitados por {@code "} o {@code '}.

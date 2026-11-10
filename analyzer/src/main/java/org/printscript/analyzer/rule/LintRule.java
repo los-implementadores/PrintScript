@@ -2,10 +2,10 @@ package org.printscript.analyzer.rule;
 
 import java.util.function.Consumer;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.VarDeclarationStatement;
 
 /**
  * Una regla del linter.

@@ -3,12 +3,12 @@ package org.printscript.analyzer.rule;
 import java.util.function.Consumer;
 import org.printscript.analyzer.violation.Severity;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.ast.BooleanLiteral;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.StringLiteral;
+import org.printscript.ast.BooleanLiteral;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.Expression;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.StringLiteral;
 
 /**
  * Exige que el argumento de una función sea un literal o una variable, no una expresión. Se usa

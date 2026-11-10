@@ -8,11 +8,11 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.Statement;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.lexer.LexerFactory;
 import org.printscript.parser.parselet.statement.VarDeclarationParselet;
+import org.printscript.token.TokenType;
 
 /** El parser entiende exactamente lo que trae su gramática, sin saber de versiones del lenguaje. */
 class GrammarFeatureTest {

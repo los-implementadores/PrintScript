@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import org.printscript.analyzer.config.NamingConvention;
 import org.printscript.analyzer.violation.Severity;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.ast.VarDeclarationStatement;
 
 /** Exige que los nombres de variables sigan una convención (camelCase o snake_case). */
 public final class NamingConventionRule implements LintRule {

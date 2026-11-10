@@ -3,7 +3,7 @@ package org.printscript.formatter;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Iterator;
-import org.printscript.common.ast.Program;
+import org.printscript.ast.Program;
 
 /**
  * Formateador de código PrintScript.

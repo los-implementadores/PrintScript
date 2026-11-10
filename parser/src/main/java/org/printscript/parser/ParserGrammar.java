@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.printscript.common.token.TokenType;
 import org.printscript.parser.parselet.InfixParselet;
 import org.printscript.parser.parselet.PrefixParselet;
 import org.printscript.parser.parselet.StatementParselet;
 import org.printscript.parser.parselet.statement.ExpressionStatementParselet;
+import org.printscript.token.TokenType;
 
 /**
  * Lo que entiende un parser: qué parselet maneja cada token y qué tokens son nombres de tipo.

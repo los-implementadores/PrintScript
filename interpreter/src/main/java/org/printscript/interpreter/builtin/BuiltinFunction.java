@@ -1,6 +1,6 @@
 package org.printscript.interpreter.builtin;
 
-import org.printscript.common.ast.CallExpression;
+import org.printscript.ast.CallExpression;
 
 /**
  * Función nativa del lenguaje ({@code println}, {@code readInput}, {@code readEnv}).

@@ -4,9 +4,9 @@ El AST es la representación en memoria de un programa PrintScript después de
 ser parseado. Es una estructura de árbol donde cada nodo representa una
 construcción del lenguaje.
 
-Todos los nodos viven en el módulo `common`, paquete `org.printscript.common.ast`,
-para que el `interpreter`, el `formatter` y el `analyzer` los puedan usar sin
-depender del `parser`.
+Todos los nodos viven en el módulo `ast`, paquete `org.printscript.ast`, para que
+el `interpreter`, el `formatter` y el `analyzer` los puedan usar sin depender del
+`parser`. El módulo solo depende de `source` (por `Position`).
 
 ---
 
@@ -315,8 +315,8 @@ program.accept(interpreter); // arranca el recorrido
 ## Cómo se conectan
 
 ```
-                    common/ast
-                    ──────────
+                    ast
+                    ───
 Lexer               Node  (interfaz base)
   │                  ├── Expression
   │ Iterator<Token>  │    ├── NumberLiteral

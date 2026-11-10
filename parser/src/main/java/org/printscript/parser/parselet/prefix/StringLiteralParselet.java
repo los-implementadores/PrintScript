@@ -1,10 +1,10 @@
 package org.printscript.parser.parselet.prefix;
 
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.token.Token;
+import org.printscript.ast.Expression;
+import org.printscript.ast.StringLiteral;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.parselet.PrefixParselet;
+import org.printscript.token.Token;
 
 /** Parsea un literal de cadena. */
 public final class StringLiteralParselet implements PrefixParselet {

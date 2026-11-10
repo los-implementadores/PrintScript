@@ -1,8 +1,8 @@
 package org.printscript.interpreter.semantic;
 
-import org.printscript.common.ast.Statement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.Statement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.scope.Environment;
 
 public class SemanticAnalyzerImpl implements SemanticAnalyzer {
 

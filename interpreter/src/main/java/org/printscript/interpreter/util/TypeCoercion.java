@@ -1,7 +1,7 @@
 package org.printscript.interpreter.util;
 
-import org.printscript.common.Position;
 import org.printscript.interpreter.ExecutionException;
+import org.printscript.source.Position;
 
 /**
  * Utilidad compartida para la coerción de tipos desde fuentes textuales ({@code readInput}, {@code

@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 import java.util.NoSuchElementException;
-import org.printscript.common.Position;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.source.Position;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Implementación de {@link Lexer} basada en Strategy pattern.

@@ -11,7 +11,7 @@ El TCK es un repositorio independiente mantenido por la cátedra que contiene la
 ```
 ┌────────────────────────────────────────────────────────┐
 │                      PrintScript                       │
-│  (Módulos: common, lexer, parser, interpreter, etc.)   │
+│  (Módulos: source, token, ast, lexer, parser, etc.)    │
 └──────────────────────────┬─────────────────────────────┘
                            │  1. ./gradlew publishToMavenLocal
                            │     (o GitHub Packages)
@@ -66,7 +66,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = project.group.toString()
-            artifactId = project.name     // common, lexer, parser, interpreter, etc.
+            artifactId = project.name     // source, token, ast, lexer, parser, runner, etc.
             version = project.version.toString()
             from(project.components["java"])
         }

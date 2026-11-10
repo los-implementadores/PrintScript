@@ -3,13 +3,13 @@ package org.printscript.parser;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.Expression;
+import org.printscript.ast.Statement;
 import org.printscript.parser.parselet.InfixParselet;
 import org.printscript.parser.parselet.PrefixParselet;
 import org.printscript.parser.parselet.StatementParselet;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Implementación de {@link Parser}. Usa despacho por tablas (parselets) en vez de cadenas de {@code

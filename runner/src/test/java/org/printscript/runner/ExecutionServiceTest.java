@@ -8,12 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.EagerProgram;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.EagerProgram;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.Statement;
 import org.printscript.interpreter.semantic.SemanticException;
+import org.printscript.source.Position;
 
 /**
  * {@link ExecutionService} con dobles: no hace falta lexer, parser ni intérprete reales para probar

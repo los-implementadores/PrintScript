@@ -6,7 +6,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.token.TokenType;
+import org.printscript.token.TokenType;
 
 class LexerFactoryTest {
 

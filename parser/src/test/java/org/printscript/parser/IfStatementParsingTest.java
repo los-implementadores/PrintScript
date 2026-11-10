@@ -9,13 +9,13 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.LazyProgram;
-import org.printscript.common.ast.Program;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.LazyProgram;
+import org.printscript.ast.Program;
+import org.printscript.ast.Statement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
+import org.printscript.source.Position;
 
 /** Tests de #33: condicionales if/else con bloques. */
 class IfStatementParsingTest {

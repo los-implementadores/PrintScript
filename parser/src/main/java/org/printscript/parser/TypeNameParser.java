@@ -1,8 +1,8 @@
 package org.printscript.parser;
 
 import java.util.Set;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Resuelve el nombre de tipo en una declaración a partir del token actual, validándolo contra un

@@ -18,6 +18,10 @@ sección no se publica (ver "Versiones y releases" en el README).
 
 ### Cambiado
 
+- **Incompatible:** `common` se separa en tres módulos (ADR-024): `source` (`Position`,
+  `PrintScriptException`), `token` (`Token`, `TokenType`) y `ast` (los nodos, `Program` y
+  `ASTVisitor`). `Environment` pasa a `org.printscript.interpreter.scope`. El artefacto
+  `org.printscript:common` deja de publicarse.
 - **Incompatible:** los módulos no saben de versiones del lenguaje (ADR-025). El parser se arma con
   una `ParserGrammar` hecha de `GrammarFeature` (`CORE`, `BOOLEANS`, `CONSTANTS`, `CONDITIONALS`) y
   el intérprete con el `BuiltinFunctions` que se le pase; `LanguageVersion`, que pasa de `common`

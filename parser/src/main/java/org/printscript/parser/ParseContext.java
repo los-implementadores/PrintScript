@@ -1,7 +1,7 @@
 package org.printscript.parser;
 
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Expression;
+import org.printscript.ast.Statement;
 
 /**
  * Servicios que un parselet necesita para hacer su trabajo, sin acoplarse a {@code ParserImpl}.

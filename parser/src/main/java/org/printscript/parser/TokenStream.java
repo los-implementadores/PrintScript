@@ -1,9 +1,9 @@
 package org.printscript.parser;
 
 import java.util.Iterator;
-import org.printscript.common.Position;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.source.Position;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Encapsula el consumo del stream de tokens: mantiene el token actual, avanza y valida.

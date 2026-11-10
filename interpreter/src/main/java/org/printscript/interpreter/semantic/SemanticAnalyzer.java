@@ -1,6 +1,6 @@
 package org.printscript.interpreter.semantic;
 
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Statement;
 
 public interface SemanticAnalyzer {
   /** Valida una sentencia. Lanza excepción si es semánticamente inválida. */

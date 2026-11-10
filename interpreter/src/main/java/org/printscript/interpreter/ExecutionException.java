@@ -1,7 +1,7 @@
 package org.printscript.interpreter;
 
-import org.printscript.common.Position;
-import org.printscript.common.PrintScriptException;
+import org.printscript.source.Position;
+import org.printscript.source.PrintScriptException;
 
 /**
  * Error que sólo aparece al ejecutar: depende de valores de runtime (división por cero, input que

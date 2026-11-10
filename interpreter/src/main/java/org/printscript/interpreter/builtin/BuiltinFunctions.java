@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import org.printscript.common.ast.CallExpression;
+import org.printscript.ast.CallExpression;
 
 /**
  * Funciones nativas disponibles, indexadas por nombre.

@@ -1,7 +1,7 @@
 package org.printscript.interpreter.builtin;
 
-import org.printscript.common.Position;
-import org.printscript.common.ast.Expression;
+import org.printscript.ast.Expression;
+import org.printscript.source.Position;
 
 /** Lo que el análisis semántico le ofrece a una {@link BuiltinFunction} para chequear tipos. */
 public interface TypeChecker {

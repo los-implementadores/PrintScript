@@ -13,13 +13,13 @@ import org.printscript.analyzer.rule.LintRule;
 import org.printscript.analyzer.rule.LintRules;
 import org.printscript.analyzer.violation.Severity;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.Position;
-import org.printscript.common.ast.BinaryExpression;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.VarDeclarationStatement;
+import org.printscript.source.Position;
 
 class LintRuleTest {
 

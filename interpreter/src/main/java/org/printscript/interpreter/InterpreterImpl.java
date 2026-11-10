@@ -1,8 +1,8 @@
 package org.printscript.interpreter;
 
-import org.printscript.common.ast.Statement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.Statement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.scope.Environment;
 
 public class InterpreterImpl implements Interpreter {
 

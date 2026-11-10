@@ -8,23 +8,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.BooleanLiteral;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.BooleanLiteral;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.Statement;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;
+import org.printscript.interpreter.scope.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 import org.printscript.interpreter.semantic.SemanticException;
+import org.printscript.source.Position;
 
 /**
  * Las llaves de un {@code if} abren un scope, como en TypeScript: lo que se declara adentro no

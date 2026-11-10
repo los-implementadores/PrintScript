@@ -1,8 +1,8 @@
 package org.printscript.interpreter.builtin;
 
-import org.printscript.common.Position;
 import org.printscript.interpreter.ExecutionException;
 import org.printscript.interpreter.ExecutionIo;
+import org.printscript.source.Position;
 
 /** {@code readEnv(name)}: lee una variable de entorno. */
 public final class ReadEnvFunction extends ExternalTextFunction {

@@ -7,10 +7,12 @@ static code analyzer para el lenguaje PrintScript (subset de TypeScript).
 
 | Módulo | Responsabilidad |
 |--------|-----------------|
-| `common` | Tipos compartidos: `Token`, `TokenType`, `Position`, nodos del AST, `Environment`. Sin dependencias externas |
+| `source` | `Position` y la excepción base de los errores del programa. Sin dependencias |
+| `token` | `Token` y `TokenType`: el vocabulario que comparten lexer, parser y formatter |
+| `ast` | Los nodos del AST, `Program` y `ASTVisitor` |
 | `lexer` | Análisis léxico. Convierte código fuente en un stream de tokens (Strategy pattern). `LexerFactory` tiene el vocabulario del lenguaje |
 | `parser` | Análisis sintáctico. Convierte tokens en AST usando Pratt parsing, con la gramática que se le pase (`GrammarFeature`) |
-| `interpreter` | Recorre el AST y ejecuta el programa (incluye análisis semántico) |
+| `interpreter` | Recorre el AST y ejecuta el programa (incluye análisis semántico y la tabla de símbolos) |
 | `formatter` | Reformatea código fuente según reglas configurables (JSON) |
 | `analyzer` | Static code analyzer (linter): reglas configurables (JSON) que reportan violaciones con su posición |
 | `runner` | Orquestación del lenguaje: un servicio por operación (validar, analizar, ejecutar, formatear). Es el único módulo que sabe de versiones (`LanguageVersion`). Puro: sin consola ni archivos |

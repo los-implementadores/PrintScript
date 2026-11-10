@@ -1,6 +1,5 @@
 package org.printscript.parser;
 
-import org.printscript.common.token.TokenType;
 import org.printscript.parser.parselet.infix.BinaryOperatorParselet;
 import org.printscript.parser.parselet.prefix.BooleanLiteralParselet;
 import org.printscript.parser.parselet.prefix.GroupParselet;
@@ -10,6 +9,7 @@ import org.printscript.parser.parselet.prefix.StringLiteralParselet;
 import org.printscript.parser.parselet.statement.AssignmentOrExpressionParselet;
 import org.printscript.parser.parselet.statement.IfStatementParselet;
 import org.printscript.parser.parselet.statement.VarDeclarationParselet;
+import org.printscript.token.TokenType;
 
 /**
  * Las construcciones que sabe parsear el parser, agrupadas para armar una {@link ParserGrammar}.

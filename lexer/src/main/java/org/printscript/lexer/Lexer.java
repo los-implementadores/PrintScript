@@ -1,7 +1,7 @@
 package org.printscript.lexer;
 
 import java.util.Iterator;
-import org.printscript.common.token.Token;
+import org.printscript.token.Token;
 
 /**
  * Analizador léxico de PrintScript.

@@ -6,14 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.LazyProgram;
-import org.printscript.common.ast.Program;
+import org.printscript.ast.LazyProgram;
+import org.printscript.ast.Program;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
 import org.printscript.parser.GrammarFeature;
 import org.printscript.parser.ParserGrammar;
 import org.printscript.parser.ParserImpl;
+import org.printscript.source.Position;
 
 class FormatterTest {
 

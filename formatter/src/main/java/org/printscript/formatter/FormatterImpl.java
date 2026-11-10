@@ -7,7 +7,7 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.Iterator;
-import org.printscript.common.ast.Program;
+import org.printscript.ast.Program;
 
 /**
  * Implementación de {@link Formatter} que soporta tanto formateo desde AST (con {@link

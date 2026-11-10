@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 import org.printscript.analyzer.violation.Severity;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.VarDeclarationStatement;
+import org.printscript.source.Position;
 
 /**
  * Reporta las variables declaradas que nunca se leen ni se reasignan. Como necesita haber visto

@@ -3,7 +3,7 @@ package org.printscript.lexer;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
-import org.printscript.common.token.TokenType;
+import org.printscript.token.TokenType;
 
 /**
  * Arma el {@link Lexer} con el vocabulario de PrintScript: sus palabras reservadas y sus símbolos.
