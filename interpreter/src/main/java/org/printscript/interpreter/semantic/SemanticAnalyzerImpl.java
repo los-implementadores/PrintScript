@@ -1,16 +1,18 @@
 package org.printscript.interpreter.semantic;
 
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.Statement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.scope.Environment;
 
 public class SemanticAnalyzerImpl implements SemanticAnalyzer {
 
   private final SemanticAnalyzerVisitor visitor;
 
-  public SemanticAnalyzerImpl(Environment env, LanguageVersion version) {
-    this.visitor = new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), version);
+  /**
+   * @param builtins las funciones nativas que puede llamar el programa
+   */
+  public SemanticAnalyzerImpl(Environment env, BuiltinFunctions builtins) {
+    this.visitor = new SemanticAnalyzerVisitor(env, builtins);
   }
 
   @Override

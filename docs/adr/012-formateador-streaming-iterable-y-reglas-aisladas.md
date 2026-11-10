@@ -1,6 +1,6 @@
 # ADR-012: Formateador en streaming/iterable sobre código fuente y reglas aisladas
 
-- **Estado:** Aceptado
+- **Estado:** Reemplazado por [ADR-027](027-formatter-y-linter-sin-visitor.md)
 - **Fecha:** 2026-09-19
 - **Relacionado:** ADR-002 (Visitor para recorrer el AST), ADR-007 (Parser como `Iterator<Statement>` y `Program` como interfaz lazy)
 

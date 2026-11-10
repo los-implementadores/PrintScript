@@ -3,10 +3,10 @@ package org.printscript.cli.command;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
-import org.printscript.analyzer.config.AnalyzerConfig;
 import org.printscript.analyzer.violation.Violation;
 import org.printscript.cli.io.Console;
 import org.printscript.cli.io.FileAccess;
+import org.printscript.rules.RuleConfig;
 import org.printscript.runner.AnalysisService;
 
 public class AnalyzingCommand implements Command {
@@ -33,7 +33,7 @@ public class AnalyzingCommand implements Command {
 
   @Override
   public void execute(CommandRequest request) throws IOException {
-    AnalyzerConfig config = loadConfig(request);
+    RuleConfig config = loadConfig(request);
 
     List<Violation> violations;
     try (Reader source = files.openReader(request.filePath())) {
@@ -51,12 +51,12 @@ public class AnalyzingCommand implements Command {
     }
   }
 
-  private AnalyzerConfig loadConfig(CommandRequest request) throws IOException {
+  private RuleConfig loadConfig(CommandRequest request) throws IOException {
     if (request.configPath().isEmpty()) {
-      return new AnalyzerConfig();
+      return RuleConfig.empty();
     }
     try (Reader reader = files.openReader(request.configPath().get())) {
-      return AnalyzerConfig.fromJson(reader);
+      return RuleConfig.fromJson(reader);
     }
   }
 }

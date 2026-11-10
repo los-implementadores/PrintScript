@@ -4,13 +4,16 @@ plugins {
 }
 
 dependencies {
-    // Tipos que forman parte de la firma pública de los servicios (configs, versiones,
-    // providers de I/O, violaciones): se exponen como `api` para que los consumidores
-    // (CLI, futura API HTTP) no tengan que redeclararlos.
-    api(project(":common"))
+    // Tipos que forman parte de la firma pública de los servicios (configuración de reglas,
+    // providers de I/O, violaciones): se exponen como `api` para que los consumidores (CLI, futura
+    // API HTTP) no tengan que redeclararlos.
+    api(project(":rules"))
     api(project(":interpreter"))
-    api(project(":formatter"))
     api(project(":analyzer"))
+    implementation(project(":formatter"))
+    implementation(project(":source"))
+    implementation(project(":token"))
+    implementation(project(":ast"))
     implementation(project(":lexer"))
     implementation(project(":parser"))
 }

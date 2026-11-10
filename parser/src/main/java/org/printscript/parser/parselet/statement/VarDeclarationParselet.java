@@ -1,41 +1,33 @@
 package org.printscript.parser.parselet.statement;
 
-import org.printscript.common.Position;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.Expression;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.Statement;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.ParseException;
 import org.printscript.parser.TokenStream;
-import org.printscript.parser.TypeNameParser;
 import org.printscript.parser.parselet.StatementParselet;
+import org.printscript.source.Position;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Parsea una declaración de variable: {@code let <ident> : <type> = <expr> ;}.
  *
- * <p>Delega la validación del nombre de tipo en un {@link TypeNameParser} inyectado, para no
- * hardcodear los tipos admitidos.
+ * <p>Qué tipos se admiten lo define la gramática ({@link ParseContext#parseTypeName}), no esta
+ * clase.
  */
 public final class VarDeclarationParselet implements StatementParselet {
 
-  private final TypeNameParser typeNameParser;
   private final TokenType keyword;
   private final boolean isConst;
 
-  /** Declaración mutable con {@code let}. */
-  public VarDeclarationParselet(TypeNameParser typeNameParser) {
-    this(typeNameParser, TokenType.LET, false);
-  }
-
   /**
    * Declaración con la keyword indicada. {@code isConst=true} marca la variable como inmutable
-   * (usado para {@code const}, PrintScript 1.1).
+   * (como {@code const}): tiene que tener valor y no se puede reasignar.
    */
-  public VarDeclarationParselet(TypeNameParser typeNameParser, TokenType keyword, boolean isConst) {
-    this.typeNameParser = typeNameParser;
+  public VarDeclarationParselet(TokenType keyword, boolean isConst) {
     this.keyword = keyword;
     this.isConst = isConst;
   }
@@ -52,7 +44,7 @@ public final class VarDeclarationParselet implements StatementParselet {
     Identifier name = new Identifier(nameToken.getLexeme(), nameToken.getPosition());
 
     ts.consume(TokenType.COLON);
-    String typeName = typeNameParser.parse(ts);
+    String typeName = ctx.parseTypeName();
 
     Expression initializer = null;
     if (ts.current().getType() == TokenType.ASSIGN) {

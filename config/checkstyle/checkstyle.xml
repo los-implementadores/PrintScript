@@ -32,6 +32,39 @@
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
+    <!-- Reglas de estilo propias. El patrón y el mensaje de cada una están en
+         buildSrc/src/main/kotlin/StyleRules.kt: Spotless arregla exactamente lo que estos módulos
+         verifican, así que lo que deja spotlessApply siempre pasa Checkstyle. -->
+    <module name="RegexpMultiline">
+        <property name="id" value="lineCommentSpace"/>
+        <property name="format" value="${style.lineCommentSpace.pattern}"/>
+        <property name="message" value="${style.lineCommentSpace.message}"/>
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="noAuthorTag"/>
+        <property name="format" value="${style.noAuthorTag.pattern}"/>
+        <property name="message" value="${style.noAuthorTag.message}"/>
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="preferIsEmpty"/>
+        <property name="format" value="${style.preferIsEmpty.pattern}"/>
+        <property name="message" value="${style.preferIsEmpty.message}"/>
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="noTrueComparison"/>
+        <property name="format" value="${style.noTrueComparison.pattern}"/>
+        <property name="message" value="${style.noTrueComparison.message}"/>
+    </module>
+
+    <module name="RegexpMultiline">
+        <property name="id" value="noBlankLineBeforeClosingBrace"/>
+        <property name="format" value="${style.noBlankLineBeforeClosingBrace.pattern}"/>
+        <property name="message" value="${style.noBlankLineBeforeClosingBrace.message}"/>
+    </module>
+
     <module name="TreeWalker">
         <!-- Naming conventions -->
         <module name="TypeName"/>

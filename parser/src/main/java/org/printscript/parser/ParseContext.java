@@ -1,7 +1,7 @@
 package org.printscript.parser;
 
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Expression;
+import org.printscript.ast.Statement;
 
 /**
  * Servicios que un parselet necesita para hacer su trabajo, sin acoplarse a {@code ParserImpl}.
@@ -21,6 +21,14 @@ public interface ParseContext {
    * bloques) parsee sentencias anidadas sin acoplarse a {@code ParserImpl}.
    */
   Statement parseStatement();
+
+  /**
+   * Consume el nombre de tipo de una declaración y lo devuelve. Qué tokens son tipos lo define la
+   * gramática.
+   *
+   * @throws ParseException si el token actual no es un tipo de la gramática
+   */
+  String parseTypeName();
 
   /**
    * Parsea una expresión completa respetando la precedencia (binding power) mínima indicada. Es el

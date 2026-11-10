@@ -1,6 +1,6 @@
 package org.printscript.lexer;
 
-import org.printscript.common.token.Token;
+import org.printscript.token.Token;
 
 /**
  * Estrategia para reconocer y extraer un tipo de token del flujo de caracteres.

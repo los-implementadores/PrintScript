@@ -1,6 +1,6 @@
 package org.printscript.interpreter.builtin;
 
-import org.printscript.common.ast.Expression;
+import org.printscript.ast.Expression;
 import org.printscript.interpreter.ExecutionIo;
 
 /** Lo que el intérprete le ofrece a una {@link BuiltinFunction} para ejecutarse. */

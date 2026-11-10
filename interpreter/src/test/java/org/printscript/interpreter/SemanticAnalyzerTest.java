@@ -6,20 +6,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.BinaryExpression;
-import org.printscript.common.ast.BooleanLiteral;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.Block;
+import org.printscript.ast.BooleanLiteral;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.scope.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 import org.printscript.interpreter.semantic.SemanticException;
+import org.printscript.source.Position;
 
 class SemanticAnalyzerTest {
 
@@ -30,7 +30,7 @@ class SemanticAnalyzerTest {
   @BeforeEach
   void setUp() {
     env = new Environment();
-    analyzer = new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_0);
+    analyzer = new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
   }
 
   @Test
@@ -149,7 +149,11 @@ class SemanticAnalyzerTest {
   void acceptsIfWithBooleanCondition() {
     // if (true) { }
     IfStatement ifStmt =
-        new IfStatement(new BooleanLiteral(true, dummyPos), java.util.List.of(), null, dummyPos);
+        new IfStatement(
+            new BooleanLiteral(true, dummyPos),
+            new Block(java.util.List.of(), dummyPos),
+            null,
+            dummyPos);
     assertDoesNotThrow(() -> ifStmt.accept(analyzer));
   }
 
@@ -157,7 +161,11 @@ class SemanticAnalyzerTest {
   void throwsOnNonBooleanIfCondition() {
     // if (5) { }
     IfStatement ifStmt =
-        new IfStatement(new NumberLiteral(5.0, dummyPos), java.util.List.of(), null, dummyPos);
+        new IfStatement(
+            new NumberLiteral(5.0, dummyPos),
+            new Block(java.util.List.of(), dummyPos),
+            null,
+            dummyPos);
     RuntimeException exception =
         assertThrows(SemanticException.class, () -> ifStmt.accept(analyzer));
     assertTrue(exception.getMessage().contains("if condition must be boolean"));

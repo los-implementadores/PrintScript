@@ -1,6 +1,6 @@
 package org.printscript.interpreter;
 
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Statement;
 
 public interface Interpreter {
   /** Ejecuta una sentencia produciendo sus efectos secundarios. */

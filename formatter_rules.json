@@ -1,4 +1,6 @@
 {
+  "mandatory-line-break-after-statement": true,
+  "maxOneSpaceBetweenTokens": true,
   "spaceBeforeColon": false,
   "spaceAfterColon": true,
   "spaceAroundAssign": true,

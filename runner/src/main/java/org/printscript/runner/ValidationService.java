@@ -1,7 +1,6 @@
 package org.printscript.runner;
 
 import java.io.Reader;
-import org.printscript.common.LanguageVersion;
 
 /**
  * Valida sintaxis y semántica de un programa sin ejecutarlo. Falla con excepción ante el primer

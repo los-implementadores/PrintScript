@@ -9,22 +9,20 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.Position;
-import org.printscript.common.ast.LazyProgram;
-import org.printscript.common.ast.Program;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.ast.LazyProgram;
+import org.printscript.ast.Program;
+import org.printscript.ast.Statement;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
 
-/** Tests de #32: declaración de constantes con {@code const} (PrintScript 1.1). */
+/** Tests de #32: declaración de constantes con {@code const}. */
 class ConstParsingTest {
 
-  private List<Statement> parse(String source, LanguageVersion version) {
+  private List<Statement> parse(String source, GrammarFeature... features) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
-    Parser parser = new ParserImpl(lexer, version);
-    Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
+    Parser parser = new ParserImpl(lexer, ParserGrammar.of(features));
+    Program program = new LazyProgram(parser);
     List<Statement> statements = new ArrayList<>();
     program.stream().forEachRemaining(statements::add);
     return statements;
@@ -32,7 +30,7 @@ class ConstParsingTest {
 
   @Test
   void parsesConstDeclarationAsImmutable() {
-    List<Statement> stmts = parse("const pi: number = 3;", LanguageVersion.V1_1);
+    List<Statement> stmts = parse("const pi: number = 3;", GrammarFeature.values());
     VarDeclarationStatement decl = (VarDeclarationStatement) stmts.get(0);
     assertEquals("pi", decl.getName().getName());
     assertEquals("number", decl.getTypeName());
@@ -41,14 +39,14 @@ class ConstParsingTest {
 
   @Test
   void letDeclarationIsNotConst() {
-    List<Statement> stmts = parse("let x: number = 3;", LanguageVersion.V1_1);
+    List<Statement> stmts = parse("let x: number = 3;", GrammarFeature.values());
     VarDeclarationStatement decl = (VarDeclarationStatement) stmts.get(0);
     assertFalse(decl.isConst());
   }
 
   @Test
-  void constRejectedInV1_0() {
-    // `const` no tiene statement parselet en 1.0 -> se parsea como default (expresión) y falla.
-    assertThrows(Exception.class, () -> parse("const pi: number = 3;", LanguageVersion.V1_0));
+  void constRejectedWithoutItsFeature() {
+    // Sin la feature, `const` no tiene statement parselet -> se parsea como expresión y falla.
+    assertThrows(Exception.class, () -> parse("const pi: number = 3;", GrammarFeature.CORE));
   }
 }

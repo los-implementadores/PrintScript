@@ -1,8 +1,8 @@
 package org.printscript.parser.parselet;
 
-import org.printscript.common.ast.Expression;
-import org.printscript.common.token.Token;
+import org.printscript.ast.Expression;
 import org.printscript.parser.ParseContext;
+import org.printscript.token.Token;
 
 /**
  * Parsea una expresión que aparece en posición <em>infija</em>: un operador binario entre una

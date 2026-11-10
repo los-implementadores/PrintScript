@@ -1,9 +1,9 @@
 package org.printscript.runner;
 
 import org.printscript.analyzer.StaticAnalyzerImpl;
-import org.printscript.common.env.Environment;
 import org.printscript.formatter.FormatterImpl;
 import org.printscript.interpreter.InterpreterImpl;
+import org.printscript.interpreter.scope.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerImpl;
 
 /**
@@ -11,7 +11,8 @@ import org.printscript.interpreter.semantic.SemanticAnalyzerImpl;
  *
  * <p>{@link #printScript()} es el único lugar del módulo que elige implementaciones concretas
  * (lexer, parser, análisis semántico, intérprete, linter, formateador). Los servicios reciben esas
- * piezas por constructor y sólo conocen sus interfaces, así se pueden probar con dobles.
+ * piezas por constructor y sólo conocen sus interfaces, así se pueden probar con dobles. Lo que
+ * cambia entre versiones del lenguaje lo arma {@link LanguageVersion}.
  */
 public record LanguageServices(
     ValidationService validation,
@@ -23,14 +24,16 @@ public record LanguageServices(
   public static LanguageServices printScript() {
     ProgramLoader loader = new LazyProgramLoader();
     SemanticAnalyzerFactory semanticAnalyzers =
-        version -> new SemanticAnalyzerImpl(new Environment(), version);
+        version -> new SemanticAnalyzerImpl(new Environment(), version.builtins());
     InterpreterFactory interpreters =
-        (version, io) -> new InterpreterImpl(new Environment(), io, version);
+        (version, io) -> new InterpreterImpl(new Environment(), io, version.builtins());
+    LinterFactory linters = StaticAnalyzerImpl::new;
+    FormatterFactory formatters = FormatterImpl::new;
 
     return new LanguageServices(
         new ValidationService(loader, semanticAnalyzers),
-        new AnalysisService(loader, semanticAnalyzers, StaticAnalyzerImpl::new),
+        new AnalysisService(loader, semanticAnalyzers, linters),
         new ExecutionService(loader, semanticAnalyzers, interpreters),
-        new FormattingService(loader, FormatterImpl::new));
+        new FormattingService(new ParsedTokenLoader(), formatters));
   }
 }

@@ -2,14 +2,14 @@ package org.printscript.parser.parselet.prefix;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.Expression;
+import org.printscript.ast.Identifier;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.TokenStream;
 import org.printscript.parser.parselet.PrefixParselet;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Parsea un identificador. Si a continuación hay un paréntesis de apertura, lo trata como una

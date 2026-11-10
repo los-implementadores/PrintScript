@@ -2,18 +2,19 @@ package org.printscript.parser.parselet.statement;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.printscript.common.Position;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.token.TokenType;
+import org.printscript.ast.Block;
+import org.printscript.ast.Expression;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.Statement;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.ParseException;
 import org.printscript.parser.TokenStream;
 import org.printscript.parser.parselet.StatementParselet;
+import org.printscript.source.Position;
+import org.printscript.token.TokenType;
 
 /**
- * Parsea un condicional {@code if (cond) { ... } else { ... }} (PrintScript 1.1).
+ * Parsea un condicional {@code if (cond) { ... } else { ... }}.
  *
  * <ul>
  *   <li>Condición entre paréntesis.
@@ -36,10 +37,10 @@ public final class IfStatementParselet implements StatementParselet {
     Expression condition = ctx.parseExpression(0);
     ts.consume(TokenType.RPAREN);
 
-    List<Statement> thenBlock = parseBlock(ctx);
+    Block thenBlock = parseBlock(ctx);
 
-    List<Statement> elseBlock = null;
-    Position end = ts.current().getPosition();
+    Block elseBlock = null;
+    Position end = thenBlock.getPosition();
     if (ts.currentType() == TokenType.ELSE) {
       ts.consume(TokenType.ELSE);
       if (ts.currentType() != TokenType.LBRACE) {
@@ -48,15 +49,16 @@ public final class IfStatementParselet implements StatementParselet {
             ts.current().getPosition());
       }
       elseBlock = parseBlock(ctx);
-      end = ts.current().getPosition();
+      end = elseBlock.getPosition();
     }
 
     return new IfStatement(condition, thenBlock, elseBlock, ts.span(start, end));
   }
 
-  /** Consume {@code { stmt* }} y devuelve la lista de sentencias del bloque. */
-  private List<Statement> parseBlock(ParseContext ctx) {
+  /** Consume {@code { stmt* }} y devuelve el bloque. */
+  private Block parseBlock(ParseContext ctx) {
     TokenStream ts = ctx.tokens();
+    Position open = ts.current().getPosition();
     ts.consume(TokenType.LBRACE);
     List<Statement> statements = new ArrayList<>();
     while (ts.currentType() != TokenType.RBRACE) {
@@ -65,7 +67,7 @@ public final class IfStatementParselet implements StatementParselet {
       }
       statements.add(ctx.parseStatement());
     }
-    ts.consume(TokenType.RBRACE);
-    return statements;
+    Position close = ts.consume(TokenType.RBRACE).getPosition();
+    return new Block(statements, ts.span(open, close));
   }
 }

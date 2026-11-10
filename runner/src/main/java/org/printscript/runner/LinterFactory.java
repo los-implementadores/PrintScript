@@ -1,11 +1,11 @@
 package org.printscript.runner;
 
 import org.printscript.analyzer.StaticAnalyzer;
-import org.printscript.analyzer.config.AnalyzerConfig;
+import org.printscript.rules.RuleConfig;
 
-/** Crea un linter nuevo con las reglas dadas para cada programa. */
+/** Crea un linter nuevo con las reglas que activa la configuración, para cada programa. */
 @FunctionalInterface
 interface LinterFactory {
 
-  StaticAnalyzer create(AnalyzerConfig config);
+  StaticAnalyzer create(RuleConfig rules);
 }

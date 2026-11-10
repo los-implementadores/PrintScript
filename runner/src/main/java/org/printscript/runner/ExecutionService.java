@@ -1,7 +1,6 @@
 package org.printscript.runner;
 
 import java.io.Reader;
-import org.printscript.common.LanguageVersion;
 import org.printscript.interpreter.ExecutionIo;
 import org.printscript.interpreter.Interpreter;
 import org.printscript.interpreter.semantic.SemanticAnalyzer;

@@ -1,6 +1,7 @@
 package org.printscript.runner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,16 +10,14 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.printscript.analyzer.config.AnalyzerConfig;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.LanguageVersion;
-import org.printscript.formatter.FormattingRules;
 import org.printscript.interpreter.ExecutionIo;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;
 import org.printscript.interpreter.semantic.SemanticException;
 import org.printscript.parser.ParseException;
+import org.printscript.rules.RuleConfig;
 
 class RunnerServicesTest {
 
@@ -75,8 +74,7 @@ class RunnerServicesTest {
 
   @Test
   void analysisReturnsViolations() {
-    AnalyzerConfig config = new AnalyzerConfig();
-    config.activeComplexPrintln = true;
+    RuleConfig config = RuleConfig.of(Map.of("activeComplexPrintln", true));
 
     List<Violation> violations =
         services
@@ -95,10 +93,50 @@ class RunnerServicesTest {
         .format(
             new StringReader("let x:number=1;"),
             LanguageVersion.V1_0,
-            new FormattingRules(),
+            services.formatting().defaultRules(),
             target);
 
-    assertEquals("let x: number = 1;", target.toString().trim());
+    assertEquals("let x: number = 1;", target.toString());
+  }
+
+  @Test
+  void formattingStopsAtTheFirstSyntaxErrorAfterWritingWhatCameBefore() {
+    StringWriter target = new StringWriter();
+
+    assertThrows(
+        ParseException.class,
+        () ->
+            services
+                .formatting()
+                .format(
+                    new StringReader("let a:number=1;\nlet = ;\nlet b:number=2;"),
+                    LanguageVersion.V1_0,
+                    services.formatting().defaultRules(),
+                    target));
+    assertTrue(target.toString().startsWith("let a: number = 1;"));
+    assertFalse(target.toString().contains("2"));
+  }
+
+  @Test
+  void formattingUsesTheGrammarOfTheVersion() {
+    String source = "const x:number=1;";
+    StringWriter target = new StringWriter();
+
+    services
+        .formatting()
+        .format(new StringReader(source), LanguageVersion.V1_1, RuleConfig.empty(), target);
+
+    assertEquals(source, target.toString());
+    assertThrows(
+        ParseException.class,
+        () ->
+            services
+                .formatting()
+                .format(
+                    new StringReader(source),
+                    LanguageVersion.V1_0,
+                    RuleConfig.empty(),
+                    new StringWriter()));
   }
 
   @Test
@@ -111,9 +149,6 @@ class RunnerServicesTest {
             services
                 .formatting()
                 .format(
-                    new StringReader("let = ;"),
-                    LanguageVersion.V1_0,
-                    new FormattingRules(),
-                    target));
+                    new StringReader("let = ;"), LanguageVersion.V1_0, RuleConfig.empty(), target));
   }
 }

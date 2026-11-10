@@ -43,3 +43,9 @@ variables del primero.
 - Cada regla guarda su propio estado y se puede testear sola.
 - El límite de ADR-009 sigue valiendo: un nodo nuevo en el AST obliga a agregar su `visitX` en
   `AnalyzerVisitor` (y, si alguna regla lo necesita, un evento nuevo en `LintRule`).
+
+> **Actualización:** desde [ADR-026](026-reglas-configurables-en-un-registro.md) las reglas se
+> registran con su clave en `LintRules` (sin `AnalyzerConfig`), y desde
+> [ADR-027](027-formatter-y-linter-sin-visitor.md) el recorrido usa `Node.children()` en vez de un
+> visitor: `LintRule` tiene `onEnter`, `onExit` y `onFinish`, y un nodo nuevo ya no obliga a tocar
+> el linter.

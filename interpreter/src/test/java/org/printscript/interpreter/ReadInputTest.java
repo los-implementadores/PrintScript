@@ -9,23 +9,23 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
+import org.printscript.interpreter.builtin.PrintlnFunction;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.InputProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;
+import org.printscript.interpreter.scope.Environment;
 import org.printscript.interpreter.semantic.SemanticAnalyzerVisitor;
 import org.printscript.interpreter.semantic.SemanticException;
+import org.printscript.source.Position;
 
 class ReadInputTest {
 
@@ -41,7 +41,7 @@ class ReadInputTest {
 
   private InterpreterVisitor interpreterWith(InputProvider input) {
     ExecutionIo io = new ExecutionIo(input, new MapEnvProvider(Map.of()), output);
-    return new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+    return new InterpreterVisitor(env, io, BuiltinFunctions.standard());
   }
 
   @Test
@@ -163,9 +163,9 @@ class ReadInputTest {
   }
 
   @Test
-  void semanticAnalyzerAcceptsReadInputInV1_1() {
+  void semanticAnalyzerAcceptsReadInput() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
 
     CallExpression call =
         new CallExpression("readInput", List.of(new StringLiteral("Prompt: ", dummyPos)), dummyPos);
@@ -176,9 +176,9 @@ class ReadInputTest {
   }
 
   @Test
-  void semanticAnalyzerRejectsReadInputInV1_0() {
+  void semanticAnalyzerRejectsReadInputWhenItIsNotAvailable() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_0);
+        new SemanticAnalyzerVisitor(env, new BuiltinFunctions(List.of(new PrintlnFunction())));
 
     CallExpression call =
         new CallExpression("readInput", List.of(new StringLiteral("Prompt: ", dummyPos)), dummyPos);
@@ -186,13 +186,13 @@ class ReadInputTest {
         new VarDeclarationStatement(new Identifier("n", dummyPos), "number", call, dummyPos);
 
     RuntimeException ex = assertThrows(SemanticException.class, () -> decl.accept(analyzer));
-    assertTrue(ex.getMessage().contains("only supported in PrintScript 1.1"));
+    assertTrue(ex.getMessage().contains("Unknown function 'readInput'"));
   }
 
   @Test
   void semanticAnalyzerRejectsNonStringPrompt() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
 
     CallExpression call =
         new CallExpression("readInput", List.of(new NumberLiteral(123.0, dummyPos)), dummyPos);
@@ -206,7 +206,7 @@ class ReadInputTest {
   @Test
   void semanticAnalyzerRejectsWrongArgumentCount() {
     SemanticAnalyzerVisitor analyzer =
-        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard(), LanguageVersion.V1_1);
+        new SemanticAnalyzerVisitor(env, BuiltinFunctions.standard());
 
     CallExpression noArgs = new CallExpression("readInput", List.of(), dummyPos);
     VarDeclarationStatement decl =

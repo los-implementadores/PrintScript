@@ -9,22 +9,20 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.Position;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.LazyProgram;
-import org.printscript.common.ast.Program;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.LazyProgram;
+import org.printscript.ast.Program;
+import org.printscript.ast.Statement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
 
-/** Tests de #33: condicionales if/else con bloques (PrintScript 1.1). */
+/** Tests de #33: condicionales if/else con bloques. */
 class IfStatementParsingTest {
 
-  private List<Statement> parse(String source, LanguageVersion version) {
+  private List<Statement> parse(String source, GrammarFeature... features) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
-    Parser parser = new ParserImpl(lexer, version);
-    Program program = new LazyProgram(parser, new Position(1, 1, 1, 1));
+    Parser parser = new ParserImpl(lexer, ParserGrammar.of(features));
+    Program program = new LazyProgram(parser);
     List<Statement> statements = new ArrayList<>();
     program.stream().forEachRemaining(statements::add);
     return statements;
@@ -32,9 +30,9 @@ class IfStatementParsingTest {
 
   @Test
   void parsesSimpleIf() {
-    List<Statement> stmts = parse("if (true) { let x: number = 1; }", LanguageVersion.V1_1);
+    List<Statement> stmts = parse("if (true) { let x: number = 1; }", GrammarFeature.values());
     IfStatement ifStmt = (IfStatement) stmts.get(0);
-    assertEquals(1, ifStmt.getThenBlock().size());
+    assertEquals(1, ifStmt.getThenBlock().getStatements().size());
     assertFalse(ifStmt.hasElse());
   }
 
@@ -42,11 +40,12 @@ class IfStatementParsingTest {
   void parsesIfElse() {
     List<Statement> stmts =
         parse(
-            "if (false) { let x: number = 1; } else { let y: number = 2; }", LanguageVersion.V1_1);
+            "if (false) { let x: number = 1; } else { let y: number = 2; }",
+            GrammarFeature.values());
     IfStatement ifStmt = (IfStatement) stmts.get(0);
-    assertEquals(1, ifStmt.getThenBlock().size());
+    assertEquals(1, ifStmt.getThenBlock().getStatements().size());
     assertTrue(ifStmt.hasElse());
-    assertEquals(1, ifStmt.getElseBlock().size());
+    assertEquals(1, ifStmt.getElseBlock().getStatements().size());
   }
 
   @Test
@@ -54,12 +53,12 @@ class IfStatementParsingTest {
     ParseException ex =
         assertThrows(
             ParseException.class,
-            () -> parse("if (true) { } else if (false) { }", LanguageVersion.V1_1));
+            () -> parse("if (true) { } else if (false) { }", GrammarFeature.values()));
     assertTrue(ex.getMessage().contains("else if"));
   }
 
   @Test
-  void ifRejectedInV1_0() {
-    assertThrows(Exception.class, () -> parse("if (true) { }", LanguageVersion.V1_0));
+  void ifRejectedWithoutItsFeature() {
+    assertThrows(Exception.class, () -> parse("if (true) { }", GrammarFeature.CORE));
   }
 }

@@ -1,27 +1,24 @@
 package org.printscript.interpreter.semantic;
 
-import java.util.Iterator;
-import java.util.List;
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.Position;
-import org.printscript.common.ast.ASTVisitor;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.BinaryExpression;
-import org.printscript.common.ast.BooleanLiteral;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.IfStatement;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.Program;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.ASTVisitor;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.Block;
+import org.printscript.ast.BooleanLiteral;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.Expression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.IfStatement;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.Statement;
+import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.interpreter.builtin.BuiltinFunction;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
 import org.printscript.interpreter.builtin.TypeChecker;
+import org.printscript.interpreter.scope.Environment;
+import org.printscript.source.Position;
 
 public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
 
@@ -29,24 +26,12 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   private Environment env;
 
   private final BuiltinFunctions builtins;
-  private final LanguageVersion version;
   private final TypeChecker typeChecker = new VisitorTypeChecker();
   private String expectedType;
 
-  public SemanticAnalyzerVisitor(
-      Environment env, BuiltinFunctions builtins, LanguageVersion version) {
+  public SemanticAnalyzerVisitor(Environment env, BuiltinFunctions builtins) {
     this.env = env;
     this.builtins = builtins;
-    this.version = version;
-  }
-
-  @Override
-  public String visitProgram(Program node) {
-    Iterator<Statement> it = node.stream();
-    while (it.hasNext()) {
-      it.next().accept(this);
-    }
-    return null;
   }
 
   @Override
@@ -111,23 +96,26 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
     }
     // Cada rama en su propio scope: lo que se declara en una no existe en la otra ni después del
     // if.
-    analyzeBlock(node.getThenBlock());
+    node.getThenBlock().accept(this);
     if (node.hasElse()) {
-      analyzeBlock(node.getElseBlock());
+      node.getElseBlock().accept(this);
     }
     return null;
   }
 
-  private void analyzeBlock(List<Statement> block) {
+  /** Analiza un bloque en su propio scope, igual que lo ejecuta el intérprete. */
+  @Override
+  public String visitBlock(Block node) {
     Environment outer = env;
     env = outer.childScope();
     try {
-      for (Statement stmt : block) {
+      for (Statement stmt : node.getStatements()) {
         stmt.accept(this);
       }
     } finally {
       env = outer;
     }
+    return null;
   }
 
   @Override
@@ -161,8 +149,7 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
   @Override
   public String visitCallExpression(CallExpression node) {
     BuiltinFunction function =
-        builtins.resolve(
-            node, version, detail -> new SemanticException(detail, node.getPosition()));
+        builtins.resolve(node, detail -> new SemanticException(detail, node.getPosition()));
     return function.checkTypes(typeChecker, node);
   }
 

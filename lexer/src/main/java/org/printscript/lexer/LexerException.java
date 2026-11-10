@@ -1,7 +1,7 @@
 package org.printscript.lexer;
 
-import org.printscript.common.Position;
-import org.printscript.common.PrintScriptException;
+import org.printscript.source.Position;
+import org.printscript.source.PrintScriptException;
 
 /**
  * Error léxico: un caracter o secuencia que no se puede tokenizar (símbolo desconocido, string sin

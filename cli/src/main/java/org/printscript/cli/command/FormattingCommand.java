@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.Reader;
 import org.printscript.cli.io.Console;
 import org.printscript.cli.io.FileAccess;
-import org.printscript.formatter.FormattingRules;
+import org.printscript.rules.RuleConfig;
 import org.printscript.runner.FormattingService;
 
 /** Formatea el script y sobreescribe el archivo original. */
@@ -32,7 +32,7 @@ public class FormattingCommand implements Command {
 
   @Override
   public void execute(CommandRequest request) throws IOException {
-    FormattingRules rules = loadRules(request);
+    RuleConfig rules = loadRules(request);
     String path = request.filePath();
 
     // rewrite escribe en un temporal y sólo reemplaza el archivo si el formateo terminó bien. Si el
@@ -48,12 +48,12 @@ public class FormattingCommand implements Command {
     console.println("Formatting successful. El archivo ha sido formateado.");
   }
 
-  private FormattingRules loadRules(CommandRequest request) throws IOException {
+  private RuleConfig loadRules(CommandRequest request) throws IOException {
     if (request.configPath().isEmpty()) {
-      return new FormattingRules();
+      return service.defaultRules();
     }
     try (Reader reader = files.openReader(request.configPath().get())) {
-      return FormattingRules.fromJson(reader);
+      return RuleConfig.fromJson(reader);
     }
   }
 }

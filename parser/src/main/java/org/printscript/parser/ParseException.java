@@ -1,7 +1,7 @@
 package org.printscript.parser;
 
-import org.printscript.common.Position;
-import org.printscript.common.PrintScriptException;
+import org.printscript.source.Position;
+import org.printscript.source.PrintScriptException;
 
 /**
  * Excepción lanzada cuando el parser encuentra un token inesperado o una construcción sintáctica

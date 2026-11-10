@@ -2,8 +2,8 @@ package org.printscript.runner;
 
 import java.util.Iterator;
 import java.util.List;
-import org.printscript.common.ast.Program;
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Program;
+import org.printscript.ast.Statement;
 
 /**
  * Recorre un programa de a una sentencia y le aplica cada etapa en orden, sin cargarlo entero en

@@ -1,7 +1,7 @@
 package org.printscript.interpreter.semantic;
 
-import org.printscript.common.Position;
-import org.printscript.common.PrintScriptException;
+import org.printscript.source.Position;
+import org.printscript.source.PrintScriptException;
 
 /** Programa sintácticamente válido pero con un error de tipos o de declaración. */
 public class SemanticException extends PrintScriptException {

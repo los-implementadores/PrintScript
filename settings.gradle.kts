@@ -6,7 +6,10 @@ plugins {
 rootProject.name = "printscript"
 
 include(
-    "common",
+    "source",
+    "token",
+    "ast",
+    "rules",
     "lexer",
     "parser",
     "interpreter",

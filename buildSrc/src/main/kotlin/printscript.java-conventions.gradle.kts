@@ -30,11 +30,31 @@ publishing {
     }
 }
 
+val checkstyleConfig = rootProject.file("config/checkstyle/checkstyle.xml")
+
 checkstyle {
     toolVersion = "10.17.0"
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+    configFile = checkstyleConfig
     // Un warning frena el build (y el pre-commit). Si se pudiera ignorar, nadie lo miraría.
     maxWarnings = 0
+    // El patrón y el mensaje de cada regla de estilo propia (StyleRules) se leen desde acá, así
+    // Checkstyle verifica exactamente lo que arregla Spotless.
+    configProperties =
+        StyleRules.all.flatMap { rule ->
+            listOf(
+                "style.${rule.id}.pattern" to rule.pattern,
+                "style.${rule.id}.message" to rule.message,
+            )
+        }.toMap()
+}
+
+// Una regla de StyleRules sin su módulo en checkstyle.xml la arreglaría Spotless pero nadie la
+// verificaría: mejor que el build falle.
+val checkstyleXml = checkstyleConfig.readText()
+StyleRules.all.forEach { rule ->
+    check(checkstyleXml.contains("\${style.${rule.id}.pattern}")) {
+        "La regla de estilo '${rule.id}' no tiene su módulo RegexpMultiline en $checkstyleConfig"
+    }
 }
 
 pmd {
@@ -52,6 +72,9 @@ tasks.withType<Pmd> {
 
 spotless {
     java {
+        // Primero las reglas de estilo propias (StyleRules) y después google-java-format, que
+        // acomoda lo que haya cambiado.
+        StyleRules.all.forEach { rule -> replaceRegex(rule.id, rule.pattern, rule.replacement) }
         googleJavaFormat("1.22.0")
         removeUnusedImports()
         trimTrailingWhitespace()

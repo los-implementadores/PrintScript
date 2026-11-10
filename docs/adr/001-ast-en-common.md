@@ -1,6 +1,6 @@
 # ADR-001: Los nodos del AST viven en el módulo `common`
 
-- **Estado:** Aceptado
+- **Estado:** Reemplazado por [ADR-024](024-separar-common-en-source-token-y-ast.md)
 - **Fecha:** 2026-08-10
 
 ## Contexto

@@ -8,21 +8,20 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.BinaryExpression;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
-import org.printscript.common.env.Environment;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.interpreter.builtin.BuiltinFunctions;
 import org.printscript.interpreter.env.MapEnvProvider;
 import org.printscript.interpreter.input.ProgrammaticInputProvider;
 import org.printscript.interpreter.output.CollectingOutputProvider;
+import org.printscript.interpreter.scope.Environment;
+import org.printscript.source.Position;
 
 class InterpreterTest {
 
@@ -37,8 +36,7 @@ class InterpreterTest {
     output = new CollectingOutputProvider();
     ExecutionIo io =
         new ExecutionIo(new ProgrammaticInputProvider(), new MapEnvProvider(Map.of()), output);
-    interpreter =
-        new InterpreterVisitor(env, io, BuiltinFunctions.standard(), LanguageVersion.V1_0);
+    interpreter = new InterpreterVisitor(env, io, BuiltinFunctions.standard());
   }
 
   @Test

@@ -1,7 +1,7 @@
 package org.printscript.lexer;
 
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Contexto que el lexer expone a cada {@link TokenMatcher} para que pueda leer caracteres, avanzar

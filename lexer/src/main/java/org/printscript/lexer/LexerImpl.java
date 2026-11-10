@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 import java.util.NoSuchElementException;
-import org.printscript.common.Position;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.source.Position;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Implementación de {@link Lexer} basada en Strategy pattern.
@@ -15,6 +15,9 @@ import org.printscript.common.token.TokenType;
  * matchers hasta que uno reconoce el caracter actual y lo extrae. Esto cumple el Open/Closed
  * Principle: para soportar nuevos tipos de tokens, se agrega un matcher nuevo sin modificar esta
  * clase.
+ *
+ * <p>Los espacios que ningún matcher reconoce se descartan. Así, con los matchers del lenguaje el
+ * parser no ve espacios, y sumando un {@link WhitespaceTokenMatcher} se obtienen como tokens.
  *
  * <p>Implementa también {@link LexerContext} para exponer su estado interno a los matchers de forma
  * controlada.
@@ -52,26 +55,26 @@ public class LexerImpl implements Lexer, LexerContext {
       throw new NoSuchElementException("No more tokens");
     }
 
-    skipWhitespace();
-
-    int startLine = currentLine;
-    int startColumn = currentColumn;
-
-    if (currentChar == -1) {
-      finished = true;
-      return createToken(TokenType.EOF, "", startLine, startColumn, startLine, startColumn);
-    }
-
-    char c = (char) currentChar;
-
-    for (TokenMatcher matcher : matchers) {
-      if (matcher.matches(c)) {
-        return matcher.extract(this);
+    while (true) {
+      if (currentChar == -1) {
+        finished = true;
+        return createToken(
+            TokenType.EOF, "", currentLine, currentColumn, currentLine, currentColumn);
       }
-    }
 
-    Position position = new Position(startLine, startColumn, startLine, startColumn);
-    throw new LexerException("Unexpected character '" + c + "'", position);
+      char c = (char) currentChar;
+      for (TokenMatcher matcher : matchers) {
+        if (matcher.matches(c)) {
+          return matcher.extract(this);
+        }
+      }
+
+      if (!WhitespaceTokenMatcher.isWhitespace(c)) {
+        Position position = new Position(currentLine, currentColumn, currentLine, currentColumn);
+        throw new LexerException("Unexpected character '" + c + "'", position);
+      }
+      advance();
+    }
   }
 
   // ---------------------------------------------------------------- LexerContext
@@ -109,15 +112,6 @@ public class LexerImpl implements Lexer, LexerContext {
   }
 
   // ---------------------------------------------------------------- Internos
-
-  private void skipWhitespace() {
-    while (currentChar == ' '
-        || currentChar == '\t'
-        || currentChar == '\r'
-        || currentChar == '\n') {
-      advance();
-    }
-  }
 
   private int rawRead() {
     try {

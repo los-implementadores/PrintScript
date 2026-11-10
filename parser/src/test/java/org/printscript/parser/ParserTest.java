@@ -12,18 +12,17 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.BinaryExpression;
-import org.printscript.common.ast.CallExpression;
-import org.printscript.common.ast.ExpressionStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.LazyProgram;
-import org.printscript.common.ast.NumberLiteral;
-import org.printscript.common.ast.Program;
-import org.printscript.common.ast.Statement;
-import org.printscript.common.ast.StringLiteral;
-import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.LazyProgram;
+import org.printscript.ast.NumberLiteral;
+import org.printscript.ast.Program;
+import org.printscript.ast.Statement;
+import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
 
@@ -31,9 +30,8 @@ class ParserTest {
 
   private Program parse(String source) {
     Lexer lexer = LexerFactory.create(new StringReader(source));
-    Parser parser = new ParserImpl(lexer);
-    Position start = new Position(1, 1, 1, 1);
-    return new LazyProgram(parser, start);
+    Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE));
+    return new LazyProgram(parser);
   }
 
   /** Parsea y materializa la lista de sentencias. */
@@ -210,9 +208,8 @@ class ParserTest {
   void parserAsIteratorProducesStatementsLazily() {
     String source = "let a: number = 1;\nlet b: number = 2;";
     Lexer lexer = LexerFactory.create(new StringReader(source));
-    Parser parser = new ParserImpl(lexer);
-    Position start = new Position(1, 1, 1, 1);
-    Program program = new LazyProgram(parser, start);
+    Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE));
+    Program program = new LazyProgram(parser);
 
     // consume de a uno via stream(), sin materializar el programa
     java.util.Iterator<Statement> it = program.stream();

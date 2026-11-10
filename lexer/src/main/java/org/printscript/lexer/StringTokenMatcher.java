@@ -1,11 +1,14 @@
 package org.printscript.lexer;
 
-import org.printscript.common.Position;
-import org.printscript.common.token.Token;
-import org.printscript.common.token.TokenType;
+import org.printscript.source.Position;
+import org.printscript.token.Token;
+import org.printscript.token.TokenType;
 
 /**
  * Matcher para literales de tipo string, delimitados por {@code "} o {@code '}.
+ *
+ * <p>El lexema incluye las comillas, tal como está en el código fuente: el formatter lo reescribe
+ * sin cambios y el parser es quien saca el valor de adentro.
  *
  * <p>Lanza {@link LexerException} si el string no se cierra antes de llegar al final del archivo.
  */
@@ -22,9 +25,10 @@ public class StringTokenMatcher implements TokenMatcher {
     int startColumn = context.getCurrentColumn();
     char quote = (char) context.getCurrentChar();
 
+    StringBuilder sb = new StringBuilder();
+    sb.append(quote);
     context.advance(); // consume la comilla de apertura
 
-    StringBuilder sb = new StringBuilder();
     while (context.getCurrentChar() != -1 && context.getCurrentChar() != quote) {
       sb.append((char) context.getCurrentChar());
       context.advance();
@@ -39,6 +43,7 @@ public class StringTokenMatcher implements TokenMatcher {
 
     int endLine = context.getCurrentLine();
     int endColumn = context.getCurrentColumn();
+    sb.append(quote);
     context.advance(); // consume la comilla de cierre
 
     return context.createToken(

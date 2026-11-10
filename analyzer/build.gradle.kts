@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":common"))
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation(project(":ast"))
+    implementation(project(":rules"))
 }

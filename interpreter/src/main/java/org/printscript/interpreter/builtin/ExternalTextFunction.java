@@ -1,11 +1,10 @@
 package org.printscript.interpreter.builtin;
 
-import org.printscript.common.LanguageVersion;
-import org.printscript.common.Position;
-import org.printscript.common.ast.CallExpression;
+import org.printscript.ast.CallExpression;
 import org.printscript.interpreter.ExecutionIo;
 import org.printscript.interpreter.util.TypeCoercion;
 import org.printscript.interpreter.util.ValueFormatter;
+import org.printscript.source.Position;
 
 /**
  * Base de las funciones que leen un texto de afuera del programa y lo convierten al tipo que espera
@@ -14,11 +13,6 @@ import org.printscript.interpreter.util.ValueFormatter;
  * <p>Las subclases sólo dicen de dónde sale el texto.
  */
 abstract class ExternalTextFunction implements BuiltinFunction {
-
-  @Override
-  public LanguageVersion since() {
-    return LanguageVersion.V1_1;
-  }
 
   @Override
   public int arity() {

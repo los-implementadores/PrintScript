@@ -36,10 +36,31 @@ El parser se envuelve en un `LazyProgram` para que los módulos consumidores
 reciban siempre la misma interfaz `Program`, sin saber que por abajo es lazy:
 
 ```java
-Lexer lexer = new LexerImpl(new StringReader(source));
-Parser parser = new ParserImpl(lexer);
-Program program = new LazyProgram(parser, startPos);
+Lexer lexer = LexerFactory.create(new StringReader(source));
+Parser parser = new ParserImpl(lexer, ParserGrammar.of(GrammarFeature.CORE, GrammarFeature.BOOLEANS));
+Program program = new LazyProgram(parser);
 ```
+
+---
+
+## Qué entiende el parser: `ParserGrammar` y `GrammarFeature`
+
+`ParserImpl` no sabe qué construcciones existen: despacha cada token al parselet
+que registra la `ParserGrammar` con la que se lo arma (ADR-008). Tampoco sabe que
+el lenguaje tiene versiones. Las construcciones se agrupan en `GrammarFeature`, el
+único lugar donde se registra qué parselet maneja cada una:
+
+| Feature | Qué agrega |
+|---|---|
+| `CORE` | `let`, asignaciones, llamadas, tipos `number` y `string`, sus literales, `+ - * /` y paréntesis |
+| `BOOLEANS` | el tipo `boolean` y los literales `true` / `false` |
+| `CONSTANTS` | declaraciones con `const` |
+| `CONDITIONALS` | `if (cond) { ... } else { ... }` |
+
+Qué features tiene cada versión del lenguaje lo decide el runner
+(`org.printscript.runner.LanguageVersion`, ADR-025): 1.0 es `CORE` y 1.1 suma las
+otras tres. Para una construcción que no está en ninguna feature,
+`ParserGrammar.builder()` permite registrar parselets sueltos.
 
 A partir de ahí cada módulo lo recorre una sola vez, de a una sentencia (ver ADR-020):
 
@@ -55,7 +76,7 @@ transparente para el caller.
 
 ---
 
-## Gramática soportada (PrintScript 1.0)
+## Gramática de `CORE`
 
 ```
 program             → statement* EOF

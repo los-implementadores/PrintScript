@@ -1,10 +1,10 @@
 package org.printscript.parser.parselet.infix;
 
-import org.printscript.common.ast.BinaryExpression;
-import org.printscript.common.ast.Expression;
-import org.printscript.common.token.Token;
+import org.printscript.ast.BinaryExpression;
+import org.printscript.ast.Expression;
 import org.printscript.parser.ParseContext;
 import org.printscript.parser.parselet.InfixParselet;
+import org.printscript.token.Token;
 
 /**
  * Parsea un operador binario (aritmético) entre dos expresiones. Es asociativo a izquierda: para el

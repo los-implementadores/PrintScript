@@ -1,6 +1,6 @@
 package org.printscript.parser.parselet;
 
-import org.printscript.common.ast.Statement;
+import org.printscript.ast.Statement;
 import org.printscript.parser.ParseContext;
 
 /**

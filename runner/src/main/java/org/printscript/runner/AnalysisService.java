@@ -3,10 +3,9 @@ package org.printscript.runner;
 import java.io.Reader;
 import java.util.List;
 import org.printscript.analyzer.StaticAnalyzer;
-import org.printscript.analyzer.config.AnalyzerConfig;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.LanguageVersion;
 import org.printscript.interpreter.semantic.SemanticAnalyzer;
+import org.printscript.rules.RuleConfig;
 
 /**
  * Chequeo semántico estricto + linter. Los errores semánticos se lanzan como excepción; las reglas
@@ -25,9 +24,12 @@ public class AnalysisService {
     this.linters = linters;
   }
 
-  public List<Violation> analyze(Reader source, LanguageVersion version, AnalyzerConfig config) {
+  /**
+   * @param rules la configuración de las reglas del linter; sin claves, no aplica ninguna
+   */
+  public List<Violation> analyze(Reader source, LanguageVersion version, RuleConfig rules) {
     SemanticAnalyzer semantic = semanticAnalyzers.create(version);
-    StaticAnalyzer linter = linters.create(config);
+    StaticAnalyzer linter = linters.create(rules);
     StatementPipeline.of(semantic::analyze, linter::analyze).run(loader.load(source, version));
     return linter.getViolations();
   }

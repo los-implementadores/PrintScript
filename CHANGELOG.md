@@ -18,15 +18,39 @@ sección no se publica (ver "Versiones y releases" en el README).
 
 ### Cambiado
 
-- **Incompatible:** `AnalyzerConfig` y `NamingConvention` pasan de `org.printscript.common.configs`
-  a `org.printscript.analyzer.config`, y `Violation` y `Severity` pasan de
-  `org.printscript.common.linterViolations` a `org.printscript.analyzer.violation`. `common` queda
-  sin dependencias externas. Por eso la próxima versión es la 2.0.0 (ADR-014).
-- El linter funciona con reglas (`LintRule`) registradas en `LintRules`. Agregar una regla ya no
-  modifica `AnalyzerVisitor`, y `StaticAnalyzerImpl` acepta una fábrica de reglas propias (ADR-015).
-- El formatter lee su configuración con Jackson en lugar de Gson. Solo acepta JSON estándar (Gson
-  también aceptaba comentarios, comillas simples y claves sin comillas), y un JSON mal formado
-  lanza `IllegalArgumentException`.
+- **Incompatible:** `common` se separa en tres módulos (ADR-024): `source` (`Position`,
+  `PrintScriptException`), `token` (`Token`, `TokenType`) y `ast` (los nodos, `Program` y
+  `ASTVisitor`). `Environment` pasa a `org.printscript.interpreter.scope` y `LanguageVersion` a
+  `org.printscript.runner`. El artefacto `org.printscript:common` deja de publicarse.
+- **Incompatible:** los módulos no saben de versiones del lenguaje (ADR-025). El parser se arma con
+  una `ParserGrammar` hecha de `GrammarFeature` (`CORE`, `BOOLEANS`, `CONSTANTS`, `CONDITIONALS`) y
+  el intérprete con el `BuiltinFunctions` que se le pase; `LanguageVersion`, en el runner, dice qué
+  trae cada versión. Se van `ParserGrammar.forVersion`, `BuiltinFunction.since()` y los
+  constructores que recibían la versión. En 1.0, `readInput` falla con "Unknown function".
+- **Incompatible:** las reglas del formatter y del linter se registran con su clave en un solo
+  lugar (`FormattingRules` y `LintRules`) y se activan desde un `RuleConfig` (módulo `rules`), que
+  reemplaza a `AnalyzerConfig` y a la clase de configuración del formatter (ADR-026). Agregar una
+  regla es su clase más una línea en el registro.
+- **Incompatible:** el formatter trabaja sobre los tokens del código, espacios incluidos, en vez
+  del AST (ADR-027). Hay un solo formateador para la CLI y el TCK: sin reglas devuelve el código
+  igual, y una regla que no está en la configuración no lo toca. Sin configuración, la CLI usa un
+  estilo por defecto con las reglas de la consigna. La salida ya no agrega un salto de línea al
+  final y respeta los números como están escritos. `newlineBeforePrintln` (líneas antes del
+  `println`) y `line-breaks-after-println` (después) pasan a ser reglas distintas.
+- **Incompatible:** el linter recorre el árbol con `Node.children()` en vez de un visitor (ADR-027).
+  `LintRule` tiene `onEnter`, `onExit` y `onFinish`; un tipo de nodo nuevo ya no obliga a tocarlo.
+- El AST tiene un nodo `Block` para los bloques `{ }`, y `Program` deja de ser un nodo.
+- **Incompatible:** `Violation` y `Severity` pasan de `org.printscript.common.linterViolations` a
+  `org.printscript.analyzer.violation`, `NamingConvention` pasa a `org.printscript.analyzer.rule` y
+  `AnalyzerConfig` (antes en `org.printscript.common.configs`) se reemplaza por `RuleConfig`. Por eso
+  la próxima versión es la 2.0.0 (ADR-014, ADR-026).
+- **Incompatible:** el lexema de un `STRING_LITERAL` incluye las comillas, tal como está en el
+  código; el parser saca el valor de adentro.
+- El linter funciona con reglas (`LintRule`) registradas en `LintRules`, y `StaticAnalyzerImpl`
+  acepta una fábrica de reglas propias (ADR-015).
+- La configuración se lee con Jackson en lugar de Gson. Solo acepta JSON estándar (Gson también
+  aceptaba comentarios, comillas simples y claves sin comillas), y un JSON mal formado lanza
+  `IllegalArgumentException`.
 - `analyzer` ya no depende de `lexer` ni de `parser`.
 - Checkstyle usa la indentación de google-java-format y un warning hace fallar el build.
 - CI y CD son un solo workflow: lo que se publica sale del mismo build que corrió los tests.
@@ -36,6 +60,10 @@ sección no se publica (ver "Versiones y releases" en el README).
 
 ### Agregado
 
+- 5 reglas de estilo propias para el código Java, compartidas por Spotless (que las arregla) y
+  Checkstyle (que las verifica), definidas una sola vez en `buildSrc` (ADR-028).
+- La regla `maxOneSpaceBetweenTokens` del formatter (como mucho un espacio entre tokens).
+- `LexerFactory.createWithWhitespace`, que también devuelve los espacios como tokens.
 - `LexerFactory` en el módulo `lexer`, con el vocabulario de PrintScript en un solo lugar.
 - Lockfiles de dependencias (`gradle.lockfile`), checksum del Gradle wrapper y descarga automática
   de la JDK 17 si no está instalada.
@@ -43,6 +71,9 @@ sección no se publica (ver "Versiones y releases" en el README).
 
 ### Arreglado
 
+- La posición de un `if` terminaba en el token siguiente al bloque en vez de en su `}`.
+- Un valor del tipo equivocado en la configuración del formatter o del linter
+  (`"indentSize": "cuatro"`) ahora es un error con el nombre de la clave.
 - `getViolations()` repetía los avisos de variables sin usar si se llamaba más de una vez.
 - La regla de nombres rechazaba nombres válidos con dígitos o siglas (`value1`, `var1`, `myURL`).
 - `"namingConventionFormat": null` en la configuración del linter terminaba en un

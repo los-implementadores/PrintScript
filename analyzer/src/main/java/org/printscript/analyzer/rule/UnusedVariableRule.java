@@ -9,10 +9,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 import org.printscript.analyzer.violation.Severity;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.common.Position;
-import org.printscript.common.ast.AssignmentStatement;
-import org.printscript.common.ast.Identifier;
-import org.printscript.common.ast.VarDeclarationStatement;
+import org.printscript.ast.AssignmentStatement;
+import org.printscript.ast.Block;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.Node;
+import org.printscript.ast.VarDeclarationStatement;
+import org.printscript.source.Position;
 
 /**
  * Reporta las variables declaradas que nunca se leen ni se reasignan. Como necesita haber visto
@@ -20,7 +22,7 @@ import org.printscript.common.ast.VarDeclarationStatement;
  *
  * <p>Respeta los scopes de bloque: un uso cuenta para la declaración visible más cercana, así que
  * una variable de afuera tapada por otra del mismo nombre adentro de un bloque no cuenta como
- * usada.
+ * usada. Cualquier {@link Block} abre un scope, sea de un {@code if} o de una construcción nueva.
  */
 public final class UnusedVariableRule implements LintRule {
 
@@ -35,34 +37,23 @@ public final class UnusedVariableRule implements LintRule {
   }
 
   @Override
-  public void onDeclaration(VarDeclarationStatement node, Consumer<Violation> report) {
-    Map<String, Declaration> scope = scopes.peek();
-    String name = node.getName().getName();
-    if (!scope.containsKey(name)) {
-      Declaration declaration = new Declaration(name, node.getPosition());
-      scope.put(name, declaration);
-      declarations.add(declaration);
+  public void onEnter(Node node, Consumer<Violation> report) {
+    if (node instanceof VarDeclarationStatement declaration) {
+      declare(declaration);
+    } else if (node instanceof AssignmentStatement assignment) {
+      markUsed(assignment.getTarget().getName());
+    } else if (node instanceof Identifier identifier) {
+      markUsed(identifier.getName());
+    } else if (node instanceof Block) {
+      scopes.push(new HashMap<>());
     }
   }
 
   @Override
-  public void onAssignment(AssignmentStatement node, Consumer<Violation> report) {
-    markUsed(node.getTarget().getName());
-  }
-
-  @Override
-  public void onIdentifier(Identifier node, Consumer<Violation> report) {
-    markUsed(node.getName());
-  }
-
-  @Override
-  public void onBlockStart() {
-    scopes.push(new HashMap<>());
-  }
-
-  @Override
-  public void onBlockEnd() {
-    scopes.pop();
+  public void onExit(Node node, Consumer<Violation> report) {
+    if (node instanceof Block) {
+      scopes.pop();
+    }
   }
 
   @Override
@@ -75,6 +66,17 @@ public final class UnusedVariableRule implements LintRule {
                 Severity.WARNING,
                 declaration.position));
       }
+    }
+  }
+
+  /** Se declara antes de recorrer el valor: {@code let x: number = x;} cuenta como uso. */
+  private void declare(VarDeclarationStatement node) {
+    Map<String, Declaration> scope = scopes.peek();
+    String name = node.getName().getName();
+    if (!scope.containsKey(name)) {
+      Declaration declaration = new Declaration(name, node.getPosition());
+      scope.put(name, declaration);
+      declarations.add(declaration);
     }
   }
 

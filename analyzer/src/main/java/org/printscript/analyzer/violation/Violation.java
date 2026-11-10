@@ -1,6 +1,6 @@
 package org.printscript.analyzer.violation;
 
-import org.printscript.common.Position;
+import org.printscript.source.Position;
 
 public class Violation {
   private final String message;

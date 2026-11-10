@@ -2,7 +2,8 @@
 
 El analyzer (static code analyzer) recorre el AST y reporta las reglas que no se cumplen, ya sea
 para imponer convenciones o para detectar malas prácticas, con la posición exacta del problema.
-Vive en el módulo `analyzer`, que depende solo de `common` y de Jackson.
+Vive en el módulo `analyzer`, que depende solo de `ast` y de `rules`. No sabe de versiones del
+lenguaje.
 
 ---
 
@@ -11,15 +12,15 @@ Vive en el módulo `analyzer`, que depende solo de `common` y de Jackson.
 | Paquete | Archivo | Responsabilidad |
 | --- | --- | --- |
 | `org.printscript.analyzer` | `StaticAnalyzer` | Interfaz pública: `analyze(Statement)` y `getViolations()` |
-| | `StaticAnalyzerImpl` | Fachada. Recibe una `AnalyzerConfig` o una fábrica de reglas (`Supplier<List<LintRule>>`) |
-| | `AnalyzerVisitor` | Recorre el AST (`ASTVisitor<Void>`) y le avisa a cada regla los nodos que visita |
-| `org.printscript.analyzer.rule` | `LintRule` | Interfaz de una regla |
-| | `LintRules` | Único lugar donde se registran las reglas configurables |
+| | `StaticAnalyzerImpl` | Recorre cada sentencia con `Node.children()` y le avisa a cada regla los nodos que visita. Recibe una `RuleConfig` o una fábrica de reglas (`Supplier<List<LintRule>>`) |
+| `org.printscript.analyzer.rule` | `LintRule` | Interfaz de una regla: `onEnter`, `onExit` y `onFinish` |
+| | `LintRules` | **El único lugar donde se registran las reglas**, con su clave de configuración |
 | | `NamingConventionRule`, `SimpleArgumentRule`, `UnusedVariableRule` | Una clase por regla |
-| `org.printscript.analyzer.config` | `AnalyzerConfig`, `NamingConvention` | Configuración, leída de JSON con Jackson |
+| | `NamingConvention` | Las convenciones de nombres (camelCase y snake_case) |
 | `org.printscript.analyzer.violation` | `Violation`, `Severity` | Lo que se reporta: mensaje, severidad (`WARNING` o `ERROR`) y `Position` |
 
-Hasta la versión 1.1.0 la configuración y las violaciones vivían en `common`; ver ADR-014.
+La lectura del JSON y el mecanismo "clave → regla" (`RuleConfig`, `RuleRegistry`) están en el
+módulo `rules`, que comparte con el formatter (ADR-026).
 
 ---
 
@@ -30,19 +31,14 @@ con la clave que usa el TCK.
 
 | Regla | Clave propia | Clave del TCK | Qué reporta |
 | --- | --- | --- | --- |
-| Formato de nombres | `activeNamingConvention` + `namingConventionFormat` (`"camelCase"` o `"snake_case"`) | `identifier_format` (`"camel case"` o `"snake case"`) | Variables cuyo nombre no sigue la convención |
+| Formato de nombres | `activeNamingConvention` + `namingConventionFormat` (`"camelCase"` o `"snake_case"`; camelCase si no está) | `identifier_format` (`"camel case"` o `"snake case"`) | Variables cuyo nombre no sigue la convención |
 | Argumento simple en `println` | `activeComplexPrintln` | `mandatory-variable-or-literal-in-println` | Un `println` cuyo argumento no es un literal ni una variable |
-| Argumento simple en `readInput` (1.1) | `activeComplexReadInput` | `mandatory-variable-or-literal-in-readInput` | Lo mismo para `readInput` |
+| Argumento simple en `readInput` | `activeComplexReadInput` | `mandatory-variable-or-literal-in-readInput` | Lo mismo para `readInput` |
 | Variables sin usar | `activeUnusedVariables` | — | Variables declaradas que nunca se leen ni se reasignan |
 
-Las claves desconocidas se ignoran.
-
-> **Problema conocido:** si el JSON no se puede leer, `AnalyzerConfig.fromJson` avisa con una
-> línea en `stderr` y sigue con la configuración por defecto, o sea, con **todas las reglas
-> apagadas**. Basta un typo (`"identifier_format": "kebab case"`) para que el CLI diga
-> «Analyzing successful» con exit 0 sin haber aplicado ninguna regla. Además, queda al revés que
-> el formatter, que ante un JSON roto falla. Lo correcto es fallar; el PR #57 cambia `fromJson`
-> para que lance una excepción.
+Las claves desconocidas se ignoran. Un JSON mal formado, un valor del tipo equivocado
+(`"activeUnusedVariables": "sí"`) o una convención que no existe (`"kebab case"`) son un error: la
+CLI lo informa y termina con exit code 1, en vez de analizar sin reglas.
 
 ### Ejemplo de configuración (`linter_rules.json`)
 
@@ -59,20 +55,23 @@ Las claves desconocidas se ignoran.
 
 ## Uso típico
 
+Lo normal es usarlo a través del runner, que además hace el chequeo semántico:
+
 ```java
-// 1. Cargar las reglas desde JSON
-AnalyzerConfig config = AnalyzerConfig.fromJson(new FileReader("linter_rules.json"));
+List<Violation> violations =
+    LanguageServices.printScript()
+        .analysis()
+        .analyze(reader, LanguageVersion.V1_1, RuleConfig.fromJson(configReader));
+```
 
-// 2. Instanciar el analizador
-StaticAnalyzer staticAnalyzer = new StaticAnalyzerImpl(config);
+Directo, sentencia por sentencia (no hace falta tener todo el programa en memoria):
 
-// 3. Analizar sentencia por sentencia (no hace falta tener todo el programa en memoria)
-while (statementIterator.hasNext()) {
-    staticAnalyzer.analyze(statementIterator.next());
+```java
+StaticAnalyzer analyzer = new StaticAnalyzerImpl(RuleConfig.fromJson(configReader));
+while (statements.hasNext()) {
+    analyzer.analyze(statements.next());
 }
-
-// 4. Pedir el reporte (se puede pedir más de una vez)
-for (Violation v : staticAnalyzer.getViolations()) {
+for (Violation v : analyzer.getViolations()) {   // se puede pedir más de una vez
     System.out.println(v);
 }
 ```
@@ -105,19 +104,16 @@ println(MiVariable + 1);
 ## Diseño
 
 ```text
-AnalyzerConfig ──LintRules.from(config)──► List<LintRule>
-                                                 │
-StaticAnalyzerImpl (fachada)                     │
-       │                                         │
-       ▼                                         ▼
-AnalyzerVisitor (ASTVisitor<Void>) ── avisa a cada regla ──► onDeclaration / onAssignment
-       │                                                     onCall / onIdentifier
-       │                                                     onBlockStart / onBlockEnd / onFinish
-       └── List<Violation> (acumula lo que reportan las reglas)
+RuleConfig ──LintRules.create(config)──► List<LintRule>
+                                               │
+StaticAnalyzerImpl                             │
+  recorre cada sentencia con children() ───────┤ onEnter(nodo) / onExit(nodo)
+  y acumula lo que reportan las reglas         │ onFinish() al pedir el reporte
 ```
 
-El visitor solo recorre el árbol; no sabe qué reglas existen. Cada regla implementa `LintRule` y
-sobreescribe solo los nodos que le interesan:
+El recorrido es genérico: `StaticAnalyzerImpl` baja por `Node.children()` y le avisa a cada regla
+cada nodo, al entrar y al salir. No conoce ningún tipo de nodo ni ninguna regla. Cada regla mira
+los nodos que le interesan (`if (node instanceof CallExpression call)`) e ignora el resto:
 
 | Regla | Mira | Estado propio |
 | --- | --- | --- |
@@ -125,22 +121,34 @@ sobreescribe solo los nodos que le interesan:
 | `SimpleArgumentRule` | llamadas a la función que controla | ninguno |
 | `UnusedVariableRule` | declaraciones, asignaciones, lecturas y bloques; reporta en `onFinish` | qué variables se declararon, en qué scope y cuáles se usaron |
 
+### Por qué no un visitor
+
+Con un `ASTVisitor`, cada nodo nuevo del lenguaje obliga a agregar su `visitX` en el linter aunque
+ninguna regla lo mire (el *expression problem*, ADR-009). En el linter lo que más cambia son los
+nodos, no las operaciones, así que con `children()` un nodo nuevo no lo toca: solo tiene que decir
+cuáles son sus hijos. Si es un cuerpo entre llaves, reusa `Block` y `UnusedVariableRule` ya maneja
+su scope (ADR-027).
+
 ### Cómo agregar una regla
 
 1. Escribir una clase que implemente `LintRule` en `org.printscript.analyzer.rule`.
-2. Si se activa desde el JSON, agregar su clave en `AnalyzerConfig`.
-3. Registrarla en `LintRules.from`.
+2. Registrarla con su clave en `LintRules`:
 
-El visitor no se toca. Una regla que no viene del JSON se le puede pasar directo con
+```java
+.rule("noShortNames", "min-identifier-length").whenOn(ShortNameRule::new)
+```
+
+Con eso ya se activa desde el JSON: ni el recorrido ni la lectura de la configuración cambian. Una
+regla que no viene del JSON se le puede pasar directo con
 `new StaticAnalyzerImpl(() -> List.of(new MiRegla()))`. Es una fábrica y no una lista porque las
 reglas guardan estado (por ejemplo, qué variables se usaron): cada análisis tiene que arrancar con
 reglas nuevas.
 
 ### Principios aplicados
 
-- **Open/Closed:** agregar una regla no modifica el recorrido. Es el mismo criterio que
-  `TokenMatcher` en el lexer y los parselets en el parser (ver ADR-015).
-- **Visitor:** las reglas se evalúan sobre el AST sin agregar lógica a los nodos.
+- **Open/Closed:** agregar una regla o un tipo de nodo no modifica el recorrido.
+- **Single Responsibility:** `StaticAnalyzerImpl` recorre, cada regla decide, `LintRules` registra
+  y `RuleConfig` lee la configuración.
 - **Estado aislado:** cada regla guarda su propio estado; el linter no comparte nada con la
   memoria del intérprete ni con la tabla de tipos del semántico.
 
@@ -152,10 +160,10 @@ reglas nuevas.
 Lexer (Iterator<Token>)
   │
   ▼
-Parser (Iterator<Statement>)
+Parser (Iterator<Statement>, gramática de la versión)
   │
   ▼
-CLI / Main (modo analyzing)
+AnalysisService (runner)
   │
   ├─► SemanticAnalyzer.analyze(stmt)   (falla en el primer error de tipos)
   │
