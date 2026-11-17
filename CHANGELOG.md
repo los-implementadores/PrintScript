@@ -31,15 +31,21 @@ sección no se publica (ver "Versiones y releases" en el README).
   lugar (`FormattingRules` y `LintRules`) y se activan desde un `RuleConfig` (módulo `rules`), que
   reemplaza a `AnalyzerConfig` y a la clase de configuración del formatter (ADR-026). Agregar una
   regla es su clase más una línea en el registro.
-- **Incompatible:** el formatter trabaja sobre los tokens del código, espacios incluidos, en vez
-  del AST (ADR-027). Hay un solo formateador para la CLI y el TCK: sin reglas devuelve el código
-  igual, y una regla que no está en la configuración no lo toca. Sin configuración, la CLI usa un
-  estilo por defecto con las reglas de la consigna. La salida ya no agrega un salto de línea al
-  final y respeta los números como están escritos. `newlineBeforePrintln` (líneas antes del
-  `println`) y `line-breaks-after-println` (después) pasan a ser reglas distintas.
+- **Incompatible:** el formatter recorre el AST y toma los espacios del código original, como
+  rustfmt (ADR-029). `Formatter` pasa a ser `format(Iterator<Statement>, SourceText, Writer)` y las
+  reglas deciden el espacio de cada brecha del AST (`Gap` con su `GapKind`: antes del `:` de una
+  declaración, entre dos sentencias). Hay un solo formateador para la CLI y el TCK: sin reglas
+  devuelve el código igual, y una regla que no está en la configuración no lo toca. Sin
+  configuración, la CLI usa un estilo por defecto con las reglas de la consigna. La salida ya no
+  agrega un salto de línea al final y respeta los números y las comillas como están escritos.
+  `newlineBeforePrintln` (líneas antes del `println`) y `line-breaks-after-println` (después) pasan
+  a ser reglas distintas, y `mandatory-line-break-after-statement` también corta después de un
+  `if`.
 - **Incompatible:** el linter recorre el árbol con `Node.children()` en vez de un visitor (ADR-027).
   `LintRule` tiene `onEnter`, `onExit` y `onFinish`; un tipo de nodo nuevo ya no obliga a tocarlo.
-- El AST tiene un nodo `Block` para los bloques `{ }`, y `Program` deja de ser un nodo.
+- El AST tiene un nodo `Block` para los bloques `{ }` y un nodo `GroupExpression` para los
+  paréntesis, y `Program` deja de ser un nodo. `ASTVisitor` suma `visitBlock` y `visitGroup`.
+  `NumberLiteral` y `StringLiteral` guardan el literal tal como se escribió (`getLexeme()`).
 - **Incompatible:** `Violation` y `Severity` pasan de `org.printscript.common.linterViolations` a
   `org.printscript.analyzer.violation`, `NamingConvention` pasa a `org.printscript.analyzer.rule` y
   `AnalyzerConfig` (antes en `org.printscript.common.configs`) se reemplaza por `RuleConfig`. Por eso
@@ -63,7 +69,11 @@ sección no se publica (ver "Versiones y releases" en el README).
 - 5 reglas de estilo propias para el código Java, compartidas por Spotless (que las arregla) y
   Checkstyle (que las verifica), definidas una sola vez en `buildSrc` (ADR-028).
 - La regla `maxOneSpaceBetweenTokens` del formatter (como mucho un espacio entre tokens).
-- `LexerFactory.createWithWhitespace`, que también devuelve los espacios como tokens.
+- `SourceText` (módulo `source`): el código original, que se graba mientras lo lee el lexer. El
+  formatter lo recorre con un cursor para reproducir los espacios que el AST no guarda.
+- Los casos de formatter del TCK corren en el build (`FormatterGoldenTest`), junto con las
+  propiedades que chequea rustfmt: formatear la salida no la cambia, sin reglas no cambia nada y
+  solo cambian los espacios.
 - `LexerFactory` en el módulo `lexer`, con el vocabulario de PrintScript en un solo lugar.
 - Lockfiles de dependencias (`gradle.lockfile`), checksum del Gradle wrapper y descarga automática
   de la JDK 17 si no está instalada.
@@ -72,6 +82,9 @@ sección no se publica (ver "Versiones y releases" en el README).
 ### Arreglado
 
 - La posición de un `if` terminaba en el token siguiente al bloque en vez de en su `}`.
+- El formatter de la CLI cambiaba el programa: sacaba los paréntesis (`(1 + 2) * 3` salía
+  `1 + 2 * 3`) y escribía todos los strings con comillas dobles (`'dijo "hola"'` salía
+  `"dijo "hola""`, que no compila).
 - Un valor del tipo equivocado en la configuración del formatter o del linter
   (`"indentSize": "cuatro"`) ahora es un error con el nombre de la clave.
 - `getViolations()` repetía los avisos de variables sin usar si se llamaba más de una vez.

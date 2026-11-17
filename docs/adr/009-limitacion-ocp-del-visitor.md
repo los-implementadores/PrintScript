@@ -65,4 +65,5 @@ runtime). El "dolor" es acotado y verificado por el tipado.
 
 > **Actualización:** [ADR-027](027-formatter-y-linter-sin-visitor.md) acota esta decisión al
 > semántico y al intérprete. El formatter y el linter, donde lo que más cambia son los nodos, dejan
-> de usar el visitor.
+> de usar el visitor. Después, [ADR-029](029-formatter-sobre-el-ast.md) vuelve a poner al formatter
+> en el visitor: tiene que saber escribir cada nodo, así que un nodo nuevo sí lo tiene que tocar.

@@ -50,3 +50,8 @@ claves, como `namingConventionFormat`). Las reglas se aplican en el orden en que
 - **Cambio incompatible:** `AnalyzerConfig` y `FormattingRules` (la clase de configuración del
   formatter) dejan de existir. Los servicios del runner y las herramientas reciben un `RuleConfig`
   (`RuleConfig.fromJson(reader)`).
+
+> **Actualización:** desde [ADR-029](029-formatter-sobre-el-ast.md) las reglas del formatter deciden
+> brechas del AST en vez de espacios entre tokens, así que `TokenSpacing` pasó a ser `Spacing`
+> (`Spacing.at(on, GapKind.BEFORE_ASSIGN, GapKind.AFTER_ASSIGN)`). El registro, las claves y las
+> fábricas no cambiaron.

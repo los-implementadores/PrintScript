@@ -115,7 +115,8 @@ a 2.x requiere reescribir los adapters (ver la sección 5):
 - Los módulos no saben de versiones (ADR-025): `ParserImpl(lexer, version)`, `LanguageVersion` en
   `common` y el constructor deprecado de `InterpreterImpl` dejan de existir.
 - `AnalyzerConfig` y `FormattingRules` se reemplazan por `RuleConfig` (ADR-026), y el formatter
-  trabaja sobre tokens (ADR-027).
+  recorre el AST y toma los espacios del código original (ADR-029): `Formatter.format` recibe las
+  sentencias y un `SourceText`. El runner arma todo eso; `FormattingService` no cambió.
 
 Con 2.x, los adapters solo necesitan el runner, que es el que arma cada pieza con la versión
 pedida y expone en su firma todo lo que los adapters usan:
