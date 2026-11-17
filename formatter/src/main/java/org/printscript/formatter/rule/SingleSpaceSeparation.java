@@ -2,9 +2,9 @@ package org.printscript.formatter.rule;
 
 import org.printscript.formatter.FormattingRule;
 import org.printscript.formatter.Gap;
-import org.printscript.token.TokenType;
+import org.printscript.formatter.GapKind;
 
-/** Exactamente un espacio entre dos tokens de la misma línea, salvo antes del {@code ;}. */
+/** Exactamente un espacio en cada brecha de una misma línea, salvo antes del {@code ;}. */
 public final class SingleSpaceSeparation implements FormattingRule {
 
   @Override
@@ -12,6 +12,6 @@ public final class SingleSpaceSeparation implements FormattingRule {
     if (!gap.insideLine()) {
       return gap.whitespace();
     }
-    return gap.isBefore(TokenType.SEMICOLON) ? "" : " ";
+    return gap.kind() == GapKind.BEFORE_SEMICOLON ? "" : " ";
   }
 }

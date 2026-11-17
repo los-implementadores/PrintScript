@@ -16,6 +16,7 @@ import org.printscript.ast.AssignmentStatement;
 import org.printscript.ast.BinaryExpression;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.GroupExpression;
 import org.printscript.ast.Identifier;
 import org.printscript.ast.LazyProgram;
 import org.printscript.ast.NumberLiteral;
@@ -25,6 +26,7 @@ import org.printscript.ast.StringLiteral;
 import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.lexer.Lexer;
 import org.printscript.lexer.LexerFactory;
+import org.printscript.source.Position;
 
 class ParserTest {
 
@@ -165,7 +167,9 @@ class ParserTest {
     BinaryExpression top = (BinaryExpression) stmt.getInitializer();
 
     assertEquals("*", top.getOperator());
-    assertEquals("+", ((BinaryExpression) top.getLeft()).getOperator());
+    GroupExpression group = (GroupExpression) top.getLeft();
+    assertEquals("+", ((BinaryExpression) group.getExpression()).getOperator());
+    assertEquals(new Position(1, 17, 1, 23), group.getPosition());
   }
 
   // ---------------------------------------------------------------- Programa completo

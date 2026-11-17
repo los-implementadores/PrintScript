@@ -2,10 +2,12 @@ plugins {
     id("printscript.java-conventions")
 }
 
-// El formatter trabaja sobre tokens (con los espacios originales), no sobre el AST: no depende ni
-// del parser ni de los nodos. Los tests arman los tokens con el lexer real.
+// El formatter recorre el AST y toma los espacios del código original (SourceText, en `source`),
+// como rustfmt (ADR-029). No depende del lexer ni del parser: los tests arman el AST con los reales.
 dependencies {
-    implementation(project(":token"))
+    implementation(project(":ast"))
     implementation(project(":rules"))
+    testImplementation(project(":token"))
     testImplementation(project(":lexer"))
+    testImplementation(project(":parser"))
 }

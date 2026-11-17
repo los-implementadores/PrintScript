@@ -1,6 +1,6 @@
 # ADR-027: El formatter y el linter no usan el visitor
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado. La parte del formatter fue reemplazada por [ADR-029](029-formatter-sobre-el-ast.md)
 - **Fecha:** 2026-11-10
 - **Relacionado:** ADR-002 (Visitor), ADR-009 (limitación OCP del visitor), ADR-012 (formateador streaming, reemplazado por este), ADR-015 (reglas del linter), ADR-026 (registro de reglas)
 
@@ -56,3 +56,8 @@ abre un scope que `UnusedVariableRule` ya sabe manejar.
 - **Cambio incompatible:** `Formatter` pasa a ser `format(Iterator<Token>, Writer)`; se van
   `format(Program)`, `format(Reader, Writer)`, `format(String)` y `formatIterator`. `LintRule` pasa
   a `onEnter`/`onExit`/`onFinish`. El adapter del formatter del TCK tiene que usar el runner.
+
+> **Actualización:** [ADR-029](029-formatter-sobre-el-ast.md) reemplaza la decisión sobre el
+> formatter: vuelve a recorrer el AST (con un visitor, como el semántico y el intérprete) y toma
+> los espacios del código original, como rustfmt. Lo del linter (`children()`, `onEnter`/`onExit`,
+> `Block`) sigue vigente.

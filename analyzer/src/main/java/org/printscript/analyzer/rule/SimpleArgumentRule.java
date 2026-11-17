@@ -6,6 +6,7 @@ import org.printscript.analyzer.violation.Violation;
 import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.Expression;
+import org.printscript.ast.GroupExpression;
 import org.printscript.ast.Identifier;
 import org.printscript.ast.Node;
 import org.printscript.ast.NumberLiteral;
@@ -44,7 +45,9 @@ public final class SimpleArgumentRule implements LintRule {
     }
   }
 
-  private static boolean isLiteralOrIdentifier(Expression argument) {
+  /** Los paréntesis no cuentan: {@code println((x))} sigue siendo un identificador. */
+  private static boolean isLiteralOrIdentifier(Expression expression) {
+    Expression argument = GroupExpression.unwrap(expression);
     return argument instanceof NumberLiteral
         || argument instanceof StringLiteral
         || argument instanceof BooleanLiteral

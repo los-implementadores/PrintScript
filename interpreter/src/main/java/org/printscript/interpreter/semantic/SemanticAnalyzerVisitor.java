@@ -8,6 +8,7 @@ import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.Expression;
 import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.GroupExpression;
 import org.printscript.ast.Identifier;
 import org.printscript.ast.IfStatement;
 import org.printscript.ast.NumberLiteral;
@@ -175,6 +176,11 @@ public class SemanticAnalyzerVisitor implements ASTVisitor<String> {
           "Variable '" + node.getName() + "' is not declared.", node.getPosition());
     }
     return env.getType(node.getName());
+  }
+
+  @Override
+  public String visitGroup(GroupExpression node) {
+    return node.getExpression().accept(this);
   }
 
   /** Tipo de una expresión analizada con {@code type} como tipo esperado. */

@@ -3,21 +3,17 @@ package org.printscript.formatter.rule;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.printscript.formatter.FormatterImpl;
-import org.printscript.lexer.LexerFactory;
+import org.printscript.formatter.Formatting;
 import org.printscript.rules.RuleConfig;
 
 /** Cada regla del formatter, activada con su clave como en el archivo de configuración. */
 class FormattingRulesTest {
 
   private static String format(RuleConfig config, String source) {
-    StringWriter target = new StringWriter();
-    new FormatterImpl(config)
-        .format(LexerFactory.createWithWhitespace(new StringReader(source)), target);
-    return target.toString();
+    return Formatting.format(new FormatterImpl(config), source);
   }
 
   private static String format(String json, String source) {

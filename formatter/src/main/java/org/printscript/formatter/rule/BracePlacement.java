@@ -2,11 +2,11 @@ package org.printscript.formatter.rule;
 
 import org.printscript.formatter.FormattingRule;
 import org.printscript.formatter.Gap;
-import org.printscript.token.TokenType;
+import org.printscript.formatter.GapKind;
 
 /**
- * Dónde va la llave que abre un bloque ({@code if}, {@code else}): en la misma línea, separada por
- * un espacio, o sola en la línea de abajo.
+ * Dónde va la llave que abre el bloque de un {@code if} o de un {@code else}: en la misma línea,
+ * separada por un espacio, o sola en la línea de abajo.
  */
 public final class BracePlacement implements FormattingRule {
 
@@ -22,7 +22,7 @@ public final class BracePlacement implements FormattingRule {
 
   @Override
   public String apply(Gap gap) {
-    if (!gap.isBefore(TokenType.LBRACE) || gap.atStart()) {
+    if (gap.kind() != GapKind.BEFORE_BLOCK) {
       return gap.whitespace();
     }
     if (sameLine) {

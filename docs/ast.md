@@ -5,9 +5,13 @@ ser parseado. Es una estructura de árbol donde cada nodo representa una
 construcción del lenguaje.
 
 Todos los nodos viven en el módulo `ast`, paquete `org.printscript.ast`, para que
-el `interpreter` y el `analyzer` los puedan usar sin depender del `parser`. El
-módulo solo depende de `source` (por `Position`). El `formatter` no usa el AST:
-trabaja sobre los tokens (ver [formatter.md](formatter.md)).
+el `interpreter`, el `analyzer` y el `formatter` los puedan usar sin depender
+del `parser`. El módulo solo depende de `source` (por `Position`).
+
+El AST guarda lo que hace falta para escribir el programa como estaba (ADR-029):
+los paréntesis (`GroupExpression`) y el texto de los literales (`getLexeme()`).
+Los espacios no: el formatter los toma del código original (ver
+[formatter.md](formatter.md)).
 
 Ningún nodo sabe de versiones del lenguaje: qué construcciones se aceptan en cada
 versión lo decide el runner (ADR-025).
@@ -27,7 +31,8 @@ Todo nodo del AST implementa esta interfaz. Define tres cosas:
   usa el linter). No incluye el nombre de una declaración ni el destino de una
   asignación: así, todo `Identifier` que aparece entre los hijos es una lectura.
 - `accept(ASTVisitor<T>)` — punto de entrada del patrón Visitor, para las fases
-  que le dan un significado propio a cada tipo de nodo (semántico e intérprete).
+  que tienen que hacer algo con cada tipo de nodo (semántico, intérprete y
+  formatter).
 
 ```
 Node
@@ -53,31 +58,37 @@ Implementaciones:
 | `Identifier` | Referencia a una variable | `name`, `x` |
 | `BinaryExpression` | Operación entre dos expresiones | `a + b`, `x / 2` |
 | `CallExpression` | Llamada a función | `println(x)` |
+| `GroupExpression` | Expresión entre paréntesis | `(a + b)` |
 
 ---
 
 ### `NumberLiteral.java`
 
 Representa un número en el código fuente. Guarda el valor como `double`
-(soporta enteros y decimales).
+(soporta enteros y decimales) y el lexema, el número tal como se escribió: `5.0`
+y `5` valen lo mismo pero no se escriben igual, y el formatter tiene que
+respetarlo.
 
 ```java
-// let a: number = 42;
-//                ^^— esto es un NumberLiteral con value = 42.0
-new NumberLiteral(42.0, pos)
+// let a: number = 1.50;
+//                 ^^^^— NumberLiteral con value = 1.5 y lexeme = "1.50"
+new NumberLiteral(1.5, "1.50", pos)
+new NumberLiteral(42.0, pos)          // lexeme = "42"
 ```
 
 ---
 
 ### `StringLiteral.java`
 
-Representa un string literal. El valor es el contenido **sin** las comillas
-(el lexer ya las consumió).
+Representa un string literal. El valor es el contenido **sin** las comillas;
+el lexema es el literal tal como se escribió, comillas incluidas. Así el
+formatter no cambia `'Joe'` por `"Joe"`.
 
 ```java
-// let name: string = "Joe";
-//                    ^^^^^— StringLiteral con value = "Joe"
-new StringLiteral("Joe", pos)
+// let name: string = 'Joe';
+//                    ^^^^^— StringLiteral con value = "Joe" y lexeme = "'Joe'"
+new StringLiteral("Joe", "'Joe'", pos)
+new StringLiteral("Joe", pos)         // lexeme = "\"Joe\""
 ```
 
 ---
@@ -131,6 +142,29 @@ new BinaryExpression(
     pos
 )
 ```
+
+---
+
+### `GroupExpression.java`
+
+Una expresión entre paréntesis. Para evaluar no hace falta (la precedencia ya
+quedó en la forma del árbol), pero sin este nodo el formatter escribiría
+`(1 + 2) * 3` como `1 + 2 * 3`, que es otro programa. Es el `ExprKind::Paren` del
+AST de Rust (ADR-029). El semántico y el intérprete lo resuelven con la expresión
+de adentro.
+
+```
+// (1 + 2) * 3
+BinaryExpression(*)
+├── GroupExpression
+│   └── BinaryExpression(+)
+│       ├── NumberLiteral(1)
+│       └── NumberLiteral(2)
+└── NumberLiteral(3)
+```
+
+`GroupExpression.unwrap(expr)` saca todos los paréntesis: `((x))` da `x`. Lo usa
+el linter, para que `println((x))` siga siendo un argumento simple.
 
 ---
 
@@ -308,6 +342,7 @@ ASTVisitor<T>
 ├── visitBlock(Block)                    → T
 ├── visitBinaryExpression(...)           → T
 ├── visitCallExpression(...)             → T
+├── visitGroup(GroupExpression)          → T
 ├── visitNumberLiteral(...)              → T
 ├── visitStringLiteral(...)              → T
 ├── visitBooleanLiteral(...)             → T
@@ -319,12 +354,13 @@ ASTVisitor<T>
 | `interpreter` (`InterpreterVisitor`) | `ASTVisitor<Object>` | evalúa cada nodo y retorna su valor |
 | `interpreter` (`SemanticAnalyzerVisitor`) | `ASTVisitor<String>` | retorna el tipo de cada expresión |
 | `analyzer` | `children()` | cada regla mira solo algunos nodos; un nodo nuevo no la obliga a cambiar |
-| `formatter` | no usa el AST | trabaja sobre los tokens: un nodo nuevo no lo afecta |
+| `formatter` (`FormatterVisitor`) | `ASTVisitor<Void>` | escribe cada nodo con sus partes y le pasa a las reglas cada espacio entre ellas |
 
 El visitor obliga a agregar un `visitX` en cada implementación cuando aparece un
-nodo nuevo (el *expression problem*, ADR-009). Para el semántico y el intérprete
-es lo correcto: un nodo nuevo necesita su chequeo y su ejecución. Para el linter y
-el formatter no lo es, y por eso no lo usan (ADR-027).
+nodo nuevo (el *expression problem*, ADR-009). Para el semántico, el intérprete y
+el formatter es lo correcto: un nodo nuevo necesita su chequeo, su ejecución y
+saber cómo se escribe (ADR-029). Para el linter no lo es, y por eso no lo usa
+(ADR-027).
 
 ```java
 // Cada sentencia se visita de a una, a medida que el parser la produce:

@@ -7,14 +7,14 @@ static code analyzer para el lenguaje PrintScript (subset de TypeScript).
 
 | Módulo | Responsabilidad |
 |--------|-----------------|
-| `source` | `Position` y la excepción base de los errores del programa. Sin dependencias |
-| `token` | `Token` y `TokenType`: el vocabulario que comparten lexer, parser y formatter |
+| `source` | `Position`, `SourceText` (el código original, para el formatter) y la excepción base de los errores del programa. Sin dependencias |
+| `token` | `Token` y `TokenType`: el vocabulario que comparten lexer y parser |
 | `ast` | Los nodos del AST, `Program` y `ASTVisitor` |
 | `rules` | Cómo se pasa de un archivo de configuración (JSON) a reglas: `RuleConfig` y `RuleRegistry`. Lo usan el formatter y el linter |
 | `lexer` | Análisis léxico. Convierte código fuente en un stream de tokens (Strategy pattern). `LexerFactory` tiene el vocabulario del lenguaje |
 | `parser` | Análisis sintáctico. Convierte tokens en AST usando Pratt parsing, con la gramática que se le pase (`GrammarFeature`) |
 | `interpreter` | Recorre el AST y ejecuta el programa (incluye análisis semántico y la tabla de símbolos) |
-| `formatter` | Reformatea el código sobre sus tokens; las reglas se registran en `FormattingRules` y se activan desde el JSON |
+| `formatter` | Recorre el AST y toma los espacios del código original, como rustfmt (ADR-029); las reglas se registran en `FormattingRules` y se activan desde el JSON |
 | `analyzer` | Static code analyzer (linter); las reglas se registran en `LintRules` y se activan desde el JSON |
 | `runner` | Orquestación del lenguaje: un servicio por operación (validar, analizar, ejecutar, formatear). Es el único módulo que sabe de versiones (`LanguageVersion`). Puro: sin consola ni archivos |
 | `cli` | Adaptador de terminal: comandos (`cli.command`), I/O (`cli.io`) y parseo de argumentos/menú. Depende sólo de `runner` |
@@ -115,7 +115,7 @@ hacer "Re-run" hay que borrar en GitHub Packages las versiones `X.Y.Z` que llega
 - [x] Lexer (Strategy pattern con TokenMatcher)
 - [x] Parser + AST (Pratt parsing, LazyProgram)
 - [x] Interpreter + Análisis semántico
-- [x] Formatter (sobre tokens, reglas registradas y configurables desde JSON)
+- [x] Formatter (sobre el AST, reglas registradas y configurables desde JSON)
 - [x] Static analyzer (reglas registradas y configurables desde JSON)
 - [x] CLI (validation, analyzing, execution, formatting y menú interactivo)
 - [x] PrintScript 1.1 (`const`, `boolean`, `if`/`else`, `readInput`, `readEnv`)

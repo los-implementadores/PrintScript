@@ -1,26 +1,31 @@
 package org.printscript.formatter;
 
-import org.printscript.token.Token;
-import org.printscript.token.TokenType;
+import org.printscript.ast.Node;
 
 /**
- * El espacio entre dos tokens consecutivos: lo único que cambian las reglas de formato.
+ * El espacio entre dos partes de un nodo del AST: lo único que cambian las reglas de formato.
  *
- * @param previous el token de antes, o {@code null} si es el espacio del principio del archivo
- * @param next el token de después; es {@code EOF} en el espacio del final del archivo
- * @param whitespace el espacio que hay ahora (el original, o el que dejó la regla anterior)
- * @param lineIndent la indentación de la línea en la que está {@code previous}, ya formateada
+ * <p>No es «el espacio entre dos tokens» sino un espacio con significado: {@link #kind()} dice cuál
+ * es (antes del {@code :} de una declaración, entre dos sentencias) y {@link #node()} de qué nodo
+ * es.
+ *
+ * @param kind qué espacio es
+ * @param node el nodo al que pertenece; en las brechas entre sentencias, la sentencia que sigue; en
+ *     las del bloque, el bloque; {@code null} al final del archivo y en un archivo vacío
+ * @param previous en las brechas entre sentencias, la sentencia anterior; si no, {@code null}
+ * @param whitespace el espacio que hay ahora: el original, o el que dejó la regla anterior
+ * @param shape dentro de cuántos bloques está y con qué indentación quedó la línea
  */
-public record Gap(Token previous, Token next, String whitespace, String lineIndent) {
+public record Gap(GapKind kind, Node node, Node previous, String whitespace, Shape shape) {
 
-  /** {@code true} en el espacio antes del primer token del archivo. */
+  /** {@code true} en el espacio antes de la primera sentencia del archivo. */
   public boolean atStart() {
-    return previous == null;
+    return kind == GapKind.FILE_START;
   }
 
-  /** {@code true} en el espacio después del último token del archivo. */
+  /** {@code true} en el espacio después de la última sentencia del archivo. */
   public boolean atEnd() {
-    return next.getType() == TokenType.EOF;
+    return kind == GapKind.FILE_END;
   }
 
   /** {@code true} si el espacio tiene al menos un salto de línea. */
@@ -33,7 +38,7 @@ public record Gap(Token previous, Token next, String whitespace, String lineInde
     return atStart() || breaksLine();
   }
 
-  /** {@code true} si es el espacio entre dos tokens de la misma línea. */
+  /** {@code true} si es un espacio entre dos partes de la misma línea. */
   public boolean insideLine() {
     return !atStart() && !atEnd() && !breaksLine();
   }
@@ -43,30 +48,15 @@ public record Gap(Token previous, Token next, String whitespace, String lineInde
     return (int) whitespace.chars().filter(c -> c == '\n').count();
   }
 
-  /** {@code true} si el token de antes es de tipo {@code type}. */
-  public boolean isAfter(TokenType type) {
-    return previous != null && previous.getType() == type;
-  }
-
-  /** {@code true} si el token de después es de tipo {@code type}. */
-  public boolean isBefore(TokenType type) {
-    return next.getType() == type;
-  }
-
-  /** {@code true} si el token de después es el identificador {@code name}. */
-  public boolean isBeforeIdentifier(String name) {
-    return isBefore(TokenType.IDENTIFIER) && next.getLexeme().equals(name);
-  }
-
   /** El mismo espacio con otro contenido. */
   public Gap withWhitespace(String newWhitespace) {
-    return new Gap(previous, next, newWhitespace, lineIndent);
+    return new Gap(kind, node, previous, newWhitespace, shape);
   }
 
   /**
    * Un salto de línea más {@code blankLines} líneas vacías, con la indentación de la línea actual.
    */
   public String newLine(int blankLines) {
-    return "\n".repeat(blankLines + 1) + lineIndent;
+    return "\n".repeat(blankLines + 1) + shape.lineIndent();
   }
 }

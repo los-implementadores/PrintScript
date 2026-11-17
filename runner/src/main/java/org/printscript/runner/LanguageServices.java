@@ -34,6 +34,6 @@ public record LanguageServices(
         new ValidationService(loader, semanticAnalyzers),
         new AnalysisService(loader, semanticAnalyzers, linters),
         new ExecutionService(loader, semanticAnalyzers, interpreters),
-        new FormattingService(new ParsedTokenLoader(), formatters));
+        new FormattingService(loader, formatters));
   }
 }

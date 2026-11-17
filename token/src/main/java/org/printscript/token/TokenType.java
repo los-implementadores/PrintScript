@@ -29,9 +29,5 @@ public enum TokenType {
   STAR, // *
   SLASH, // /
 
-  // Espacios, tabs y saltos de línea entre tokens. El lexer solo los produce si se le pide (lo usa
-  // el formatter); el parser nunca los ve.
-  WHITESPACE,
-
   EOF
 }

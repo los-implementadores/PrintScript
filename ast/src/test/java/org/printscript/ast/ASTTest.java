@@ -241,6 +241,11 @@ class ASTTest {
           }
 
           @Override
+          public String visitGroup(GroupExpression n) {
+            return "(" + n.getExpression().accept(this) + ")";
+          }
+
+          @Override
           public String visitBooleanLiteral(BooleanLiteral n) {
             return String.valueOf(n.getValue());
           }

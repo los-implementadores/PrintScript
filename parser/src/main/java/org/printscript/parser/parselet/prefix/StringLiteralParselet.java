@@ -12,6 +12,6 @@ public final class StringLiteralParselet implements PrefixParselet {
   @Override
   public Expression parse(Token token, ParseContext ctx) {
     String lexeme = token.getLexeme();
-    return new StringLiteral(lexeme.substring(1, lexeme.length() - 1), token.getPosition());
+    return new StringLiteral(lexeme.substring(1, lexeme.length() - 1), lexeme, token.getPosition());
   }
 }

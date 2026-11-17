@@ -2,25 +2,27 @@ package org.printscript.formatter;
 
 import java.io.Writer;
 import java.util.Iterator;
-import org.printscript.token.Token;
+import org.printscript.ast.Statement;
+import org.printscript.source.SourceText;
 
 /**
  * Formateador de código PrintScript.
  *
- * <p>Trabaja sobre los tokens del código fuente con sus espacios (los de {@code
- * LexerFactory.createWithWhitespace}): reescribe cada token tal como está y deja que las reglas
- * decidan qué espacio va entre cada par. El espacio que ninguna regla toca queda como estaba.
- *
- * <p>No usa el AST: un tipo de nodo nuevo en el lenguaje no cambia el formatter (ver ADR-027).
+ * <p>Recorre el AST y escribe cada nodo tal como estaba en el código original. Entre cada par de
+ * partes de un nodo hay una brecha ({@link Gap}) con el espacio original, y las reglas deciden qué
+ * espacio queda. El espacio que ninguna regla toca queda como estaba (ver ADR-029).
  */
 public interface Formatter {
 
   /**
-   * Escribe el código formateado a medida que lee los tokens: en memoria solo está el token actual.
+   * Escribe el código formateado de a una sentencia, a medida que llegan.
    *
-   * @param tokens los tokens del código fuente, espacios incluidos
+   * @param statements las sentencias del programa, en orden
+   * @param source el código del que salieron las sentencias, para reproducir lo que el AST no
+   *     guarda (los espacios)
    * @param target donde se escribe el código formateado
    * @throws java.io.UncheckedIOException si falla la escritura
+   * @throws IllegalStateException si las sentencias no coinciden con el código original
    */
-  void format(Iterator<Token> tokens, Writer target);
+  void format(Iterator<Statement> statements, SourceText source, Writer target);
 }
