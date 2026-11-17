@@ -8,6 +8,7 @@ import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.CallExpression;
 import org.printscript.ast.Expression;
 import org.printscript.ast.ExpressionStatement;
+import org.printscript.ast.GroupExpression;
 import org.printscript.ast.Identifier;
 import org.printscript.ast.IfStatement;
 import org.printscript.ast.NumberLiteral;
@@ -144,6 +145,11 @@ public class InterpreterVisitor implements ASTVisitor<Object> {
   @Override
   public Object visitIdentifier(Identifier node) {
     return env.get(node.getName());
+  }
+
+  @Override
+  public Object visitGroup(GroupExpression node) {
+    return node.getExpression().accept(this);
   }
 
   /** Evalúa una expresión con {@code type} como tipo esperado (lo usan readInput y readEnv). */

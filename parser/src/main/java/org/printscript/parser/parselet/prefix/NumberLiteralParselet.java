@@ -11,7 +11,7 @@ public final class NumberLiteralParselet implements PrefixParselet {
 
   @Override
   public Expression parse(Token token, ParseContext ctx) {
-    double value = Double.parseDouble(token.getLexeme());
-    return new NumberLiteral(value, token.getPosition());
+    String lexeme = token.getLexeme();
+    return new NumberLiteral(Double.parseDouble(lexeme), lexeme, token.getPosition());
   }
 }
