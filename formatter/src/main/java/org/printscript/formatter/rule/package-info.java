@@ -1,8 +1,9 @@
 /**
  * Reglas del formatter.
  *
- * <p>Cada regla implementa {@link org.printscript.formatter.FormattingRule} y decide el espacio
- * entre dos tokens. Para agregar una regla configurable:
+ * <p>Cada regla implementa {@link org.printscript.formatter.FormattingRule} y decide el espacio de
+ * las brechas del AST que le corresponden ({@link org.printscript.formatter.GapKind}). Para agregar
+ * una regla configurable:
  *
  * <ol>
  *   <li>Escribir la clase de la regla en este paquete.

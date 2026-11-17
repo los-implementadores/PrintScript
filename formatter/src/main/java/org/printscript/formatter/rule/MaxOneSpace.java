@@ -4,7 +4,7 @@ import org.printscript.formatter.FormattingRule;
 import org.printscript.formatter.Gap;
 
 /**
- * Como mucho un espacio entre dos tokens de la misma línea: varios espacios o tabs quedan en uno, y
+ * Como mucho un espacio en cada brecha de una misma línea: varios espacios o tabs quedan en uno, y
  * donde no había ninguno sigue sin haber.
  */
 public final class MaxOneSpace implements FormattingRule {

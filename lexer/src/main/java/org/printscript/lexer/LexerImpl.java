@@ -5,6 +5,7 @@ import java.io.Reader;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.printscript.source.Position;
+import org.printscript.source.SourceText;
 import org.printscript.token.Token;
 import org.printscript.token.TokenType;
 
@@ -16,8 +17,8 @@ import org.printscript.token.TokenType;
  * Principle: para soportar nuevos tipos de tokens, se agrega un matcher nuevo sin modificar esta
  * clase.
  *
- * <p>Los espacios que ningún matcher reconoce se descartan. Así, con los matchers del lenguaje el
- * parser no ve espacios, y sumando un {@link WhitespaceTokenMatcher} se obtienen como tokens.
+ * <p>Los espacios entre tokens ({@link SourceText#isWhitespace}) se descartan: el parser no los ve.
+ * El formatter, que sí los necesita, los lee del código original con el mismo criterio.
  *
  * <p>Implementa también {@link LexerContext} para exponer su estado interno a los matchers de forma
  * controlada.
@@ -69,7 +70,7 @@ public class LexerImpl implements Lexer, LexerContext {
         }
       }
 
-      if (!WhitespaceTokenMatcher.isWhitespace(c)) {
+      if (!SourceText.isWhitespace(c)) {
         Position position = new Position(currentLine, currentColumn, currentLine, currentColumn);
         throw new LexerException("Unexpected character '" + c + "'", position);
       }

@@ -3,11 +3,10 @@ package org.printscript.formatter.rule;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.printscript.formatter.FormattingRule;
+import org.printscript.formatter.GapKind;
 import org.printscript.rules.RuleConfig;
 import org.printscript.rules.RuleRegistry;
-import org.printscript.token.TokenType;
 
 /**
  * Las reglas del formatter y la clave con la que se activa cada una. Es el único lugar donde se
@@ -23,9 +22,6 @@ import org.printscript.token.TokenType;
  * el comienzo de todas las líneas.
  */
 public final class FormattingRules {
-
-  private static final Set<TokenType> OPERATORS =
-      Set.of(TokenType.PLUS, TokenType.MINUS, TokenType.STAR, TokenType.SLASH);
 
   private static final RuleRegistry<FormattingRule> REGISTRY =
       RuleRegistry.<FormattingRule>builder()
@@ -46,23 +42,23 @@ public final class FormattingRules {
           .rule("mandatory-single-space-separation")
           .whenOn(SingleSpaceSeparation::new)
           .rule("spaceBeforeColon")
-          .withBoolean(on -> TokenSpacing.before(TokenType.COLON, on))
+          .withBoolean(on -> Spacing.at(on, GapKind.BEFORE_TYPE_COLON))
           .rule("enforce-spacing-before-colon-in-declaration")
-          .whenOn(() -> TokenSpacing.before(TokenType.COLON, true))
+          .whenOn(() -> Spacing.at(true, GapKind.BEFORE_TYPE_COLON))
           .rule("spaceAfterColon")
-          .withBoolean(on -> TokenSpacing.after(TokenType.COLON, on))
+          .withBoolean(on -> Spacing.at(on, GapKind.AFTER_TYPE_COLON))
           .rule("enforce-spacing-after-colon-in-declaration")
-          .whenOn(() -> TokenSpacing.after(TokenType.COLON, true))
+          .whenOn(() -> Spacing.at(true, GapKind.AFTER_TYPE_COLON))
           .rule("spaceAroundAssign")
-          .withBoolean(on -> TokenSpacing.around(Set.of(TokenType.ASSIGN), on))
+          .withBoolean(on -> Spacing.at(on, GapKind.BEFORE_ASSIGN, GapKind.AFTER_ASSIGN))
           .rule("enforce-no-spacing-around-equals")
-          .whenOn(() -> TokenSpacing.around(Set.of(TokenType.ASSIGN), false))
+          .whenOn(() -> Spacing.at(false, GapKind.BEFORE_ASSIGN, GapKind.AFTER_ASSIGN))
           .rule("enforce-spacing-around-equals")
-          .whenOn(() -> TokenSpacing.around(Set.of(TokenType.ASSIGN), true))
+          .whenOn(() -> Spacing.at(true, GapKind.BEFORE_ASSIGN, GapKind.AFTER_ASSIGN))
           .rule("spaceAroundOperators")
-          .withBoolean(on -> TokenSpacing.around(OPERATORS, on))
+          .withBoolean(on -> Spacing.at(on, GapKind.BEFORE_OPERATOR, GapKind.AFTER_OPERATOR))
           .rule("mandatory-space-surrounding-operations")
-          .whenOn(() -> TokenSpacing.around(OPERATORS, true))
+          .whenOn(() -> Spacing.at(true, GapKind.BEFORE_OPERATOR, GapKind.AFTER_OPERATOR))
           // Indentación: al final, para corregir todas las líneas que armaron las reglas de arriba
           .rule("indentSize", "indent-inside-if")
           .withInt(BlockIndentation::new)
