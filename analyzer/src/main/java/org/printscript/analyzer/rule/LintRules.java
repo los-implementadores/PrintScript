@@ -1,7 +1,9 @@
 package org.printscript.analyzer.rule;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import org.printscript.rules.RuleConfig;
 import org.printscript.rules.RuleRegistry;
 import org.printscript.rules.RuleSetting;
@@ -16,7 +18,7 @@ import org.printscript.rules.RuleSetting;
  * @param nodeRules las reglas que revisan un nodo por vez
  * @param programRules las reglas que necesitan el programa entero
  */
-public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule<?>> programRules) {
+public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule> programRules) {
 
   private static final RuleRegistry<NodeRule<?>> NODE_RULES =
       RuleRegistry.<NodeRule<?>>builder()
@@ -28,8 +30,8 @@ public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule<?>> progra
           .whenOn(() -> new SimpleArgumentRule("readInput"))
           .build();
 
-  private static final RuleRegistry<ProgramRule<?>> PROGRAM_RULES =
-      RuleRegistry.<ProgramRule<?>>builder()
+  private static final RuleRegistry<ProgramRule> PROGRAM_RULES =
+      RuleRegistry.<ProgramRule>builder()
           .rule("activeUnusedVariables")
           .whenOn(UnusedVariableRule::new)
           .build();
@@ -54,21 +56,43 @@ public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule<?>> progra
   }
 
   /**
-   * La regla de nombres se activa de dos formas: con {@code "activeNamingConvention": true} y la
-   * convención en {@code namingConventionFormat} (camelCase si no está), o con la convención
-   * directamente en {@code identifier_format}, como la configura el TCK.
+   * La regla de nombres se activa de dos formas: con la convención directamente en {@code
+   * identifier_format}, como la configura el TCK, o con {@code "activeNamingConvention": true} y la
+   * convención en {@code namingConventionFormat} (camelCase si no está). Con {@code null}, ninguna
+   * de las dos la activa.
    */
   private static Optional<NodeRule<?>> namingConvention(RuleSetting setting) {
     if (setting.isNull()) {
       return Optional.empty();
     }
-    if ("identifier_format".equals(setting.key())) {
-      return Optional.of(new NamingConventionRule(NamingConvention.fromString(setting.asText())));
-    }
+    return NAMING_CONVENTION_BY_KEY.get(setting.key()).apply(setting);
+  }
+
+  /** Cómo arma la regla de nombres cada una de sus dos claves. */
+  private static final Map<String, Function<RuleSetting, Optional<NodeRule<?>>>>
+      NAMING_CONVENTION_BY_KEY =
+          Map.of(
+              "identifier_format", LintRules::namingConventionFromFormat,
+              "activeNamingConvention", LintRules::namingConventionFromActiveFlag);
+
+  /** Con {@code identifier_format}, el valor es la convención. */
+  private static Optional<NodeRule<?>> namingConventionFromFormat(RuleSetting setting) {
+    return Optional.of(namingConventionRule(setting.asText()));
+  }
+
+  /**
+   * Con {@code activeNamingConvention}, la regla se arma solo con {@code true}, y la convención
+   * viene en {@code namingConventionFormat}.
+   */
+  private static Optional<NodeRule<?>> namingConventionFromActiveFlag(RuleSetting setting) {
     if (!setting.asBoolean()) {
       return Optional.empty();
     }
-    String format = setting.config().text("namingConventionFormat", "camelCase");
-    return Optional.of(new NamingConventionRule(NamingConvention.fromString(format)));
+    String convention = setting.config().text("namingConventionFormat", "camelCase");
+    return Optional.of(namingConventionRule(convention));
+  }
+
+  private static NodeRule<?> namingConventionRule(String convention) {
+    return new NamingConventionRule(NamingConvention.fromString(convention));
   }
 }

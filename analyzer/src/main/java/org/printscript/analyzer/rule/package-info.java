@@ -4,10 +4,12 @@
  * <p>Hay dos clases de regla, según lo que necesitan ver, y cada una implementa solo lo suyo:
  *
  * <ul>
- *   <li>{@link org.printscript.analyzer.rule.NodeRule}: revisa los nodos de un tipo, de a uno. Es
- *       una función del nodo a sus violaciones.
- *   <li>{@link org.printscript.analyzer.rule.ProgramRule}: necesita el programa entero. Es un fold:
- *       recibe lo que sabía y una sentencia, y devuelve lo que sabe ahora.
+ *   <li>{@link org.printscript.analyzer.rule.NodeRule}: revisa los nodos de un tipo, de a uno. El
+ *       linter la llama con {@code onEnter} al entrar a cada nodo de ese tipo.
+ *   <li>{@link org.printscript.analyzer.rule.ProgramRule}: necesita el programa entero. Es un valor
+ *       que no cambia: el linter llama a {@code onExit} al salir de cada sentencia y la regla
+ *       devuelve otra, que sabe esa sentencia más; al terminar, le pide {@code onFinish} a la
+ *       última.
  * </ul>
  *
  * <p>Ninguna regla guarda estado, así que la misma instancia sirve para cualquier cantidad de

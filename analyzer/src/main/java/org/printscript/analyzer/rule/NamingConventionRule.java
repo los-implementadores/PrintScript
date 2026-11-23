@@ -25,15 +25,19 @@ public final class NamingConventionRule implements NodeRule<VarDeclarationStatem
     return VarDeclarationStatement.class;
   }
 
+  /** Si el nombre de la variable no sigue la convención, lo avisa. */
   @Override
-  public List<Violation> check(VarDeclarationStatement declaration) {
+  public List<Violation> onEnter(VarDeclarationStatement declaration) {
     Identifier name = declaration.getName();
-    if (convention.matches(name.getName())) {
-      return List.of();
+    if (!convention.matches(name.getName())) {
+      return List.of(wrongName(name));
     }
-    return List.of(
-        new Violation(
-            "Variable '" + name.getName() + "' should be in " + convention.displayName() + ".",
-            name.getPosition()));
+    return List.of();
+  }
+
+  private Violation wrongName(Identifier name) {
+    return new Violation(
+        "Variable '" + name.getName() + "' should be in " + convention.displayName() + ".",
+        name.getPosition());
   }
 }

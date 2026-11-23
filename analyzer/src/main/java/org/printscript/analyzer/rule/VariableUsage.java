@@ -3,173 +3,95 @@ package org.printscript.analyzer.rule;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.ast.ASTVisitor;
-import org.printscript.ast.AssignmentStatement;
-import org.printscript.ast.BinaryExpression;
-import org.printscript.ast.Block;
-import org.printscript.ast.BooleanLiteral;
-import org.printscript.ast.CallExpression;
-import org.printscript.ast.Expression;
-import org.printscript.ast.ExpressionStatement;
-import org.printscript.ast.GroupExpression;
-import org.printscript.ast.Identifier;
-import org.printscript.ast.IfStatement;
-import org.printscript.ast.NumberLiteral;
-import org.printscript.ast.Statement;
-import org.printscript.ast.StringLiteral;
-import org.printscript.ast.VarDeclarationStatement;
-import org.printscript.source.Position;
 
 /**
- * Qué hace un pedazo de código con las variables: cuáles lee de afuera, cuál declara y cuáles de
- * sus bloques no usó nadie. Cada nodo arma su respuesta con la de sus hijos y no se guarda nada
- * entre una visita y otra.
+ * Lo que hace un pedazo de código con las variables: cuáles declara, cuáles de esas se usan más
+ * adelante, cuáles lee de afuera y qué variables sin usar dejaron sus bloques.
  *
- * <p>Un bloque se resuelve entero acá, porque empieza y termina adentro de su sentencia: sus
- * variables sin usar ya se saben al salir de él. Lo que lee de afuera sube para que lo resuelva
- * quien lo contiene.
+ * <p>Es un valor: nunca cambia. Dos pedazos seguidos se juntan con {@link #then}, que es asociativo
+ * y tiene a {@link #NOTHING} como neutro. Por eso un bloque, o un programa entero, se arma juntando
+ * sus sentencias con {@code then}, una detrás de otra.
+ *
+ * @param declared las variables declaradas en este pedazo, por nombre
+ * @param used los nombres de esas variables que se leen o se reasignan más adelante en el mismo
+ *     pedazo
+ * @param readsFromOutside los nombres que se leen o se reasignan sin haberlos declarado antes en el
+ *     mismo pedazo: son de un scope de afuera
+ * @param unusedInClosedBlocks las variables sin usar de los bloques que empiezan y terminan adentro
+ *     de este pedazo
  */
-final class VariableUsage implements ASTVisitor<VariableUsage.Usage> {
-
-  static final VariableUsage INSTANCE = new VariableUsage();
-
-  private VariableUsage() {}
+public record VariableUsage(
+    Map<String, DeclaredVariable> declared,
+    Set<String> used,
+    Set<String> readsFromOutside,
+    List<Violation> unusedInClosedBlocks) {
 
   /**
-   * Lo que hace un pedazo de código con las variables.
-   *
-   * @param reads las variables que lee o reasigna y que no se declaran adentro de ese pedazo
-   * @param declares la variable que declara, si es una declaración
-   * @param unused las variables declaradas en sus bloques que nadie usó
+   * Un pedazo que no hace nada con las variables, como un literal. Es el neutro de {@link #then}.
    */
-  record Usage(Set<String> reads, Optional<Declared> declares, List<Violation> unused) {
+  public static final VariableUsage NOTHING =
+      new VariableUsage(Map.of(), Set.of(), Set.of(), List.of());
 
-    static final Usage NONE = new Usage(Set.of(), Optional.empty(), List.of());
-
-    Usage {
-      reads = Set.copyOf(reads);
-      unused = List.copyOf(unused);
-    }
-
-    static Usage reading(String name) {
-      return new Usage(Set.of(name), Optional.empty(), List.of());
-    }
-
-    /** Lo que hacen este pedazo y {@code other} juntos. Solo se junta lo que no declara nada. */
-    Usage and(Usage other) {
-      Set<String> allReads = new LinkedHashSet<>(reads);
-      allReads.addAll(other.reads);
-      List<Violation> allUnused = new ArrayList<>(unused);
-      allUnused.addAll(other.unused);
-      return new Usage(allReads, Optional.empty(), allUnused);
-    }
+  public VariableUsage {
+    declared = Map.copyOf(declared);
+    used = Set.copyOf(used);
+    readsFromOutside = Set.copyOf(readsFromOutside);
+    unusedInClosedBlocks = List.copyOf(unusedInClosedBlocks);
   }
 
-  /** Una variable declarada: su nombre y dónde está escrito. */
-  record Declared(String name, Position position) {
-
-    Violation neverUsed() {
-      return new Violation("Variable '" + name + "' is declared but never used.", position);
-    }
+  /** Un pedazo que solo lee (o reasigna) la variable {@code name}. */
+  static VariableUsage reading(String name) {
+    return new VariableUsage(Map.of(), Set.of(), Set.of(name), List.of());
   }
 
-  // ---------------------------------------------------------------- Sentencias
-
-  /** El valor se lee antes de que la variable exista: en {@code let x = x + 1;} la x es otra. */
-  @Override
-  public Usage visitVarDeclaration(VarDeclarationStatement node) {
-    Expression initializer = node.getInitializer();
-    Set<String> reads = initializer == null ? Set.of() : initializer.accept(this).reads();
-    Identifier name = node.getName();
-    return new Usage(
-        reads, Optional.of(new Declared(name.getName(), name.getPosition())), List.of());
-  }
-
-  /** Reasignar una variable cuenta como usarla. */
-  @Override
-  public Usage visitAssignment(AssignmentStatement node) {
-    return Usage.reading(node.getTarget().getName()).and(node.getValue().accept(this));
-  }
-
-  @Override
-  public Usage visitExpressionStatement(ExpressionStatement node) {
-    return node.getExpression().accept(this);
-  }
-
-  @Override
-  public Usage visitIf(IfStatement node) {
-    Usage usage = node.getCondition().accept(this).and(node.getThenBlock().accept(this));
-    return node.hasElse() ? usage.and(node.getElseBlock().accept(this)) : usage;
+  /** Un pedazo que solo declara {@code variable}. */
+  static VariableUsage declaring(DeclaredVariable variable) {
+    return new VariableUsage(Map.of(variable.name(), variable), Set.of(), Set.of(), List.of());
   }
 
   /**
-   * Recorre las sentencias en orden, con las variables que se van declarando en el bloque. Cada
-   * sentencia primero lee y después declara, así una variable no se usa a sí misma. Lo que se lee y
-   * no se declaró en el bloque es de afuera.
+   * Este pedazo y, después, {@code next}. Lo que {@code next} lee de afuera y se declaró en este
+   * pedazo pasa a ser un uso de esa variable; lo demás sigue siendo de afuera. No cambia ninguno de
+   * los dos: devuelve uno nuevo.
    */
-  @Override
-  public Usage visitBlock(Block node) {
-    Map<String, Declared> declared = new HashMap<>();
-    Set<String> used = new HashSet<>();
-    Set<String> fromOutside = new LinkedHashSet<>();
-    List<Violation> unused = new ArrayList<>();
-    for (Statement statement : node.getStatements()) {
-      Usage usage = statement.accept(this);
-      for (String name : usage.reads()) {
-        (declared.containsKey(name) ? used : fromOutside).add(name);
+  public VariableUsage then(VariableUsage next) {
+    Set<String> usedNow = new HashSet<>(used);
+    usedNow.addAll(next.used);
+    Set<String> stillFromOutside = new HashSet<>(readsFromOutside);
+    for (String name : next.readsFromOutside) {
+      if (declared.containsKey(name)) {
+        usedNow.add(name);
+      } else {
+        stillFromOutside.add(name);
       }
-      unused.addAll(usage.unused());
-      usage.declares().ifPresent(declaration -> declared.put(declaration.name(), declaration));
     }
-    declared.values().stream()
-        .filter(declaration -> !used.contains(declaration.name()))
-        .map(Declared::neverUsed)
-        .forEach(unused::add);
-    return new Usage(fromOutside, Optional.empty(), unused);
+    Map<String, DeclaredVariable> declaredInBoth = new HashMap<>(declared);
+    declaredInBoth.putAll(next.declared);
+    List<Violation> unusedInBoth = new ArrayList<>(unusedInClosedBlocks);
+    unusedInBoth.addAll(next.unusedInClosedBlocks);
+    return new VariableUsage(declaredInBoth, usedNow, stillFromOutside, unusedInBoth);
   }
 
-  // ---------------------------------------------------------------- Expresiones
-
-  @Override
-  public Usage visitIdentifier(Identifier node) {
-    return Usage.reading(node.getName());
+  /**
+   * Lo que se ve de este pedazo desde afuera cuando es un bloque que terminó: sus variables dejan
+   * de existir, y las que nadie usó quedan como violaciones.
+   */
+  VariableUsage asClosedBlock() {
+    return new VariableUsage(Map.of(), Set.of(), readsFromOutside, unused());
   }
 
-  @Override
-  public Usage visitBinaryExpression(BinaryExpression node) {
-    return node.getLeft().accept(this).and(node.getRight().accept(this));
-  }
-
-  @Override
-  public Usage visitCallExpression(CallExpression node) {
-    return node.getArguments().stream()
-        .map(argument -> argument.accept(this))
-        .reduce(Usage.NONE, Usage::and);
-  }
-
-  @Override
-  public Usage visitGroup(GroupExpression node) {
-    return node.getExpression().accept(this);
-  }
-
-  @Override
-  public Usage visitNumberLiteral(NumberLiteral node) {
-    return Usage.NONE;
-  }
-
-  @Override
-  public Usage visitStringLiteral(StringLiteral node) {
-    return Usage.NONE;
-  }
-
-  @Override
-  public Usage visitBooleanLiteral(BooleanLiteral node) {
-    return Usage.NONE;
+  /** Las variables de este pedazo y de sus bloques que nadie usó, en la posición de su nombre. */
+  public List<Violation> unused() {
+    List<Violation> unused = new ArrayList<>(unusedInClosedBlocks);
+    for (DeclaredVariable variable : declared.values()) {
+      if (!used.contains(variable.name())) {
+        unused.add(variable.neverUsed());
+      }
+    }
+    return List.copyOf(unused);
   }
 }

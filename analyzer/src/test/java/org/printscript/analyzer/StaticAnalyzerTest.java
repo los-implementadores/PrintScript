@@ -9,6 +9,7 @@ import static org.printscript.analyzer.TestAst.ifElse;
 import static org.printscript.analyzer.TestAst.println;
 import static org.printscript.analyzer.TestAst.sum;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,10 @@ import org.printscript.analyzer.rule.LintRules;
 import org.printscript.analyzer.rule.NodeRule;
 import org.printscript.analyzer.rule.ProgramRule;
 import org.printscript.analyzer.violation.Violation;
+import org.printscript.ast.BinaryExpression;
 import org.printscript.ast.CallExpression;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.NumberLiteral;
 import org.printscript.ast.Statement;
 import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.rules.RuleConfig;
@@ -31,7 +35,11 @@ class StaticAnalyzerTest {
   }
 
   private static List<String> messages(List<Violation> violations) {
-    return violations.stream().map(Violation::message).toList();
+    List<String> messages = new ArrayList<>();
+    for (Violation violation : violations) {
+      messages.add(violation.message());
+    }
+    return messages;
   }
 
   /** Reporta cada declaración de una variable llamada x. */
@@ -43,10 +51,11 @@ class StaticAnalyzerTest {
         }
 
         @Override
-        public List<Violation> check(VarDeclarationStatement declaration) {
-          return "x".equals(declaration.getName().getName())
-              ? List.of(new Violation("Do not call it x.", declaration.getPosition()))
-              : List.of();
+        public List<Violation> onEnter(VarDeclarationStatement declaration) {
+          if ("x".equals(declaration.getName().getName())) {
+            return List.of(new Violation("Do not call it x.", declaration.getPosition()));
+          }
+          return List.of();
         }
       };
 
@@ -59,29 +68,24 @@ class StaticAnalyzerTest {
         }
 
         @Override
-        public List<Violation> check(CallExpression call) {
+        public List<Violation> onEnter(CallExpression call) {
           return List.of(new Violation("Call to " + call.getCallee() + ".", call.getPosition()));
         }
       };
 
-  /** Cuenta las sentencias del programa con un fold: lo que sabe es un número. */
-  private static final ProgramRule<Integer> COUNT_STATEMENTS =
-      new ProgramRule<>() {
-        @Override
-        public Integer start() {
-          return 0;
-        }
+  /** Cuenta las sentencias del programa: cada sentencia da otra regla, con una más. */
+  private record CountStatements(int statements) implements ProgramRule {
 
-        @Override
-        public Integer after(Integer known, Statement statement) {
-          return known + 1;
-        }
+    @Override
+    public ProgramRule onExit(Statement statement) {
+      return new CountStatements(statements + 1);
+    }
 
-        @Override
-        public List<Violation> violations(Integer known) {
-          return List.of(new Violation(known + " statements.", POS));
-        }
-      };
+    @Override
+    public List<Violation> onFinish() {
+      return List.of(new Violation(statements + " statements.", POS));
+    }
+  }
 
   @Test
   void aCustomRuleRunsWithoutChangingTheAnalyzer() {
@@ -107,7 +111,7 @@ class StaticAnalyzerTest {
   @Test
   void aProgramRuleSeesEveryStatementAndReportsAtTheEnd() {
     StaticAnalyzer analyzer =
-        new StaticAnalyzerImpl(new LintRules(List.of(), List.of(COUNT_STATEMENTS)));
+        new StaticAnalyzerImpl(new LintRules(List.of(), List.of(new CountStatements(0))));
 
     List<Violation> violations =
         analyzer.analyze(program(declaration("a", POS), declaration("b", POS), println("a")));
@@ -144,7 +148,14 @@ class StaticAnalyzerTest {
             program(
                 declaration("myVar", new Position(1, 5, 1, 9)),
                 declaration("other", new Position(2, 5, 2, 9)),
-                call("println", TestAst.plusOne("myVar"), new Position(3, 1, 3, 15))));
+                call(
+                    "println",
+                    new BinaryExpression(
+                        new Identifier("myVar", new Position(3, 9, 3, 13)),
+                        "+",
+                        new NumberLiteral(1, new Position(3, 17, 3, 17)),
+                        new Position(3, 9, 3, 17)),
+                    new Position(3, 1, 3, 18))));
 
     assertEquals(
         List.of(

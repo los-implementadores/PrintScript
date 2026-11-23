@@ -2,11 +2,10 @@ package org.printscript.analyzer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.printscript.analyzer.rule.LintRules;
 import org.printscript.analyzer.rule.NodeRule;
 import org.printscript.analyzer.rule.ProgramRule;
@@ -16,12 +15,13 @@ import org.printscript.ast.Statement;
 import org.printscript.rules.RuleConfig;
 
 /**
- * Recorre cada sentencia con {@link Node#children()} y le pasa cada nodo a las reglas de su tipo, y
- * cada sentencia entera a las reglas de programa. No conoce ninguna regla ni ningún tipo de nodo en
- * particular: ni una regla nueva ni un nodo nuevo cambian esta clase.
+ * Recorre cada sentencia con {@link Node#children()}: al entrar a cada nodo llama a las reglas de
+ * su tipo, y al salir de cada sentencia, a las reglas de programa. No conoce ninguna regla ni
+ * ningún tipo de nodo en particular: ni una regla nueva ni un nodo nuevo cambian esta clase.
  *
- * <p>No tiene estado: todo lo que se sabe de un programa vive en las variables locales de {@link
- * #analyze}, así que un analyzer sirve para cualquier cantidad de programas.
+ * <p>No tiene estado: sus campos se arman en el constructor y no cambian más. Lo que se sabe de un
+ * programa vive en las variables locales de {@link #analyze} y en las reglas de programa que van
+ * devolviendo, que tampoco cambian. Así un analyzer sirve para cualquier cantidad de programas.
  */
 public final class StaticAnalyzerImpl implements StaticAnalyzer {
 
@@ -30,9 +30,9 @@ public final class StaticAnalyzerImpl implements StaticAnalyzer {
           .thenComparingInt(violation -> violation.position().getStartColumn());
 
   /** Las reglas de nodo, indexadas por el tipo de nodo que revisan. */
-  private final Map<Class<? extends Node>, List<NodeRule<?>>> nodeRules;
+  private final Map<Class<? extends Node>, List<NodeRule<?>>> nodeRulesByType;
 
-  private final List<ProgramRule<?>> programRules;
+  private final List<ProgramRule> programRules;
 
   /**
    * Usa las reglas que la configuración deja activas.
@@ -45,57 +45,70 @@ public final class StaticAnalyzerImpl implements StaticAnalyzer {
 
   /** Usa estas reglas, incluidas reglas propias que no están en la configuración. */
   public StaticAnalyzerImpl(LintRules rules) {
-    this.nodeRules =
-        Map.copyOf(
-            rules.nodeRules().stream()
-                .collect(
-                    Collectors.<NodeRule<?>, Class<? extends Node>>groupingBy(NodeRule::nodeType)));
+    this.nodeRulesByType = indexByNodeType(rules.nodeRules());
     this.programRules = rules.programRules();
   }
 
   @Override
   public List<Violation> analyze(Iterator<Statement> program) {
-    List<Violation> found = new ArrayList<>();
-    List<Progress<?>> progress = programRules.stream().<Progress<?>>map(Progress::start).toList();
+    // estado interno, no la vuelve impura
+    List<Violation> violations = new ArrayList<>();
+    List<ProgramRule> programRulesSoFar = programRules;
     while (program.hasNext()) {
       Statement statement = program.next();
-      check(statement).forEach(found::add);
-      progress = progress.stream().<Progress<?>>map(rule -> rule.after(statement)).toList();
+      violations.addAll(violationsIn(statement));
+      programRulesSoFar = rulesAfter(statement, programRulesSoFar);
     }
-    progress.forEach(rule -> found.addAll(rule.violations()));
-    found.sort(BY_POSITION);
-    return List.copyOf(found);
-  }
-
-  /** Lo que encuentran las reglas de nodo en {@code node} y en todo lo que tiene adentro. */
-  private Stream<Violation> check(Node node) {
-    Stream<Violation> here =
-        nodeRules.getOrDefault(node.getClass(), List.of()).stream()
-            .flatMap(rule -> check(rule, node).stream());
-    return Stream.concat(here, node.children().stream().flatMap(this::check));
-  }
-
-  /** Le pasa el nodo a la regla con el tipo que ella pide: el índice ya garantiza que es ese. */
-  private static <N extends Node> List<Violation> check(NodeRule<N> rule, Node node) {
-    return rule.check(rule.nodeType().cast(node));
+    for (ProgramRule rule : programRulesSoFar) {
+      violations.addAll(rule.onFinish());
+    }
+    violations.sort(BY_POSITION);
+    return List.copyOf(violations);
   }
 
   /**
-   * Una regla de programa con lo que sabe hasta la última sentencia leída. Inmutable: leer otra
-   * sentencia devuelve otro.
+   * Lo que encuentran las reglas de nodo al entrar a {@code node} y a todo lo que tiene adentro.
    */
-  private record Progress<S>(ProgramRule<S> rule, S known) {
-
-    static <S> Progress<S> start(ProgramRule<S> rule) {
-      return new Progress<>(rule, rule.start());
+  private List<Violation> violationsIn(Node node) {
+    List<Violation> violations = new ArrayList<>();
+    for (NodeRule<?> rule : nodeRulesByType.getOrDefault(node.getClass(), List.of())) {
+      violations.addAll(violationsFrom(rule, node));
     }
-
-    Progress<S> after(Statement statement) {
-      return new Progress<>(rule, rule.after(known, statement));
+    for (Node child : node.children()) {
+      violations.addAll(violationsIn(child));
     }
+    return violations;
+  }
 
-    List<Violation> violations() {
-      return rule.violations(known);
+  /**
+   * Lo que encuentra {@code rule} en {@code node}. Es un método aparte por los genéricos: en el
+   * índice las reglas son {@code NodeRule<?>}, y acá el tipo tiene nombre ({@code N}), así que se
+   * puede convertir el nodo al tipo que pide la regla. El índice garantiza que es ese.
+   */
+  private static <N extends Node> List<Violation> violationsFrom(NodeRule<N> rule, Node node) {
+    return rule.onEnter(rule.nodeType().cast(node));
+  }
+
+  /**
+   * Las reglas de programa después de salir de {@code statement}: cada una devuelve otra, que sabe
+   * esa sentencia más.
+   */
+  private static List<ProgramRule> rulesAfter(Statement statement, List<ProgramRule> before) {
+    List<ProgramRule> after = new ArrayList<>();
+    for (ProgramRule rule : before) {
+      after.add(rule.onExit(statement));
     }
+    return after;
+  }
+
+  /** Agrupa las reglas de nodo por el tipo de nodo que revisan. */
+  private static Map<Class<? extends Node>, List<NodeRule<?>>> indexByNodeType(
+      List<NodeRule<?>> rules) {
+    Map<Class<? extends Node>, List<NodeRule<?>>> index = new HashMap<>();
+    for (NodeRule<?> rule : rules) {
+      index.computeIfAbsent(rule.nodeType(), type -> new ArrayList<>()).add(rule);
+    }
+    index.replaceAll((type, rulesOfType) -> List.copyOf(rulesOfType));
+    return Map.copyOf(index);
   }
 }
