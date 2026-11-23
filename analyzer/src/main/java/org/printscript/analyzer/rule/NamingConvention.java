@@ -1,5 +1,6 @@
 package org.printscript.analyzer.rule;
 
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -33,16 +34,21 @@ public enum NamingConvention {
   }
 
   /**
+   * Cómo se puede escribir cada convención en la configuración, ya en minúsculas y con {@code _} en
+   * vez de espacios y guiones.
+   */
+  private static final Map<String, NamingConvention> BY_CONFIGURED_NAME =
+      Map.of("camelcase", CAMEL_CASE, "camel_case", CAMEL_CASE, "snake_case", SNAKE_CASE);
+
+  /**
    * @throws IllegalArgumentException si no es ninguna de las convenciones conocidas
    */
   public static NamingConvention fromString(String value) {
     String normalized = value.trim().toLowerCase().replace(" ", "_").replace("-", "_");
-    if ("camelcase".equals(normalized) || "camel_case".equals(normalized)) {
-      return CAMEL_CASE;
+    NamingConvention convention = BY_CONFIGURED_NAME.get(normalized);
+    if (convention == null) {
+      throw new IllegalArgumentException("Unknown naming convention: " + value);
     }
-    if ("snake_case".equals(normalized)) {
-      return SNAKE_CASE;
-    }
-    throw new IllegalArgumentException("Unknown naming convention: " + value);
+    return convention;
   }
 }

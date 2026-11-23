@@ -22,12 +22,23 @@ final class TestAst {
   private TestAst() {}
 
   static VarDeclarationStatement declaration(String name, Position position) {
+    return declaration(name, new NumberLiteral(1, position), position);
+  }
+
+  /** {@code let name: number = initializer;}, con el nombre y la sentencia en {@code position}. */
+  static VarDeclarationStatement declaration(
+      String name, Expression initializer, Position position) {
     return new VarDeclarationStatement(
-        new Identifier(name, position), "number", new NumberLiteral(1, position), position);
+        new Identifier(name, position), "number", initializer, position);
   }
 
   static Statement call(String function, Expression argument) {
-    return new ExpressionStatement(new CallExpression(function, List.of(argument), POS), POS);
+    return call(function, argument, POS);
+  }
+
+  static Statement call(String function, Expression argument, Position position) {
+    return new ExpressionStatement(
+        new CallExpression(function, List.of(argument), position), position);
   }
 
   static Statement println(String name) {
@@ -44,5 +55,10 @@ final class TestAst {
 
   static BinaryExpression sum() {
     return new BinaryExpression(new NumberLiteral(2, POS), "+", new NumberLiteral(2, POS), POS);
+  }
+
+  /** {@code name + 1}. */
+  static BinaryExpression plusOne(String name) {
+    return new BinaryExpression(new Identifier(name, POS), "+", new NumberLiteral(1, POS), POS);
   }
 }
