@@ -1,103 +1,82 @@
 package org.printscript.analyzer.rule;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import org.printscript.analyzer.violation.Severity;
+import org.printscript.analyzer.rule.VariableUsage.Declared;
+import org.printscript.analyzer.rule.VariableUsage.Usage;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.ast.AssignmentStatement;
-import org.printscript.ast.Block;
-import org.printscript.ast.Identifier;
-import org.printscript.ast.Node;
-import org.printscript.ast.VarDeclarationStatement;
+import org.printscript.ast.Statement;
 import org.printscript.source.Position;
 
 /**
- * Reporta las variables declaradas que nunca se leen ni se reasignan. Como necesita haber visto
- * todo el programa, reporta recién en {@link #onFinish}.
+ * Reporta las variables declaradas que nunca se leen ni se reasignan, en la posición de su nombre.
  *
- * <p>Respeta los scopes de bloque: un uso cuenta para la declaración visible más cercana, así que
- * una variable de afuera tapada por otra del mismo nombre adentro de un bloque no cuenta como
- * usada. Cualquier {@link Block} abre un scope, sea de un {@code if} o de una construcción nueva.
+ * <p>Respeta los scopes de bloque: un uso cuenta para la declaración visible más cercana, y el
+ * valor de una declaración se lee antes de que la variable exista (como en el semántico). Lo que
+ * pasa adentro de cada sentencia lo calcula {@link VariableUsage}. Entre una sentencia y otra solo
+ * hay que acordarse de lo que dice {@link Known}.
  */
-public final class UnusedVariableRule implements LintRule {
+public final class UnusedVariableRule implements ProgramRule<UnusedVariableRule.Known> {
 
-  /** Todas las declaraciones, en orden de declaración. */
-  private final List<Declaration> declarations = new ArrayList<>();
-
-  /** Declaraciones visibles por scope; el primero es el del bloque más interno. */
-  private final Deque<Map<String, Declaration>> scopes = new ArrayDeque<>();
-
-  public UnusedVariableRule() {
-    scopes.push(new HashMap<>());
+  @Override
+  public Known start() {
+    return Known.NOTHING;
   }
 
   @Override
-  public void onEnter(Node node, Consumer<Violation> report) {
-    if (node instanceof VarDeclarationStatement declaration) {
-      declare(declaration);
-    } else if (node instanceof AssignmentStatement assignment) {
-      markUsed(assignment.getTarget().getName());
-    } else if (node instanceof Identifier identifier) {
-      markUsed(identifier.getName());
-    } else if (node instanceof Block) {
-      scopes.push(new HashMap<>());
+  public Known after(Known known, Statement statement) {
+    return known.after(statement.accept(VariableUsage.INSTANCE));
+  }
+
+  @Override
+  public List<Violation> violations(Known known) {
+    return known.violations();
+  }
+
+  /**
+   * Lo que la regla sabe del programa hasta una sentencia. Es inmutable: leer una sentencia más
+   * devuelve otro.
+   *
+   * @param unusedOutsideBlocks las variables declaradas afuera de todo bloque que nadie usó
+   *     todavía, con la posición de su nombre
+   * @param unusedInsideBlocks las variables de bloques que ya terminaron y que nadie usó: eso ya no
+   *     puede cambiar
+   */
+  public record Known(
+      Map<String, Position> unusedOutsideBlocks, List<Violation> unusedInsideBlocks) {
+
+    static final Known NOTHING = new Known(Map.of(), List.of());
+
+    public Known {
+      unusedOutsideBlocks = Map.copyOf(unusedOutsideBlocks);
+      unusedInsideBlocks = List.copyOf(unusedInsideBlocks);
     }
-  }
 
-  @Override
-  public void onExit(Node node, Consumer<Violation> report) {
-    if (node instanceof Block) {
-      scopes.pop();
-    }
-  }
-
-  @Override
-  public void onFinish(Consumer<Violation> report) {
-    for (Declaration declaration : declarations) {
-      if (!declaration.used) {
-        report.accept(
-            new Violation(
-                "Variable '" + declaration.name + "' is declared but never used.",
-                Severity.WARNING,
-                declaration.position));
+    /** Primero cuenta lo que la sentencia lee y después lo que declara. */
+    Known after(Usage usage) {
+      boolean nothingNew =
+          usage.declares().isEmpty()
+              && usage.unused().isEmpty()
+              && Collections.disjoint(unusedOutsideBlocks.keySet(), usage.reads());
+      if (nothingNew) {
+        return this;
       }
+      Map<String, Position> outside = new HashMap<>(unusedOutsideBlocks);
+      outside.keySet().removeAll(usage.reads());
+      usage.declares().ifPresent(declared -> outside.put(declared.name(), declared.position()));
+      List<Violation> inside = new ArrayList<>(unusedInsideBlocks);
+      inside.addAll(usage.unused());
+      return new Known(outside, inside);
     }
-  }
 
-  /** Se declara antes de recorrer el valor: {@code let x: number = x;} cuenta como uso. */
-  private void declare(VarDeclarationStatement node) {
-    Map<String, Declaration> scope = scopes.peek();
-    String name = node.getName().getName();
-    if (!scope.containsKey(name)) {
-      Declaration declaration = new Declaration(name, node.getPosition());
-      scope.put(name, declaration);
-      declarations.add(declaration);
-    }
-  }
-
-  private void markUsed(String name) {
-    for (Map<String, Declaration> scope : scopes) {
-      Declaration declaration = scope.get(name);
-      if (declaration != null) {
-        declaration.used = true;
-        return;
-      }
-    }
-  }
-
-  private static final class Declaration {
-    private final String name;
-    private final Position position;
-    private boolean used;
-
-    Declaration(String name, Position position) {
-      this.name = name;
-      this.position = position;
+    List<Violation> violations() {
+      List<Violation> violations = new ArrayList<>(unusedInsideBlocks);
+      unusedOutsideBlocks.forEach(
+          (name, position) -> violations.add(new Declared(name, position).neverUsed()));
+      return violations;
     }
   }
 }

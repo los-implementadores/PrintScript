@@ -6,6 +6,7 @@ import static org.printscript.analyzer.LintRulesTest.analyze;
 import static org.printscript.analyzer.TestAst.POS;
 import static org.printscript.analyzer.TestAst.declaration;
 import static org.printscript.analyzer.TestAst.ifElse;
+import static org.printscript.analyzer.TestAst.plusOne;
 import static org.printscript.analyzer.TestAst.println;
 
 import java.util.List;
@@ -27,7 +28,7 @@ class UnusedVariablesTest {
         analyze(Map.of("activeUnusedVariables", true), declaration("x", POS));
 
     assertEquals(1, violations.size());
-    assertEquals("Variable 'x' is declared but never used.", violations.get(0).getMessage());
+    assertEquals("Variable 'x' is declared but never used.", violations.get(0).message());
   }
 
   @Test
@@ -51,7 +52,7 @@ class UnusedVariablesTest {
             ifElse(List.of(declaration("x", new Position(2, 3, 2, 22)), println("x")), null));
 
     assertEquals(1, violations.size());
-    assertEquals(outer, violations.get(0).getPosition());
+    assertEquals(outer, violations.get(0).position());
   }
 
   @Test
@@ -66,7 +67,44 @@ class UnusedVariablesTest {
                 List.of(declaration("y", new Position(4, 3, 4, 22)), println("y"))));
 
     assertEquals(1, violations.size());
-    assertEquals(thenBranch, violations.get(0).getPosition());
+    assertEquals(thenBranch, violations.get(0).position());
+  }
+
+  @Test
+  void theValueOfAShadowingDeclarationReadsTheOuterVariable() {
+    // let x: number = 5; if (true) { let x: number = x + 1; println(x); }
+    List<Violation> violations =
+        analyze(
+            Map.of("activeUnusedVariables", true),
+            declaration("x", new Position(1, 5, 1, 5)),
+            ifElse(
+                List.of(declaration("x", plusOne("x"), new Position(2, 7, 2, 7)), println("x")),
+                null));
+
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  void aDeclarationDoesNotUseItself() {
+    List<Violation> violations =
+        analyze(Map.of("activeUnusedVariables", true), declaration("x", plusOne("x"), POS));
+
+    assertEquals(1, violations.size());
+  }
+
+  @Test
+  void warnsAboutAVariableOfABlockThatNobodyReads() {
+    Position inner = new Position(2, 7, 2, 7);
+
+    List<Violation> violations =
+        analyze(
+            Map.of("activeUnusedVariables", true),
+            ifElse(List.of(declaration("y", inner)), null),
+            declaration("z", new Position(4, 5, 4, 5)),
+            println("z"));
+
+    assertEquals(1, violations.size());
+    assertEquals(inner, violations.get(0).position());
   }
 
   @Test

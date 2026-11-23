@@ -1,24 +1,38 @@
 package org.printscript.analyzer;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
-import java.util.function.Supplier;
-import org.printscript.analyzer.rule.LintRule;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.printscript.analyzer.rule.LintRules;
+import org.printscript.analyzer.rule.NodeRule;
+import org.printscript.analyzer.rule.ProgramRule;
 import org.printscript.analyzer.violation.Violation;
 import org.printscript.ast.Node;
 import org.printscript.ast.Statement;
 import org.printscript.rules.RuleConfig;
 
 /**
- * Recorre cada sentencia y le avisa a cada {@link LintRule} los nodos que visita. No conoce ninguna
- * regla ni ningún tipo de nodo en particular: recorre el árbol con {@link Node#children()}, así que
- * ni una regla nueva ni un nodo nuevo cambian esta clase.
+ * Recorre cada sentencia con {@link Node#children()} y le pasa cada nodo a las reglas de su tipo, y
+ * cada sentencia entera a las reglas de programa. No conoce ninguna regla ni ningún tipo de nodo en
+ * particular: ni una regla nueva ni un nodo nuevo cambian esta clase.
+ *
+ * <p>No tiene estado: todo lo que se sabe de un programa vive en las variables locales de {@link
+ * #analyze}, así que un analyzer sirve para cualquier cantidad de programas.
  */
-public class StaticAnalyzerImpl implements StaticAnalyzer {
+public final class StaticAnalyzerImpl implements StaticAnalyzer {
 
-  private final List<LintRule> rules;
-  private final List<Violation> violations = new ArrayList<>();
+  private static final Comparator<Violation> BY_POSITION =
+      Comparator.comparingInt((Violation violation) -> violation.position().getStartLine())
+          .thenComparingInt(violation -> violation.position().getStartColumn());
+
+  /** Las reglas de nodo, indexadas por el tipo de nodo que revisan. */
+  private final Map<Class<? extends Node>, List<NodeRule<?>>> nodeRules;
+
+  private final List<ProgramRule<?>> programRules;
 
   /**
    * Usa las reglas que la configuración deja activas.
@@ -26,47 +40,62 @@ public class StaticAnalyzerImpl implements StaticAnalyzer {
    * @throws IllegalArgumentException si una clave tiene un valor que su regla no acepta
    */
   public StaticAnalyzerImpl(RuleConfig config) {
-    this(() -> LintRules.create(config));
+    this(LintRules.from(config));
   }
 
-  /**
-   * Usa las reglas que arma {@code rules}, incluidas reglas propias que no están en la config.
-   *
-   * <p>Recibe una fábrica y no la lista porque las reglas guardan estado (por ejemplo, qué
-   * variables se usaron): cada analyzer le pide su propia lista, así dos análisis no se mezclan
-   * aunque compartan la fábrica.
-   */
-  public StaticAnalyzerImpl(Supplier<List<LintRule>> rules) {
-    this.rules = List.copyOf(rules.get());
+  /** Usa estas reglas, incluidas reglas propias que no están en la configuración. */
+  public StaticAnalyzerImpl(LintRules rules) {
+    this.nodeRules =
+        Map.copyOf(
+            rules.nodeRules().stream()
+                .collect(
+                    Collectors.<NodeRule<?>, Class<? extends Node>>groupingBy(NodeRule::nodeType)));
+    this.programRules = rules.programRules();
   }
 
   @Override
-  public void analyze(Statement statement) {
-    walk(statement);
+  public List<Violation> analyze(Iterator<Statement> program) {
+    List<Violation> found = new ArrayList<>();
+    List<Progress<?>> progress = programRules.stream().<Progress<?>>map(Progress::start).toList();
+    while (program.hasNext()) {
+      Statement statement = program.next();
+      check(statement).forEach(found::add);
+      progress = progress.stream().<Progress<?>>map(rule -> rule.after(statement)).toList();
+    }
+    progress.forEach(rule -> found.addAll(rule.violations()));
+    found.sort(BY_POSITION);
+    return List.copyOf(found);
+  }
+
+  /** Lo que encuentran las reglas de nodo en {@code node} y en todo lo que tiene adentro. */
+  private Stream<Violation> check(Node node) {
+    Stream<Violation> here =
+        nodeRules.getOrDefault(node.getClass(), List.of()).stream()
+            .flatMap(rule -> check(rule, node).stream());
+    return Stream.concat(here, node.children().stream().flatMap(this::check));
+  }
+
+  /** Le pasa el nodo a la regla con el tipo que ella pide: el índice ya garantiza que es ese. */
+  private static <N extends Node> List<Violation> check(NodeRule<N> rule, Node node) {
+    return rule.check(rule.nodeType().cast(node));
   }
 
   /**
-   * Devuelve las violaciones encontradas hasta ahora, incluidas las de las reglas que reportan al
-   * final. Se puede llamar más de una vez sin duplicar resultados.
+   * Una regla de programa con lo que sabe hasta la última sentencia leída. Inmutable: leer otra
+   * sentencia devuelve otro.
    */
-  @Override
-  public List<Violation> getViolations() {
-    List<Violation> result = new ArrayList<>(violations);
-    for (LintRule rule : rules) {
-      rule.onFinish(result::add);
-    }
-    return result;
-  }
+  private record Progress<S>(ProgramRule<S> rule, S known) {
 
-  private void walk(Node node) {
-    for (LintRule rule : rules) {
-      rule.onEnter(node, violations::add);
+    static <S> Progress<S> start(ProgramRule<S> rule) {
+      return new Progress<>(rule, rule.start());
     }
-    for (Node child : node.children()) {
-      walk(child);
+
+    Progress<S> after(Statement statement) {
+      return new Progress<>(rule, rule.after(known, statement));
     }
-    for (LintRule rule : rules) {
-      rule.onExit(node, violations::add);
+
+    List<Violation> violations() {
+      return rule.violations(known);
     }
   }
 }

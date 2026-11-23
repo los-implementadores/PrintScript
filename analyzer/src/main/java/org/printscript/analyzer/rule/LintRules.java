@@ -7,35 +7,50 @@ import org.printscript.rules.RuleRegistry;
 import org.printscript.rules.RuleSetting;
 
 /**
- * Las reglas del linter y la clave con la que se activa cada una. Es el único lugar donde se
- * registran: agregar una regla es escribir su clase y sumar una línea acá. Cada regla acepta su
- * clave propia y, si existe, la del TCK.
+ * Las reglas activas del linter, separadas por lo que necesitan ver: un nodo o el programa entero.
  *
- * <p>Las reglas se aplican (y reportan) en el orden en que están registradas.
+ * <p>Los registros de abajo son el único lugar donde se dice qué reglas existen y con qué clave se
+ * activa cada una: agregar una regla es escribir su clase y sumar una línea en el registro que le
+ * corresponde. Cada regla acepta su clave propia y, si existe, la del TCK.
+ *
+ * @param nodeRules las reglas que revisan un nodo por vez
+ * @param programRules las reglas que necesitan el programa entero
  */
-public final class LintRules {
+public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule<?>> programRules) {
 
-  private static final RuleRegistry<LintRule> REGISTRY =
-      RuleRegistry.<LintRule>builder()
+  private static final RuleRegistry<NodeRule<?>> NODE_RULES =
+      RuleRegistry.<NodeRule<?>>builder()
           .rule("activeNamingConvention", "identifier_format")
           .with(LintRules::namingConvention)
           .rule("activeComplexPrintln", "mandatory-variable-or-literal-in-println")
           .whenOn(() -> new SimpleArgumentRule("println"))
           .rule("activeComplexReadInput", "mandatory-variable-or-literal-in-readInput")
           .whenOn(() -> new SimpleArgumentRule("readInput"))
+          .build();
+
+  private static final RuleRegistry<ProgramRule<?>> PROGRAM_RULES =
+      RuleRegistry.<ProgramRule<?>>builder()
           .rule("activeUnusedVariables")
           .whenOn(UnusedVariableRule::new)
           .build();
 
-  private LintRules() {}
+  public LintRules {
+    nodeRules = List.copyOf(nodeRules);
+    programRules = List.copyOf(programRules);
+  }
 
   /**
-   * Arma reglas nuevas con las que la configuración deja activas.
+   * Las reglas que la configuración deja activas.
    *
    * @throws IllegalArgumentException si una clave tiene un valor que su regla no acepta
    */
-  public static List<LintRule> create(RuleConfig config) {
-    return REGISTRY.create(config);
+  public static LintRules from(RuleConfig config) {
+    return new LintRules(NODE_RULES.create(config), PROGRAM_RULES.create(config));
+  }
+
+  /** {@code true} si no hay ninguna regla activa. */
+  public boolean isEmpty() {
+    return nodeRules.isEmpty() && programRules.isEmpty();
   }
 
   /**
@@ -43,7 +58,7 @@ public final class LintRules {
    * convención en {@code namingConventionFormat} (camelCase si no está), o con la convención
    * directamente en {@code identifier_format}, como la configura el TCK.
    */
-  private static Optional<LintRule> namingConvention(RuleSetting setting) {
+  private static Optional<NodeRule<?>> namingConvention(RuleSetting setting) {
     if (setting.isNull()) {
       return Optional.empty();
     }

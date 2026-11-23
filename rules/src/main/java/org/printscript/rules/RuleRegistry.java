@@ -15,14 +15,14 @@ import java.util.function.Supplier;
  * clase y registrarla con su clave. Ni el motor de la herramienta ni la lectura del JSON cambian.
  *
  * <pre>
- *   RuleRegistry&lt;LintRule&gt; rules =
- *       RuleRegistry.&lt;LintRule&gt;builder()
- *           .rule("activeUnusedVariables").whenOn(UnusedVariableRule::new)
- *           .rule("indentSize").withInt(IndentRule::new)
+ *   RuleRegistry&lt;FormattingRule&gt; rules =
+ *       RuleRegistry.&lt;FormattingRule&gt;builder()
+ *           .rule("mandatory-line-break-after-statement").whenOn(LineBreakAfterStatement::new)
+ *           .rule("indentSize").withInt(BlockIndentation::new)
  *           .build();
  * </pre>
  *
- * <p>Las reglas pueden guardar estado, así que {@link #create} arma instancias nuevas cada vez.
+ * <p>{@link #create} arma instancias nuevas cada vez, por si una regla guarda estado.
  *
  * @param <R> el tipo de regla de la herramienta
  */

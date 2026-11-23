@@ -2,31 +2,19 @@ package org.printscript.analyzer.violation;
 
 import org.printscript.source.Position;
 
-public class Violation {
-  private final String message;
-  private final Severity severity;
-  private final Position position;
-
-  public Violation(String message, Severity severity, Position position) {
-    this.message = message;
-    this.severity = severity;
-    this.position = position;
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public Severity getSeverity() {
-    return severity;
-  }
-
-  public Position getPosition() {
-    return position;
-  }
+/**
+ * Algo que una regla del linter encontró en el código, con su ubicación.
+ *
+ * <p>Todas son advertencias: el linter solo lee código que el semántico ya aceptó, así que nada de
+ * lo que encuentra impide correrlo.
+ *
+ * @param message qué está mal y cómo arreglarlo
+ * @param position dónde está, en el código original
+ */
+public record Violation(String message, Position position) {
 
   @Override
   public String toString() {
-    return "[" + severity.name() + "] " + message + " at " + position.toString();
+    return "[WARNING] " + message + " at " + position;
   }
 }

@@ -1,22 +1,14 @@
 package org.printscript.analyzer.rule;
 
-import java.util.function.Consumer;
-import org.printscript.analyzer.violation.Severity;
+import java.util.List;
 import org.printscript.analyzer.violation.Violation;
-import org.printscript.ast.BooleanLiteral;
 import org.printscript.ast.CallExpression;
-import org.printscript.ast.Expression;
-import org.printscript.ast.GroupExpression;
-import org.printscript.ast.Identifier;
-import org.printscript.ast.Node;
-import org.printscript.ast.NumberLiteral;
-import org.printscript.ast.StringLiteral;
 
 /**
  * Exige que el argumento de una función sea un literal o una variable, no una expresión. Se usa
  * para {@code println} y para {@code readInput}.
  */
-public final class SimpleArgumentRule implements LintRule {
+public final class SimpleArgumentRule implements NodeRule<CallExpression> {
 
   private final String function;
 
@@ -28,29 +20,24 @@ public final class SimpleArgumentRule implements LintRule {
   }
 
   @Override
-  public void onEnter(Node node, Consumer<Violation> report) {
-    if (!(node instanceof CallExpression call)
-        || !function.equals(call.getCallee())
-        || call.getArguments().isEmpty()) {
-      return;
-    }
-    if (!isLiteralOrIdentifier(call.getArguments().get(0))) {
-      report.accept(
-          new Violation(
-              "Complex expression in '"
-                  + function
-                  + "'. Consider extracting to an intermediate variable.",
-              Severity.WARNING,
-              call.getPosition()));
-    }
+  public Class<CallExpression> nodeType() {
+    return CallExpression.class;
   }
 
-  /** Los paréntesis no cuentan: {@code println((x))} sigue siendo un identificador. */
-  private static boolean isLiteralOrIdentifier(Expression expression) {
-    Expression argument = GroupExpression.unwrap(expression);
-    return argument instanceof NumberLiteral
-        || argument instanceof StringLiteral
-        || argument instanceof BooleanLiteral
-        || argument instanceof Identifier;
+  @Override
+  public List<Violation> check(CallExpression call) {
+    boolean simple =
+        !function.equals(call.getCallee())
+            || call.getArguments().isEmpty()
+            || call.getArguments().get(0).accept(LiteralOrVariable.INSTANCE);
+    if (simple) {
+      return List.of();
+    }
+    return List.of(
+        new Violation(
+            "Complex expression in '"
+                + function
+                + "'. Consider extracting to an intermediate variable.",
+            call.getPosition()));
   }
 }

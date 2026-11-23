@@ -15,10 +15,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import org.printscript.analyzer.violation.Severity;
 import org.printscript.analyzer.violation.Violation;
+import org.printscript.ast.CallExpression;
+import org.printscript.ast.GroupExpression;
+import org.printscript.ast.Identifier;
+import org.printscript.ast.NumberLiteral;
 import org.printscript.ast.Statement;
 import org.printscript.ast.StringLiteral;
+import org.printscript.ast.VarDeclarationStatement;
 import org.printscript.rules.RuleConfig;
 import org.printscript.source.Position;
 
@@ -26,11 +30,7 @@ import org.printscript.source.Position;
 class LintRulesTest {
 
   static List<Violation> analyze(Map<String, Object> config, Statement... statements) {
-    StaticAnalyzer analyzer = new StaticAnalyzerImpl(RuleConfig.of(config));
-    for (Statement statement : statements) {
-      analyzer.analyze(statement);
-    }
-    return analyzer.getViolations();
+    return new StaticAnalyzerImpl(RuleConfig.of(config)).analyze(List.of(statements).iterator());
   }
 
   // --- Formato de nombres ---
@@ -41,8 +41,22 @@ class LintRulesTest {
         analyze(Map.of("activeNamingConvention", true), declaration("my_variable", POS));
 
     assertEquals(1, violations.size());
-    assertEquals("Variable 'my_variable' should be in camelCase.", violations.get(0).getMessage());
-    assertEquals(Severity.WARNING, violations.get(0).getSeverity());
+    assertEquals("Variable 'my_variable' should be in camelCase.", violations.get(0).message());
+  }
+
+  @Test
+  void marksTheNameNotTheWholeDeclaration() {
+    Position name = new Position(1, 5, 1, 15);
+    Statement declaration =
+        new VarDeclarationStatement(
+            new Identifier("my_variable", name),
+            "number",
+            new NumberLiteral(1, POS),
+            new Position(1, 1, 1, 30));
+
+    List<Violation> violations = analyze(Map.of("activeNamingConvention", true), declaration);
+
+    assertEquals(name, violations.get(0).position());
   }
 
   @Test
@@ -58,7 +72,7 @@ class LintRulesTest {
     List<Violation> violations =
         analyze(Map.of("identifier_format", "snake case"), declaration("myVariable", POS));
 
-    assertEquals("Variable 'myVariable' should be in snake_case.", violations.get(0).getMessage());
+    assertEquals("Variable 'myVariable' should be in snake_case.", violations.get(0).message());
   }
 
   @Test
@@ -95,7 +109,7 @@ class LintRulesTest {
         analyze(Map.of("mandatory-variable-or-literal-in-println", true), call("println", sum()));
 
     assertEquals(1, violations.size());
-    assertTrue(violations.get(0).getMessage().contains("Complex expression in 'println'"));
+    assertTrue(violations.get(0).message().contains("Complex expression in 'println'"));
   }
 
   @Test
@@ -113,7 +127,7 @@ class LintRulesTest {
     List<Violation> violations =
         analyze(Map.of("mandatory-variable-or-literal-in-readInput", true), readInput);
     assertEquals(1, violations.size());
-    assertTrue(violations.get(0).getMessage().contains("readInput"));
+    assertTrue(violations.get(0).message().contains("readInput"));
     assertTrue(analyze(Map.of("activeComplexPrintln", true), readInput).isEmpty());
   }
 
@@ -144,20 +158,39 @@ class LintRulesTest {
         """;
     StaticAnalyzer analyzer = new StaticAnalyzerImpl(RuleConfig.fromJson(new StringReader(json)));
 
-    analyzer.analyze(declaration("myVar", POS));
-    analyzer.analyze(call("println", sum()));
+    List<Violation> violations =
+        analyzer.analyze(List.of(declaration("myVar", POS), call("println", sum())).iterator());
 
-    assertEquals(2, analyzer.getViolations().size());
+    assertEquals(2, violations.size());
   }
 
   @Test
-  void aViolationPrintsSeverityMessageAndPosition() {
-    Position pos = new Position(1, 5, 1, 15);
-    Violation violation = new Violation("Variable should be camelCase", Severity.WARNING, pos);
+  void findsAComplexArgumentInsideAnInitializer() {
+    Statement readInput =
+        declaration(
+            "input",
+            new CallExpression("readInput", List.of(sum()), POS),
+            new Position(1, 1, 1, 40));
 
-    assertEquals("Variable should be camelCase", violation.getMessage());
-    assertEquals(Severity.WARNING, violation.getSeverity());
-    assertEquals(pos, violation.getPosition());
+    assertEquals(
+        1, analyze(Map.of("mandatory-variable-or-literal-in-readInput", true), readInput).size());
+  }
+
+  @Test
+  void parenthesesAroundAVariableDoNotMakeItComplex() {
+    Statement println =
+        call(
+            "println",
+            new GroupExpression(new GroupExpression(new Identifier("x", POS), POS), POS));
+
+    assertTrue(analyze(Map.of("activeComplexPrintln", true), println).isEmpty());
+  }
+
+  @Test
+  void aViolationPrintsAsAWarningWithItsPosition() {
+    Position pos = new Position(1, 5, 1, 15);
+    Violation violation = new Violation("Variable should be camelCase", pos);
+
     assertEquals("[WARNING] Variable should be camelCase at 1:5-1:15", violation.toString());
   }
 }
