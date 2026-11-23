@@ -25,7 +25,7 @@ funciones nativas de la versión pedida (ADR-025).
 
 ## Cómo correr
 
-Hace falta Git y una JDK 17 o más nueva para ejecutar Gradle. Si no está la JDK 17 que usa el
+Hace falta Git y una JDK 17 o más nueva para ejecutar Gradle. Si no está la JDK 21 que usa el
 proyecto para compilar, Gradle la descarga sola.
 
 ```bash
