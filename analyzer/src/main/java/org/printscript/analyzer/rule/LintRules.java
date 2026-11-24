@@ -1,12 +1,16 @@
 package org.printscript.analyzer.rule;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.printscript.rules.RuleConfig;
+import org.printscript.rules.RuleDefinition;
 import org.printscript.rules.RuleRegistry;
 import org.printscript.rules.RuleSetting;
+import org.printscript.rules.RuleValue;
 
 /**
  * Las reglas activas del linter, separadas por lo que necesitan ver: un nodo o el programa entero.
@@ -20,19 +24,26 @@ import org.printscript.rules.RuleSetting;
  */
 public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule> programRules) {
 
+  /** La clave del TCK para la regla de nombres: el valor es la convención. */
+  private static final String IDENTIFIER_FORMAT = "identifier_format";
+
+  /** La convención de nombres que pide {@code activeNamingConvention}: camelCase o snake_case. */
+  private static final String NAMING_CONVENTION_FORMAT = "namingConventionFormat";
+
   private static final RuleRegistry<NodeRule<?>> NODE_RULES =
       RuleRegistry.<NodeRule<?>>builder()
-          .rule("activeNamingConvention", "identifier_format")
-          .with(LintRules::namingConvention)
-          .rule("activeComplexPrintln", "mandatory-variable-or-literal-in-println")
-          .whenOn(() -> new SimpleArgumentRule("println"))
-          .rule("activeComplexReadInput", "mandatory-variable-or-literal-in-readInput")
-          .whenOn(() -> new SimpleArgumentRule("readInput"))
+          .rule(NamingConventionRule.KEY, IDENTIFIER_FORMAT)
+          .parameter(NAMING_CONVENTION_FORMAT, RuleValue.TEXT)
+          .with(RuleValue.FLAG, LintRules::namingConvention)
+          .rule(SimpleArgumentRule.PRINTLN_KEY, "mandatory-variable-or-literal-in-println")
+          .whenOn(SimpleArgumentRule::println)
+          .rule(SimpleArgumentRule.READ_INPUT_KEY, "mandatory-variable-or-literal-in-readInput")
+          .whenOn(SimpleArgumentRule::readInput)
           .build();
 
   private static final RuleRegistry<ProgramRule> PROGRAM_RULES =
       RuleRegistry.<ProgramRule>builder()
-          .rule("activeUnusedVariables")
+          .rule(UnusedVariableRule.KEY)
           .whenOn(UnusedVariableRule::new)
           .build();
 
@@ -48,6 +59,30 @@ public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule> programRu
    */
   public static LintRules from(RuleConfig config) {
     return new LintRules(NODE_RULES.create(config), PROGRAM_RULES.create(config));
+  }
+
+  /**
+   * Las reglas que existen, con la clave y el valor de cada una: las que revisan un nodo y después
+   * las que necesitan el programa entero.
+   */
+  public static List<RuleDefinition> definitions() {
+    return Stream.concat(NODE_RULES.definitions().stream(), PROGRAM_RULES.definitions().stream())
+        .toList();
+  }
+
+  /**
+   * Las reglas que se usan cuando no se configura ninguna: todas prendidas, con nombres en
+   * camelCase. Es la misma configuración que {@code linter_rules.json}, más la regla de {@code
+   * readInput}, que es de la 1.1.
+   */
+  public static RuleConfig defaults() {
+    Map<String, Object> defaults = new LinkedHashMap<>();
+    defaults.put(NamingConventionRule.KEY, true);
+    defaults.put(NAMING_CONVENTION_FORMAT, "camelCase");
+    defaults.put(SimpleArgumentRule.PRINTLN_KEY, true);
+    defaults.put(SimpleArgumentRule.READ_INPUT_KEY, true);
+    defaults.put(UnusedVariableRule.KEY, true);
+    return RuleConfig.of(defaults);
   }
 
   /** {@code true} si no hay ninguna regla activa. */
@@ -72,8 +107,10 @@ public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule> programRu
   private static final Map<String, Function<RuleSetting, Optional<NodeRule<?>>>>
       NAMING_CONVENTION_BY_KEY =
           Map.of(
-              "identifier_format", LintRules::namingConventionFromFormat,
-              "activeNamingConvention", LintRules::namingConventionFromActiveFlag);
+              IDENTIFIER_FORMAT,
+              LintRules::namingConventionFromFormat,
+              NamingConventionRule.KEY,
+              LintRules::namingConventionFromActiveFlag);
 
   /** Con {@code identifier_format}, el valor es la convención. */
   private static Optional<NodeRule<?>> namingConventionFromFormat(RuleSetting setting) {
@@ -88,7 +125,7 @@ public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule> programRu
     if (!setting.asBoolean()) {
       return Optional.empty();
     }
-    String convention = setting.config().text("namingConventionFormat", "camelCase");
+    String convention = setting.config().text(NAMING_CONVENTION_FORMAT, "camelCase");
     return Optional.of(namingConventionRule(convention));
   }
 

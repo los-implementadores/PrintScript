@@ -189,7 +189,8 @@ class LintRulesTest {
   @Test
   void aViolationPrintsAsAWarningWithItsPosition() {
     Position pos = new Position(1, 5, 1, 15);
-    Violation violation = new Violation("Variable should be camelCase", pos);
+    Violation violation =
+        new Violation("activeNamingConvention", "Variable should be camelCase", pos);
 
     assertEquals("[WARNING] Variable should be camelCase at 1:5-1:15", violation.toString());
   }

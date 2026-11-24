@@ -2,10 +2,12 @@ package org.printscript.runner;
 
 import java.io.Reader;
 import java.io.Writer;
+import java.util.List;
 import org.printscript.ast.Program;
 import org.printscript.formatter.Formatter;
 import org.printscript.formatter.rule.FormattingRules;
 import org.printscript.rules.RuleConfig;
+import org.printscript.rules.RuleDefinition;
 import org.printscript.source.SourceText;
 
 /**
@@ -38,6 +40,11 @@ public class FormattingService {
     SourceText original = SourceText.recording(source);
     Program program = loader.load(original.reader(), version);
     formatter.format(program.stream(), original, target);
+  }
+
+  /** Las reglas de formato que existen, con la clave y el valor que acepta cada una. */
+  public List<RuleDefinition> rules() {
+    return FormattingRules.definitions();
   }
 
   /** Las reglas que se usan cuando no se configura ninguna. */

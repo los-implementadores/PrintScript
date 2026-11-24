@@ -6,6 +6,7 @@ import java.util.Map;
 import org.printscript.formatter.FormattingRule;
 import org.printscript.formatter.GapKind;
 import org.printscript.rules.RuleConfig;
+import org.printscript.rules.RuleDefinition;
 import org.printscript.rules.RuleRegistry;
 
 /**
@@ -73,6 +74,11 @@ public final class FormattingRules {
    */
   public static List<FormattingRule> create(RuleConfig config) {
     return REGISTRY.create(config);
+  }
+
+  /** Las reglas que existen, con la clave y el valor de cada una, en el orden en que se aplican. */
+  public static List<RuleDefinition> definitions() {
+    return REGISTRY.definitions();
   }
 
   /**
