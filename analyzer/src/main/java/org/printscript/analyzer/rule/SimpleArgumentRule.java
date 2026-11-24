@@ -22,13 +22,32 @@ public final class SimpleArgumentRule implements NodeRule<CallExpression> {
   private static final Set<Class<? extends Expression>> LITERALS_AND_VARIABLES =
       Set.of(NumberLiteral.class, StringLiteral.class, BooleanLiteral.class, Identifier.class);
 
+  /** La clave de la regla para {@code println}. */
+  public static final String PRINTLN_KEY = "activeComplexPrintln";
+
+  /** La clave de la regla para {@code readInput}. */
+  public static final String READ_INPUT_KEY = "activeComplexReadInput";
+
+  private final String key;
   private final String function;
 
   /**
+   * @param key la clave con la que se activa la regla, que identifica sus violaciones
    * @param function nombre de la función a controlar (ej. {@code "println"})
    */
-  public SimpleArgumentRule(String function) {
+  public SimpleArgumentRule(String key, String function) {
+    this.key = key;
     this.function = function;
+  }
+
+  /** La regla para {@code println}. */
+  public static SimpleArgumentRule println() {
+    return new SimpleArgumentRule(PRINTLN_KEY, "println");
+  }
+
+  /** La regla para {@code readInput}. */
+  public static SimpleArgumentRule readInput() {
+    return new SimpleArgumentRule(READ_INPUT_KEY, "readInput");
   }
 
   @Override
@@ -65,6 +84,7 @@ public final class SimpleArgumentRule implements NodeRule<CallExpression> {
 
   private Violation complexArgument(Expression argument) {
     return new Violation(
+        key,
         "Complex expression in '"
             + function
             + "'. Consider extracting to an intermediate variable.",

@@ -22,6 +22,9 @@ import org.printscript.ast.VarDeclarationStatement;
  */
 public final class UnusedVariableRule implements ProgramRule {
 
+  /** La clave con la que se activa y con la que se identifican sus violaciones. */
+  public static final String KEY = "activeUnusedVariables";
+
   /**
    * Qué hacen con las variables los tipos de nodo que importan. Cualquier otro (un literal, una
    * operación, una llamada, un {@code if}) hace lo que hacen sus hijos, uno después del otro.

@@ -3,10 +3,12 @@ package org.printscript.runner;
 import java.io.Reader;
 import java.util.List;
 import org.printscript.analyzer.StaticAnalyzer;
+import org.printscript.analyzer.rule.LintRules;
 import org.printscript.analyzer.violation.Violation;
 import org.printscript.ast.Program;
 import org.printscript.interpreter.semantic.SemanticAnalyzer;
 import org.printscript.rules.RuleConfig;
+import org.printscript.rules.RuleDefinition;
 
 /**
  * Chequeo semántico estricto + linter. Los errores semánticos se lanzan como excepción; las reglas
@@ -34,5 +36,15 @@ public class AnalysisService {
     StaticAnalyzer linter = linters.create(rules);
     Program program = loader.load(source, version);
     return linter.analyze(StatementPipeline.of(semantic::analyze).stream(program));
+  }
+
+  /** Las reglas del linter que existen, con la clave y el valor que acepta cada una. */
+  public List<RuleDefinition> rules() {
+    return LintRules.definitions();
+  }
+
+  /** Las reglas que se usan cuando no se configura ninguna. */
+  public RuleConfig defaultRules() {
+    return LintRules.defaults();
   }
 }

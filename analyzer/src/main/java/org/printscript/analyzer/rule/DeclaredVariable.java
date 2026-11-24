@@ -13,6 +13,7 @@ public record DeclaredVariable(String name, Position position) {
 
   /** El aviso de que nadie la leyó ni la reasignó. */
   Violation neverUsed() {
-    return new Violation("Variable '" + name + "' is declared but never used.", position);
+    return new Violation(
+        UnusedVariableRule.KEY, "Variable '" + name + "' is declared but never used.", position);
   }
 }

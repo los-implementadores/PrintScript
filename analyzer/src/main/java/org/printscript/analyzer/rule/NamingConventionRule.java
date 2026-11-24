@@ -12,6 +12,9 @@ import org.printscript.ast.VarDeclarationStatement;
  */
 public final class NamingConventionRule implements NodeRule<VarDeclarationStatement> {
 
+  /** La clave con la que se activa y con la que se identifican sus violaciones. */
+  public static final String KEY = "activeNamingConvention";
+
   private final NamingConvention convention;
 
   public NamingConventionRule(NamingConvention convention) {
@@ -37,6 +40,7 @@ public final class NamingConventionRule implements NodeRule<VarDeclarationStatem
 
   private Violation wrongName(Identifier name) {
     return new Violation(
+        KEY,
         "Variable '" + name.getName() + "' should be in " + convention.displayName() + ".",
         name.getPosition());
   }

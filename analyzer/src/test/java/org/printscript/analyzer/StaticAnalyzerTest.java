@@ -53,7 +53,7 @@ class StaticAnalyzerTest {
         @Override
         public List<Violation> onEnter(VarDeclarationStatement declaration) {
           if ("x".equals(declaration.getName().getName())) {
-            return List.of(new Violation("Do not call it x.", declaration.getPosition()));
+            return List.of(new Violation("no-x", "Do not call it x.", declaration.getPosition()));
           }
           return List.of();
         }
@@ -69,7 +69,8 @@ class StaticAnalyzerTest {
 
         @Override
         public List<Violation> onEnter(CallExpression call) {
-          return List.of(new Violation("Call to " + call.getCallee() + ".", call.getPosition()));
+          return List.of(
+              new Violation("calls", "Call to " + call.getCallee() + ".", call.getPosition()));
         }
       };
 
@@ -83,7 +84,7 @@ class StaticAnalyzerTest {
 
     @Override
     public List<Violation> onFinish() {
-      return List.of(new Violation(statements + " statements.", POS));
+      return List.of(new Violation("count", statements + " statements.", POS));
     }
   }
 

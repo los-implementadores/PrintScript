@@ -18,6 +18,8 @@ import org.printscript.interpreter.output.CollectingOutputProvider;
 import org.printscript.interpreter.semantic.SemanticException;
 import org.printscript.parser.ParseException;
 import org.printscript.rules.RuleConfig;
+import org.printscript.rules.RuleDefinition;
+import org.printscript.rules.RuleValue;
 
 class RunnerServicesTest {
 
@@ -150,5 +152,41 @@ class RunnerServicesTest {
                 .formatting()
                 .format(
                     new StringReader("let = ;"), LanguageVersion.V1_0, RuleConfig.empty(), target));
+  }
+
+  @Test
+  void theLinterDefaultsReportWhichRuleFailed() {
+    List<Violation> violations =
+        services
+            .analysis()
+            .analyze(
+                new StringReader("let my_var: number = 1;\nprintln(my_var + 1);"),
+                LanguageVersion.V1_1,
+                services.analysis().defaultRules());
+
+    assertEquals(
+        List.of("activeNamingConvention", "activeComplexPrintln"),
+        violations.stream().map(Violation::rule).toList());
+  }
+
+  @Test
+  void everyDefaultRuleIsADescribedRule() {
+    RuleConfig lintDefaults = services.analysis().defaultRules();
+    RuleConfig formatDefaults = services.formatting().defaultRules();
+
+    assertTrue(services.analysis().rules().stream().allMatch(rule -> lintDefaults.has(rule.key())));
+    assertEquals(
+        8,
+        services.formatting().rules().stream()
+            .map(RuleDefinition::key)
+            .filter(formatDefaults::has)
+            .count());
+    assertEquals(
+        RuleValue.INTEGER,
+        services.formatting().rules().stream()
+            .filter(rule -> rule.key().equals("indentSize"))
+            .findFirst()
+            .orElseThrow()
+            .value());
   }
 }
