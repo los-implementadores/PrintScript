@@ -7,6 +7,7 @@ import java.util.function.Function;
 import org.printscript.rules.RuleConfig;
 import org.printscript.rules.RuleRegistry;
 import org.printscript.rules.RuleSetting;
+import org.printscript.rules.RuleValue;
 
 /**
  * Las reglas activas del linter, separadas por lo que necesitan ver: un nodo o el programa entero.
@@ -23,7 +24,7 @@ public record LintRules(List<NodeRule<?>> nodeRules, List<ProgramRule> programRu
   private static final RuleRegistry<NodeRule<?>> NODE_RULES =
       RuleRegistry.<NodeRule<?>>builder()
           .rule("activeNamingConvention", "identifier_format")
-          .with(LintRules::namingConvention)
+          .with(RuleValue.FLAG, LintRules::namingConvention)
           .rule("activeComplexPrintln", "mandatory-variable-or-literal-in-println")
           .whenOn(() -> new SimpleArgumentRule("println"))
           .rule("activeComplexReadInput", "mandatory-variable-or-literal-in-readInput")

@@ -28,7 +28,9 @@ class RuleRegistryTest {
           .rule("format")
           .withText(format -> new Rule("format " + format))
           .rule("custom")
+          .parameter("extra", RuleValue.TEXT)
           .with(
+              RuleValue.FLAG,
               setting ->
                   Optional.of(new Rule(setting.key() + " " + setting.config().text("extra", "-"))))
           .build();
@@ -98,6 +100,22 @@ class RuleRegistryTest {
     RuleConfig config = RuleConfig.of(Map.of("state", true));
 
     assertNotSame(stateful.create(config).get(0), stateful.create(config).get(0));
+  }
+
+  @Test
+  void describesEachRuleWithTheValueItAccepts() {
+    assertEquals(
+        List.of(
+            new RuleDefinition("flag", List.of("tck-flag"), RuleValue.FLAG, List.of()),
+            new RuleDefinition("spaces", List.of(), RuleValue.BOOLEAN, List.of()),
+            new RuleDefinition("indent", List.of(), RuleValue.INTEGER, List.of()),
+            new RuleDefinition("format", List.of(), RuleValue.TEXT, List.of()),
+            new RuleDefinition(
+                "custom",
+                List.of(),
+                RuleValue.FLAG,
+                List.of(new RuleDefinition.Parameter("extra", RuleValue.TEXT)))),
+        registry.definitions());
   }
 
   @Test
